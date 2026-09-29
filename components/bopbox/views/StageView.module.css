@@ -1,0 +1,74 @@
+.view {
+  height: 100%;
+  overflow-y: auto;
+  padding: 18px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.card {
+  --pulse: 0;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 12px;
+  align-items: center;
+  min-height: 92px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid color-mix(in srgb, var(--track) calc(20% + var(--pulse) * 60%), transparent);
+  background:
+    radial-gradient(120% 120% at 0% 0%, color-mix(in srgb, var(--track) calc(8% + var(--pulse) * 40%), transparent), transparent 70%),
+    var(--stage-card);
+  color: var(--stage-ink);
+  text-align: left;
+  box-shadow: 0 0 calc(var(--pulse) * 30px) color-mix(in srgb, var(--track) 60%, transparent);
+  transform: scale(calc(1 + var(--pulse) * 0.03));
+  transition: opacity 200ms;
+}
+
+.card[aria-pressed="false"] {
+  opacity: 0.35;
+  filter: grayscale(0.8);
+}
+
+.icon {
+  grid-row: span 2;
+  font-size: 34px;
+  line-height: 1;
+  transform: rotate(calc(var(--pulse) * -12deg)) scale(calc(1 + var(--pulse) * 0.18));
+}
+
+.name {
+  font: 700 15px/1.2 var(--font-display);
+  text-transform: capitalize;
+}
+
+.role {
+  font: 600 10px/1.2 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--track), #000 var(--lit-shade, 0%));
+}
+
+.note {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  font: 700 12px var(--font-mono);
+  color: var(--stage-ink-3);
+}
+
+.muted {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  font: 700 10px var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}

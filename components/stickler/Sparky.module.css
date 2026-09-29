@@ -1,0 +1,174 @@
+.sparky {
+  --body: #e63b2e;
+  --body-dark: #9e1f15;
+  --flame-a: #ffb23d;
+  --flame-b: #fffbe0;
+  --ink: #2b1712;
+  display: inline-block;
+  flex: none;
+  animation: bob 2.4s ease-in-out infinite;
+}
+
+.sparky svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.glow {
+  --body: #1e1a33;
+  --body-dark: #0d0b18;
+  --flame-a: #39ff88;
+  --flame-b: #d9ffe9;
+  --ink: #39ff88;
+}
+
+.candy {
+  --body: #ff7eb0;
+  --body-dark: #d9407a;
+  --flame-a: #ffd23d;
+  --flame-b: #ffffff;
+  --ink: #5a1834;
+}
+
+.body {
+  fill: var(--body);
+  stroke: var(--body-dark);
+  stroke-width: 3;
+}
+
+.glow .body {
+  stroke: #39ff88;
+  filter: drop-shadow(0 0 6px #39ff88);
+}
+
+.shine {
+  fill: #fff;
+  opacity: 0.35;
+}
+
+.flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: flame 0.35s ease-in-out infinite alternate;
+}
+
+.flameOuter {
+  fill: var(--flame-a);
+}
+
+.flameInner {
+  fill: var(--flame-b);
+}
+
+.eyeWhite {
+  fill: #fff;
+}
+
+.glow .eyeWhite {
+  fill: #0d0b18;
+  stroke: #39ff88;
+  stroke-width: 2;
+}
+
+.pupil {
+  fill: var(--ink);
+}
+
+.glow .pupil {
+  fill: #39ff88;
+}
+
+.lid {
+  fill: var(--body);
+}
+
+.ink {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mouthFill {
+  fill: var(--ink);
+}
+
+.blush {
+  fill: #ff9eb5;
+  opacity: 0.55;
+}
+
+.glow .blush {
+  opacity: 0;
+}
+
+.sweat {
+  fill: #7ad7ff;
+}
+
+.mouth {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.talking .mouth {
+  animation: talk 0.16s ease-in-out infinite alternate;
+}
+
+/* Moods move the whole body a little too. */
+.sparky[data-mood="cross"] {
+  animation: shake 0.3s ease-in-out 2;
+}
+
+.sparky[data-mood="sad"] {
+  animation: droop 2.4s ease-in-out infinite;
+}
+
+.sparky[data-mood="happy"] .flame,
+.sparky[data-mood="smug"] .flame {
+  animation-duration: 0.2s;
+}
+
+.sparky[data-mood="sad"] .flame {
+  transform: scale(0.5);
+  animation: none;
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes droop {
+  50% {
+    transform: translateY(3px) rotate(-3deg);
+  }
+}
+
+@keyframes shake {
+  25% {
+    transform: translateX(-6px) rotate(-4deg);
+  }
+  75% {
+    transform: translateX(6px) rotate(4deg);
+  }
+}
+
+@keyframes flame {
+  from {
+    transform: scale(1) skewX(-5deg);
+  }
+  to {
+    transform: scale(1.1, 0.92) skewX(6deg);
+  }
+}
+
+@keyframes talk {
+  to {
+    transform: scaleY(0.6);
+  }
+}

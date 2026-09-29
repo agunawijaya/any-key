@@ -2,6 +2,19 @@
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
+/* Registered so style colours can glide from one to the next. */
+@property --accent {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #c9f73a;
+}
+
+@property --accent-2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #7a5cff;
+}
+
 /* ---------- Design tokens ---------- */
 
 :root {

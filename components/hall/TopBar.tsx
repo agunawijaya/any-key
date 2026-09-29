@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { HALL_STYLES, type HallStyle, type ThemePref } from "@/lib/prefs";
+import { HALL_STYLES, type HallStyle } from "@/lib/prefs";
 import { setPrefs, usePrefs } from "@/lib/use-prefs";
+import { ThemeButton } from "@/components/ui/ThemeButton";
 import styles from "./TopBar.module.css";
 
 const HALL_LABELS: Record<HallStyle, string> = { wall: "Wall", orbit: "Orbit", device: "Device" };
-const NEXT_THEME: Record<ThemePref, ThemePref> = { system: "light", light: "dark", dark: "system" };
 
 export function TopBar() {
   const prefs = usePrefs();
-  const nextTheme = NEXT_THEME[prefs.theme];
 
   return (
     <header className={styles.bar}>
@@ -52,25 +51,7 @@ export function TopBar() {
             <path className={styles.mute} d="M16 9.5l5 5M21 9.5l-5 5" />
           </svg>
         </button>
-        <button
-          type="button"
-          className={styles.tool}
-          aria-label={`Theme: ${prefs.theme}. Switch to ${nextTheme}`}
-          title={`Theme: ${prefs.theme}`}
-          onClick={() => setPrefs({ theme: nextTheme })}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden className={styles.themeIcon} data-icon="light">
-            <circle cx="12" cy="12" r="4.2" />
-            <path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" />
-          </svg>
-          <svg viewBox="0 0 24 24" aria-hidden className={styles.themeIcon} data-icon="dark">
-            <path d="M19.5 14.6A7.8 7.8 0 0 1 9.4 4.5a7.8 7.8 0 1 0 10.1 10.1z" />
-          </svg>
-          <svg viewBox="0 0 24 24" aria-hidden className={styles.themeIcon} data-icon="system">
-            <circle cx="12" cy="12" r="8" />
-            <path d="M12 4a8 8 0 0 1 0 16z" className={styles.fill} />
-          </svg>
-        </button>
+        <ThemeButton />
       </div>
     </header>
   );

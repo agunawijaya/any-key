@@ -6,12 +6,22 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:music": "tsx scripts/check-songs.ts && tsx scripts/check-arrangements.ts",
+    "check:audio": "tsx scripts/render-check.mts 8",
+    "build:soundfont": "tsx scripts/build-soundfont.mts",
+    "check:stickler": "tsx scripts/check-stickler.ts"
   },
   "dependencies": {
+    "lucide-react": "^1.48.0",
+    "marked": "^18.0.14",
+    "mermaid": "^12.0.0",
     "next": "16.3.6",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "spessasynth_core": "^4.3.22",
+    "spessasynth_lib": "^4.3.14",
+    "vexflow": "^5.0.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -21,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

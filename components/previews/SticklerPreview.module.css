@@ -1,0 +1,192 @@
+.preview {
+  --loop: 4.8s;
+  width: 100%;
+}
+
+.table {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 16 / 7;
+  border-radius: 18px;
+  background:
+    radial-gradient(60% 70% at 50% 30%, rgb(255 190 110 / 0.35), transparent 70%),
+    repeating-linear-gradient(92deg, rgb(0 0 0 / 0.14) 0 3px, transparent 3px 11px),
+    linear-gradient(180deg, #5a3a22, #26170c);
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(6px, 1.2vw, 12px);
+  transform: translateY(8%);
+}
+
+.match {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: clamp(8px, 1.4vw, 14px);
+  transform: rotate(var(--t));
+}
+
+.head {
+  width: 130%;
+  aspect-ratio: 0.7;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ff8a7a, #e63b2e 45%, #8e1b12);
+}
+
+.stick {
+  width: 70%;
+  height: clamp(60px, 9vw, 96px);
+  margin-top: -2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #d9a86c, #f4d3a1 45%, #c68d4f);
+}
+
+.flame {
+  position: absolute;
+  bottom: 100%;
+  width: 180%;
+  aspect-ratio: 0.6;
+  margin-bottom: -40%;
+  border-radius: 50% 50% 45% 45% / 65% 65% 35% 35%;
+  background: radial-gradient(circle at 50% 75%, #fffbe0, #ffd23d 35%, #ff7a1f 65%, transparent 72%);
+  opacity: 0;
+  transform-origin: 50% 100%;
+}
+
+.taken {
+  animation: take var(--loop) cubic-bezier(0.5, -0.2, 0.6, 1) infinite;
+  animation-delay: calc((var(--i) - 8) * 90ms);
+}
+
+.taken .flame {
+  animation: flare var(--loop) ease-in-out infinite;
+  animation-delay: calc((var(--i) - 8) * 90ms);
+}
+
+.taken .head {
+  animation: char var(--loop) linear infinite;
+  animation-delay: calc((var(--i) - 8) * 90ms);
+}
+
+@keyframes take {
+  0%,
+  30% {
+    transform: rotate(var(--t)) translateY(0);
+    opacity: 1;
+  }
+  38%,
+  52% {
+    transform: rotate(var(--t)) translateY(-22%);
+  }
+  66% {
+    transform: translate(180%, -140%) rotate(80deg) scale(0.5);
+    opacity: 0;
+  }
+  90% {
+    transform: rotate(var(--t)) translateY(-30%);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(var(--t)) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes flare {
+  0%,
+  36% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  42%,
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  66%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes char {
+  0%,
+  40% {
+    filter: none;
+  }
+  50%,
+  88% {
+    filter: brightness(0.25) saturate(0);
+  }
+  100% {
+    filter: none;
+  }
+}
+
+.count {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  display: grid;
+  justify-items: end;
+  color: #fff4e0;
+  line-height: 1;
+}
+
+.count b {
+  grid-area: 1 / 1;
+  font: 800 clamp(24px, 3vw, 34px) / 1 var(--font-display);
+}
+
+.from {
+  animation: from var(--loop) steps(1) infinite;
+}
+
+.to {
+  opacity: 0;
+  animation: to var(--loop) steps(1) infinite;
+}
+
+@keyframes from {
+  0%,
+  62% {
+    opacity: 1;
+  }
+  63%,
+  95% {
+    opacity: 0;
+  }
+}
+
+@keyframes to {
+  0%,
+  62% {
+    opacity: 0;
+  }
+  63%,
+  95% {
+    opacity: 1;
+  }
+}
+
+.count small {
+  font: 600 10px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .taken,
+  .taken .flame,
+  .taken .head,
+  .from,
+  .to {
+    animation: none;
+  }
+}

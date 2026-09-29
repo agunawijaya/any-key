@@ -36,7 +36,7 @@ export function WallView() {
             <em>New</em> tricks.
           </h2>
           <p className={styles.lede}>
-            Programs people typed into home computers in the early ’80s, rebuilt for right now:
+            Programs people typed into computers in the ’70s and ’80s, rebuilt for right now:
             louder, brighter and way more fun.
           </p>
           <div className={styles.keys}>
@@ -58,7 +58,7 @@ export function WallView() {
 
         <ProgramTile program={featured} />
 
-        <TriviaTile program={featured} />
+        <TriviaTile />
 
         <Tile className={styles.years} label="Years since">
           <p className={styles.eyebrowDark}>Since {oldestYear}</p>
@@ -66,13 +66,17 @@ export function WallView() {
           <p className={styles.yearsText}>years since this code first ran. Still slaps.</p>
         </Tile>
 
+        {programs.slice(1).map((program) => (
+          <ProgramTile key={program.id} program={program} wide />
+        ))}
+
         <Tile className={styles.how} label="How it works">
           <h3 className={styles.tileTitle}>How it works</h3>
           <ol className={styles.steps}>
             <li>
               <span className={styles.stepKey}>1</span>
               <strong>Pick a program</strong>
-              <span>Every tile is a real program from the early ’80s.</span>
+              <span>Every tile is a real program from the ’70s or ’80s.</span>
             </li>
             <li>
               <span className={styles.stepKey}>2</span>
@@ -102,10 +106,10 @@ export function WallView() {
   );
 }
 
-function ProgramTile({ program }: { program: Program }) {
+function ProgramTile({ program, wide = false }: { program: Program; wide?: boolean }) {
   const [c1, c2, c3] = program.palette;
   return (
-    <Tile className={styles.program} label={program.title}>
+    <Tile className={`${styles.program} ${wide ? styles.programWide : ""}`} label={program.title}>
       <div
         className={styles.programBg}
         style={{ "--c1": c1, "--c2": c2, "--c3": c3 } as React.CSSProperties}
@@ -167,24 +171,23 @@ function ProgramTile({ program }: { program: Program }) {
   );
 }
 
-function TriviaTile({ program }: { program: Program }) {
+/** Facts from every program in the hall, one at a time. */
+function TriviaTile() {
+  const facts = programs.flatMap((p) => p.trivia.map((fact) => ({ title: p.title, fact })));
   const [index, setIndex] = useState(0);
+  const current = facts[index];
   return (
     <Tile className={styles.trivia} label="Did you know?">
       <div className={styles.triviaHead}>
-        <p className={styles.eyebrowDark}>Did you know?</p>
+        <p className={styles.eyebrowDark}>Did you know? · {current.title}</p>
         <span className={styles.counter}>
-          {index + 1}/{program.trivia.length}
+          {index + 1}/{facts.length}
         </span>
       </div>
       <p className={styles.fact} aria-live="polite">
-        {program.trivia[index]}
+        {current.fact}
       </p>
-      <button
-        type="button"
-        className={styles.nextFact}
-        onClick={() => setIndex((index + 1) % program.trivia.length)}
-      >
+      <button type="button" className={styles.nextFact} onClick={() => setIndex((index + 1) % facts.length)}>
         Another one <span aria-hidden>↻</span>
       </button>
     </Tile>

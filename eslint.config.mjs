@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Vendored build of the SpessaSynth audio worklet.
+    "public/spessasynth/**",
   ]),
 ]);
 

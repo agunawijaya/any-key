@@ -1,0 +1,70 @@
+.view {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.scroller {
+  position: absolute;
+  left: 32%;
+  top: 50%;
+  margin-top: -114px;
+  will-change: transform;
+}
+
+.score :global(svg) {
+  display: block;
+  overflow: visible;
+}
+
+/* VexFlow draws in black; recolour it for the dark stage. */
+.score :global(svg) :global(path),
+.score :global(svg) :global(rect) {
+  fill: var(--stage-ink);
+  stroke: var(--stage-ink);
+}
+
+.score :global(svg) :global(text) {
+  fill: var(--stage-ink);
+}
+
+/* Chord symbols above the staff. */
+.score :global(.vf-annotation) :global(text) {
+  fill: var(--stage-accent);
+  font-weight: 700;
+}
+
+.score :global(.vf-stavenote) :global(path) {
+  transition: fill 120ms ease-out;
+}
+
+.now :global(path),
+.now :global(text) {
+  fill: var(--stage-accent) !important;
+  stroke: var(--stage-accent) !important;
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+
+.playhead {
+  position: absolute;
+  left: 32%;
+  top: 12%;
+  bottom: 12%;
+  width: 3px;
+  margin-left: -1px;
+  border-radius: 3px;
+  background: var(--stage-accent);
+  box-shadow: 0 0 18px var(--accent);
+  z-index: 2;
+}
+
+.loading {
+  position: absolute;
+  inset: auto 0 16px;
+  text-align: center;
+  font: 500 13px var(--font-mono);
+  color: var(--stage-ink-3);
+}

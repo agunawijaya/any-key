@@ -1,0 +1,680 @@
+/* ---------- Style themes: every style repaints the studio ---------- */
+
+.app {
+  --accent: #e3b64f;
+  --accent-2: #8c1d40;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background:
+    radial-gradient(60% 40% at 50% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+    var(--bg);
+  transition: --accent 700ms ease, --accent-2 700ms ease;
+}
+
+.app[data-style="orchestra"] { --accent: #e3b64f; --accent-2: #8c1d40; }
+.app[data-style="pop"] { --accent: #ff5ca3; --accent-2: #4f6bff; }
+.app[data-style="jazz"] { --accent: #ffb020; --accent-2: #1f7a80; }
+.app[data-style="house"] { --accent: #3ddcf5; --accent-2: #d33cff; }
+.app[data-style="dangdut"] { --accent: #ff4d5e; --accent-2: #ffc233; }
+.app[data-style="koplo"] { --accent: #ff7a2e; --accent-2: #ff2e88; }
+.app[data-style="lofi"] { --accent: #b69cff; --accent-2: #ffb38a; }
+.app[data-style="solo"] { --accent: #c9f73a; --accent-2: #13c2e3; }
+.app[data-style="pc81"] { --accent: #55ff55; --accent-2: #5555ff; }
+.app[data-style="remix"] { --accent: #c9f73a; --accent-2: #7a5cff; }
+
+/* ---------- Header ---------- */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  align-items: center;
+  gap: 16px;
+  height: 72px;
+  padding: 0 clamp(16px, 3vw, 32px);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid var(--line);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: 700 14px/1 var(--font-display);
+  text-decoration: none;
+  box-shadow: var(--lift);
+}
+
+.back:hover {
+  transform: translateX(-2px);
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
+
+.logo {
+  font: 800 26px/1 var(--font-display);
+  letter-spacing: -0.03em;
+  font-variation-settings: "wdth" 84;
+  background: linear-gradient(100deg, var(--accent), var(--accent-2));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: saturate(1.2);
+}
+
+:global(:root:not([data-theme="dark"])) .logo {
+  filter: saturate(1.3) brightness(0.8);
+}
+
+.origin {
+  font: 500 12px var(--font-mono);
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.tabs {
+  display: flex;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+
+.tabs button {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-2);
+  font: 600 14px var(--font-sans);
+}
+
+.tabs button[aria-selected="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+/* ---------- Studio grid ---------- */
+
+.studio {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 300px;
+  gap: 16px;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 16px clamp(16px, 2vw, 28px) 24px;
+}
+
+.panelTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 4px 10px;
+  font: 700 12px var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.panelTitle kbd,
+.viewHint kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  font: 600 10px/16px var(--font-mono);
+  text-align: center;
+  color: var(--ink-2);
+}
+
+/* ---------- Tunes ---------- */
+
+.tracks {
+  align-self: start;
+  position: sticky;
+  top: 88px;
+}
+
+.trackList {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px 8px 8px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  transition: background 160ms, transform 160ms;
+}
+
+.track:hover {
+  background: var(--surface);
+  transform: translateX(3px);
+}
+
+.track[aria-pressed="true"] {
+  background: var(--surface);
+  border-color: var(--line);
+  box-shadow: var(--lift);
+}
+
+.letter {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 3px 0 var(--ink);
+  font: 800 15px/1 var(--font-display);
+  transition: background 160ms, transform 100ms;
+}
+
+.track[aria-pressed="true"] .letter {
+  background: var(--tune);
+  color: #141118;
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--ink);
+}
+
+.trackText {
+  display: grid;
+  min-width: 0;
+}
+
+.trackTitle {
+  font: 700 14px/1.25 var(--font-display);
+  letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trackComposer {
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Stage: the centre panel, in stage colours for dark and light ---------- */
+
+.stage {
+  --stage-ink: #f4f1fa;
+  --stage-ink-2: rgb(244 241 250 / 0.78);
+  --stage-ink-3: rgb(244 241 250 / 0.55);
+  --stage-line: rgb(255 255 255 / 0.16);
+  --stage-faint: rgb(255 255 255 / 0.05);
+  --stage-well: rgb(0 0 0 / 0.28);
+  --stage-card: rgb(255 255 255 / 0.04);
+  --stage-base: #110e18;
+  --stage-accent: var(--accent);
+  --stage-glow: 30%;
+  --keybed-top: #1c1826;
+  --keybed-bottom: #0f0d15;
+  --lit-shade: 0%;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 14px;
+  min-width: 0;
+  padding: clamp(16px, 2vw, 24px);
+  border-radius: 30px;
+  color: var(--stage-ink);
+  background:
+    radial-gradient(70% 55% at 0% 0%, color-mix(in srgb, var(--accent) var(--stage-glow), transparent), transparent 70%),
+    radial-gradient(70% 60% at 100% 100%, color-mix(in srgb, var(--accent-2) var(--stage-glow), transparent), transparent 70%),
+    var(--stage-base);
+  box-shadow: 0 40px 80px -40px color-mix(in srgb, var(--accent-2) 60%, #000), inset 0 1px 0 rgb(255 255 255 / 0.08);
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+:global(:root[data-theme="light"]) .stage {
+  --stage-ink: #16131f;
+  --stage-ink-2: rgb(22 19 31 / 0.76);
+  --stage-ink-3: rgb(22 19 31 / 0.55);
+  --stage-line: rgb(22 19 31 / 0.16);
+  --stage-faint: rgb(22 19 31 / 0.04);
+  --stage-well: rgb(255 255 255 / 0.62);
+  --stage-card: rgb(255 255 255 / 0.72);
+  --stage-base: #fbf9ff;
+  --stage-accent: color-mix(in srgb, var(--accent) 62%, #16131f);
+  --stage-glow: 26%;
+  --keybed-top: #ebe6f3;
+  --keybed-bottom: #d9d2e6;
+  --lit-shade: 18%;
+  box-shadow: 0 40px 80px -44px color-mix(in srgb, var(--accent-2) 45%, transparent), inset 0 0 0 1px var(--line);
+}
+
+/* The 1981 screen was CGA blue whatever the room lighting. */
+.app[data-style="pc81"] .stage {
+  --stage-ink: #ffffff;
+  --stage-ink-2: rgb(255 255 255 / 0.85);
+  --stage-ink-3: rgb(255 255 255 / 0.65);
+  --stage-line: rgb(255 255 255 / 0.3);
+  --stage-faint: rgb(255 255 255 / 0.08);
+  --stage-well: rgb(0 0 0 / 0.25);
+  --stage-card: rgb(255 255 255 / 0.06);
+  --stage-accent: #55ff55;
+  --lit-shade: 0%;
+  background: #0000aa;
+  border-radius: 8px;
+  box-shadow: 0 0 0 6px #aa0000, 0 40px 80px -40px #000;
+  font-family: var(--font-mono);
+}
+
+.nowPlaying {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.styleChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #141118;
+  font: 700 13px/1 var(--font-sans);
+}
+
+.meta {
+  font: 500 12px var(--font-mono);
+  color: var(--stage-ink-3);
+}
+
+.songTitle {
+  margin-top: 12px;
+  font: 800 clamp(32px, 3.6vw, 54px) / 0.95 var(--font-display);
+  letter-spacing: -0.03em;
+  font-variation-settings: "wdth" 84, "opsz" 72;
+  text-wrap: balance;
+}
+
+.app[data-style="pc81"] .songTitle {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  font-size: clamp(24px, 2.6vw, 38px);
+}
+
+.songAbout {
+  max-width: 70ch;
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--stage-ink-2);
+}
+
+.songAbout strong {
+  color: var(--stage-ink);
+}
+
+.viewTabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.viewTabs button {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--stage-line);
+  background: var(--stage-faint);
+  color: var(--stage-ink-2);
+  font: 600 13px var(--font-sans);
+}
+
+.viewTabs button[aria-selected="true"] {
+  background: var(--stage-ink);
+  border-color: var(--stage-ink);
+  color: var(--stage-base);
+}
+
+.app[data-style="pc81"] .viewTabs button[aria-selected="true"] {
+  color: #0000aa;
+}
+
+.viewHint {
+  margin-left: auto;
+  font: 500 11px var(--font-mono);
+  color: var(--stage-ink-3);
+}
+
+.viewHint kbd {
+  color: var(--stage-ink-2);
+  border-color: var(--stage-line);
+}
+
+.viewport {
+  position: relative;
+  min-height: 260px;
+  height: clamp(260px, 36vh, 420px);
+  border-radius: 20px;
+  background: var(--stage-well);
+  box-shadow: inset 0 0 0 1px var(--stage-faint);
+  overflow: hidden;
+}
+
+/* ---------- Styles and band ---------- */
+
+.controls {
+  align-self: start;
+  position: sticky;
+  top: 88px;
+  display: grid;
+  gap: 6px;
+}
+
+.styleGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.styleCard {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  min-height: 92px;
+  padding: 12px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  box-shadow: var(--lift);
+  transition: transform 180ms cubic-bezier(0.3, 1.5, 0.5, 1), background 200ms;
+}
+
+.styleCard:hover {
+  transform: translateY(-3px) rotate(-1deg);
+}
+
+.styleCard[aria-pressed="true"] {
+  background: linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent-2) 70%, var(--accent)));
+  border-color: transparent;
+  color: #141118;
+}
+
+.styleEmoji {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.styleName {
+  margin-top: 4px;
+  font: 800 15px/1.1 var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+.styleBlurb {
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--ink-3);
+}
+
+.styleCard[aria-pressed="true"] .styleBlurb {
+  color: rgb(20 17 24 / 0.75);
+}
+
+.styleKey {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  min-width: 18px;
+  padding: 0 4px;
+  border: 1px solid var(--line-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  font: 600 10px/16px var(--font-mono);
+  text-align: center;
+  color: var(--ink-3);
+}
+
+.styleCard[data-card="remix"] {
+  grid-column: 1 / -1;
+  min-height: 0;
+}
+
+.styleCard[data-card="remix"]:not([aria-pressed="true"]) {
+  border: 1.5px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+}
+
+.instrument {
+  display: grid;
+  gap: 6px;
+  margin: -4px 0 16px;
+  font: 700 12px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.instrument select {
+  height: 44px;
+  padding: 0 12px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 15px var(--font-sans);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.mixer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+}
+
+.mixerTrack {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font: 600 12.5px var(--font-sans);
+  text-transform: capitalize;
+}
+
+.mixerTrack[aria-pressed="true"] {
+  box-shadow: inset 3px 0 0 var(--track);
+}
+
+.mixerTrack[aria-pressed="false"] {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.mixerState {
+  font: 600 10px var(--font-mono);
+  color: var(--ink-3);
+  text-transform: uppercase;
+}
+
+.mixerName {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Desktop: the studio fits one screen, side panels scroll ---------- */
+
+@media (min-width: 1281px) and (min-height: 700px) {
+  .app {
+    height: 100dvh;
+  }
+
+  .studio {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .tracks,
+  .controls {
+    position: static;
+    align-self: stretch;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding-bottom: 12px;
+  }
+
+  .stage {
+    min-height: 0;
+  }
+
+  .viewport {
+    height: auto;
+    min-height: 200px;
+  }
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 1280px) {
+  .studio {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .controls {
+    grid-column: 1 / -1;
+    position: static;
+  }
+
+  .styleGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .styleCard[data-card="remix"] {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 900px) {
+  .header {
+    grid-template-columns: auto 1fr auto;
+    height: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    row-gap: 10px;
+  }
+
+  .tabs {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: stretch;
+  }
+
+  .tabs button {
+    flex: 1;
+  }
+
+  .origin {
+    display: none;
+  }
+
+  .studio {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tracks {
+    position: static;
+    order: 2;
+  }
+
+  .trackList {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .trackList li {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+  }
+
+  .track {
+    width: auto;
+    max-width: 240px;
+  }
+
+  .stage {
+    order: 1;
+  }
+
+  .controls {
+    order: 3;
+  }
+
+  .styleGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .styleCard[data-card="remix"] {
+    grid-column: 1 / -1;
+  }
+
+  .viewHint {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .backLabel {
+    display: none;
+  }
+}

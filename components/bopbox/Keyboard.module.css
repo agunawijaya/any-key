@@ -1,0 +1,100 @@
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--keybed-top, #1c1826), var(--keybed-bottom, #0f0d15));
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.08), 0 20px 40px -24px rgb(0 0 0 / 0.45);
+}
+
+.keys {
+  flex: 1;
+  width: 100%;
+  height: clamp(92px, 11vw, 140px);
+  touch-action: none;
+}
+
+.white {
+  fill: #f6f3fb;
+  stroke: #1b1724;
+  stroke-width: 0.04;
+  cursor: pointer;
+  transition: fill 120ms ease-out;
+}
+
+.black {
+  fill: #16131e;
+  stroke: #000;
+  stroke-width: 0.03;
+  cursor: pointer;
+  transition: fill 120ms ease-out;
+}
+
+.white:hover {
+  fill: #e6e1ef;
+}
+
+.black:hover {
+  fill: #2a2436;
+}
+
+.on {
+  /* Bright role colours get a touch darker on a light stage so they read on white keys. */
+  fill: color-mix(in srgb, var(--lit), #000 var(--lit-shade, 0%)) !important;
+  transition-duration: 0ms;
+  filter: drop-shadow(0 0 0.35px var(--lit));
+}
+
+.label {
+  font: 600 0.34px var(--font-mono);
+  fill: #8d86a0;
+  pointer-events: none;
+}
+
+/* The 1981 look: CGA blue around a white keyboard in a red frame. */
+.vintage {
+  background: #0000aa;
+  border: 6px solid #aa0000;
+  border-radius: 6px;
+  box-shadow: none;
+}
+
+.vintage .white {
+  fill: #ffffff;
+  stroke: #000;
+}
+
+.vintage .black {
+  fill: #000;
+}
+
+.vintage .on {
+  fill: #55ff55 !important;
+}
+
+.edge {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  padding: 4px;
+  border: 1px dashed rgb(255 255 255 / 0.4);
+  border-radius: 4px;
+  color: rgb(255 255 255 / 0.55);
+  font: 700 10px/1.2 var(--font-mono);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.edgeOn {
+  color: #000;
+  background: #ffff55;
+  border-color: #ffff55;
+}
+
+@media (max-width: 700px) {
+  .edge {
+    display: none;
+  }
+}

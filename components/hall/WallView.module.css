@@ -33,12 +33,41 @@
 
 .how {
   grid-column: 1 / 8;
-  grid-row: 9 / 11;
+  grid-row: span 2;
 }
 
 .more {
   grid-column: 8 / 13;
-  grid-row: 9 / 11;
+  grid-row: span 2;
+}
+
+/* Every program after the first gets a wide card: details on the left, live preview on the right. */
+.program.programWide {
+  grid-column: 1 / -1;
+  grid-row: span 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+  grid-template-rows: auto auto auto auto 1fr auto;
+  column-gap: clamp(20px, 3vw, 40px);
+}
+
+.programWide > :not(.programBg) {
+  grid-column: 1;
+}
+
+.programWide > .previewPanel {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  align-self: center;
+  margin: 0;
+}
+
+.programWide .programTitle {
+  margin-top: 18px;
+}
+
+.programWide .marquee {
+  margin-right: 0;
 }
 
 /* ---------- Hero ---------- */
@@ -551,6 +580,10 @@
     grid-row: auto;
   }
 
+  .programWide {
+    min-height: 0;
+  }
+
   .trivia,
   .years {
     grid-column: span 3;
@@ -608,5 +641,13 @@
 
   .program {
     min-height: 0;
+  }
+
+  .program.programWide {
+    display: flex;
+  }
+
+  .programWide > .previewPanel {
+    margin-top: 16px;
   }
 }

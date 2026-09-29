@@ -174,22 +174,6 @@
   display: inline;
 }
 
-.themeIcon {
-  display: none;
-  grid-area: 1 / 1;
-}
-
-.fill {
-  fill: currentColor;
-}
-
-:global(:root:not([data-theme-pref])) .themeIcon[data-icon="system"],
-:global(:root[data-theme-pref="system"]) .themeIcon[data-icon="system"],
-:global(:root[data-theme-pref="light"]) .themeIcon[data-icon="light"],
-:global(:root[data-theme-pref="dark"]) .themeIcon[data-icon="dark"] {
-  display: block;
-}
-
 @media (max-width: 760px) {
   .bar {
     grid-template-columns: auto 1fr auto;

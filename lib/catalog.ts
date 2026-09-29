@@ -27,7 +27,8 @@ export const programs: Program[] = [
     tagline: "Eleven tunes from 1981. Ten ways to make them bop.",
     blurb:
       "A tiny jukebox from the first days of the PC, rebuilt with live sheet music, a glowing keyboard and a whole band behind every note.",
-    status: "in-studio",
+    status: "playable",
+    href: "/music",
     original: { title: "Music", file: "MUSIC.BAS", publisher: "IBM", year: 1981 },
     palette: ["#ff4f9a", "#6a48ff", "#13c2e3"],
     stats: [
@@ -65,6 +66,31 @@ export const programs: Program[] = [
       "To play silence, the program played a note at 32,767 Hz: far too high for anyone to hear.",
       "La Cucaracha means “the cockroach”, so the song menu filed it under BUG.",
       "The on-screen piano had only 26 keys. Some notes played right off the edge of it.",
+    ],
+  },
+  {
+    id: "23mtch",
+    title: "Stickler",
+    kind: "Mind game",
+    tagline: "Take 1, 2 or 3. Never the last one.",
+    blurb:
+      "A 1970s mind game with a secret number, rebuilt with a sore-loser opponent called Sparky, a ten-table ladder, a daily puzzle and three stick styles.",
+    status: "playable",
+    href: "/stickler",
+    original: { title: "23 Matches", file: "23MTCH.BAS", publisher: "People's Computer Company", year: 1973 },
+    palette: ["#ff8a1f", "#d7263d", "#ffd23d"],
+    stats: [
+      { value: "23", label: "sticks" },
+      { value: "5", label: "modes" },
+      { value: "12", label: "badges" },
+    ],
+    modes: ["Classic 23", "Ladder", "Daily", "Versus", "1981 mode", "Matches", "Glow sticks", "Candy sticks"],
+    moons: ["Warm-up", "Getting warmer", "The Classic", "Sparky starts", "Take up to four", "Take up to five", "Bonfire", "Two rows", "Three rows", "Marienbad"],
+    trivia: [
+      "Whoever moves first from 23 can always win. The 1973 program let you go first anyway.",
+      "The original's “random” move used RND(0), which on a PC never changes. When losing, the computer always took exactly 1.",
+      "Type 4 into the original and it called you a cheater. Sparky is just as strict.",
+      "The credits in the original file misspell the author's name as ALBRECHR.",
     ],
   },
 ];

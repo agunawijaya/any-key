@@ -1,0 +1,171 @@
+.stick {
+  --tilt: 0deg;
+  --lift: 0px;
+  display: inline-block;
+  width: var(--stick-w, 26px);
+  height: calc(var(--stick-w, 26px) * 194 / 24);
+  transform: translateY(var(--lift)) rotate(var(--tilt));
+  transform-origin: 50% 80%;
+  transition: transform 260ms cubic-bezier(0.3, 1.6, 0.5, 1), filter 200ms ease, opacity 200ms;
+  pointer-events: none;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* ---------- States ---------- */
+
+.selected {
+  --lift: -22px;
+  filter: drop-shadow(0 0 0 transparent) drop-shadow(0 10px 8px rgb(0 0 0 / 0.25));
+}
+
+.selected .svg {
+  filter: drop-shadow(0 0 5px var(--sel, #ffd23d));
+}
+
+.hinted .svg {
+  filter: drop-shadow(0 0 6px #7ad7ff) drop-shadow(0 0 2px #7ad7ff);
+  animation: hint 1.1s ease-in-out infinite;
+}
+
+@keyframes hint {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.sparky {
+  --lift: -22px;
+}
+
+.sparky .svg {
+  filter: drop-shadow(0 0 6px #ff8a3d);
+}
+
+.burning {
+  --lift: -30px;
+}
+
+.flying {
+  transition:
+    transform 620ms cubic-bezier(0.5, -0.2, 0.6, 1),
+    opacity 620ms ease-in;
+  transform: translate(var(--fly-x, 0px), var(--fly-y, -120px)) rotate(var(--fly-r, 80deg)) scale(0.35);
+  opacity: 0;
+}
+
+.doomed {
+  --lift: -34px;
+}
+
+/* ---------- Matches: strike, flare, char ---------- */
+
+.flame {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transform: scale(0.2);
+}
+
+.char {
+  fill: #1e1714;
+  opacity: 0;
+  transition: opacity 500ms ease;
+}
+
+.burntHead {
+  opacity: 0;
+  transition: opacity 300ms ease;
+}
+
+.matches.burning .flame,
+.matches.flying .flame,
+.matches.doomed .flame {
+  opacity: 1;
+  transform: scale(1);
+  transition: transform 140ms cubic-bezier(0.2, 1.6, 0.4, 1), opacity 60ms;
+  animation: flicker 0.18s ease-in-out infinite alternate;
+}
+
+.matches.doomed .flame {
+  animation-duration: 0.09s;
+  transform: scale(2.6);
+}
+
+.matches.burning .burntHead,
+.matches.flying .burntHead,
+.matches.doomed .burntHead {
+  opacity: 1;
+}
+
+.matches.flying .char {
+  opacity: 0.5;
+}
+
+@keyframes flicker {
+  from {
+    transform: scale(1) skewX(-4deg);
+  }
+  to {
+    transform: scale(1.12, 0.95) skewX(5deg);
+  }
+}
+
+/* ---------- Glow sticks: snap and shine ---------- */
+
+.glow .glowGroup {
+  filter: drop-shadow(0 0 6px var(--glow));
+}
+
+.glow.burning .glowGroup,
+.glow.flying .glowGroup,
+.glow.doomed .glowGroup {
+  filter: drop-shadow(0 0 16px var(--glow)) brightness(1.8);
+}
+
+.glow.doomed .svg {
+  animation: strobe 0.12s steps(2) infinite;
+}
+
+@keyframes strobe {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* ---------- Candy: crunch and pop ---------- */
+
+.candy.burning .svg {
+  animation: pop 380ms cubic-bezier(0.3, 1.8, 0.5, 1);
+}
+
+.candy.doomed .svg {
+  animation: wobble 0.25s ease-in-out infinite;
+}
+
+@keyframes pop {
+  40% {
+    transform: scale(1.25, 0.85);
+  }
+}
+
+@keyframes wobble {
+  25% {
+    transform: rotate(-8deg) scale(1.1);
+  }
+  75% {
+    transform: rotate(8deg) scale(1.1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stick,
+  .flying {
+    transition: opacity 200ms !important;
+  }
+}
