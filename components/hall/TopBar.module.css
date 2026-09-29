@@ -1,0 +1,231 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  height: var(--header-h);
+  padding: 0 clamp(16px, 3vw, 40px);
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid var(--line);
+}
+
+/* ---------- Logo: "any" + a real keycap that presses whenever you type ---------- */
+
+.logo {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: -0.04em;
+  font-variation-settings: "wdth" 88, "opsz" 48;
+}
+
+.any {
+  transform: translateY(-1px);
+}
+
+.cap {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  height: 38px;
+  padding: 0 11px 2px;
+  border: 2px solid var(--ink);
+  border-radius: 11px;
+  background: var(--lime);
+  color: var(--on-accent);
+  box-shadow: 0 5px 0 var(--ink);
+  transform: translateY(-3px);
+  transition: transform 90ms ease-out, box-shadow 90ms ease-out;
+}
+
+.logo:hover .cap,
+:global(:root[data-pressed]) .cap {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--ink);
+}
+
+/* ---------- Hall style switch ---------- */
+
+.switch {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--lift);
+}
+
+.switch button {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--ink-2);
+  font: 600 14px/1 var(--font-sans);
+  transition: color 200ms ease;
+}
+
+.switch button:hover {
+  color: var(--ink);
+}
+
+.switch svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+
+.thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc((100% - 8px) / 3);
+  border-radius: 999px;
+  background: var(--ink);
+  transition: transform 380ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+:global(:root[data-hall="orbit"]) .thumb {
+  transform: translateX(100%);
+}
+
+:global(:root[data-hall="device"]) .thumb {
+  transform: translateX(200%);
+}
+
+:global(:root:not([data-hall])) .switch [data-option="wall"],
+:global(:root[data-hall="wall"]) .switch [data-option="wall"],
+:global(:root[data-hall="orbit"]) .switch [data-option="orbit"],
+:global(:root[data-hall="device"]) .switch [data-option="device"] {
+  color: var(--bg);
+}
+
+/* ---------- Tools ---------- */
+
+.tools {
+  justify-self: end;
+  display: flex;
+  gap: 8px;
+}
+
+.tool {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--lift);
+  transition: transform 160ms ease;
+}
+
+.tool:hover {
+  transform: translateY(-2px) rotate(-4deg);
+}
+
+.tool svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.soundIcon path:first-child {
+  fill: currentColor;
+}
+
+.mute {
+  display: none;
+}
+
+.tool[aria-pressed="false"] .waves {
+  display: none;
+}
+
+.tool[aria-pressed="false"] .mute {
+  display: inline;
+}
+
+.themeIcon {
+  display: none;
+  grid-area: 1 / 1;
+}
+
+.fill {
+  fill: currentColor;
+}
+
+:global(:root:not([data-theme-pref])) .themeIcon[data-icon="system"],
+:global(:root[data-theme-pref="system"]) .themeIcon[data-icon="system"],
+:global(:root[data-theme-pref="light"]) .themeIcon[data-icon="light"],
+:global(:root[data-theme-pref="dark"]) .themeIcon[data-icon="dark"] {
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .bar {
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+  }
+
+  .switch {
+    justify-self: center;
+  }
+
+  .switch button {
+    height: 36px;
+    padding: 0 11px;
+  }
+
+  .logo {
+    font-size: 21px;
+  }
+
+  .cap {
+    height: 32px;
+    padding: 0 8px 2px;
+    border-radius: 9px;
+  }
+
+  .tool {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .switch button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}

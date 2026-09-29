@@ -1,0 +1,85 @@
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+.staff line {
+  stroke: rgb(255 255 255 / 0.28);
+  stroke-width: 1.2;
+}
+
+.playhead {
+  stroke: var(--lime);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px var(--lime));
+}
+
+.note line {
+  stroke: var(--c);
+  stroke-width: 1.8;
+  opacity: 0.85;
+}
+
+.note ellipse {
+  fill: var(--c);
+}
+
+.hollow ellipse {
+  fill: none;
+  stroke: var(--c);
+  stroke-width: 2.4;
+}
+
+.head {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: transform 160ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.note.on .head {
+  transform: scale(1.5);
+  filter: drop-shadow(0 0 7px var(--c));
+}
+
+.white {
+  fill: #f4f1f8;
+  stroke: #1b1724;
+  stroke-width: 1.2;
+  transition: fill 90ms ease-out;
+}
+
+.white.on {
+  fill: var(--c);
+  transition-duration: 0ms;
+}
+
+.black {
+  fill: #16131e;
+  stroke: #0b0910;
+  stroke-width: 1;
+}
+
+.bubble {
+  fill: var(--c, var(--lime));
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.rise {
+  animation: rise 900ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+@keyframes rise {
+  0% {
+    opacity: 0.95;
+    transform: translateY(0) scale(0.5);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-34px) scale(1.25);
+  }
+}

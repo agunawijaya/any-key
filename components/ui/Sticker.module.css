@@ -1,0 +1,16 @@
+.sticker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 7px;
+  border: 2px solid var(--on-accent);
+  border-radius: 999px;
+  background: var(--sticker);
+  color: var(--on-accent);
+  box-shadow: 0 3px 0 var(--on-accent);
+  font: 700 12px/1 var(--font-mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: rotate(var(--tilt));
+}

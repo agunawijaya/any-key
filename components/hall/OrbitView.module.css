@@ -1,0 +1,504 @@
+.orbit {
+  padding: 0;
+}
+
+.stage {
+  --planet: clamp(190px, 21vw, 320px);
+  position: relative;
+  height: calc(100dvh - var(--header-h));
+  min-height: 640px;
+  overflow: hidden;
+  touch-action: pan-y;
+  outline-offset: -6px;
+  user-select: none;
+}
+
+/* ---------- Sky: pastel daylight, deep space at night ---------- */
+
+.sky {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(45% 55% at 12% 18%, #ffd4e8 0, transparent 70%),
+    radial-gradient(40% 50% at 88% 12%, #d6ddff 0, transparent 70%),
+    radial-gradient(55% 45% at 70% 100%, #dcffc9 0, transparent 70%),
+    var(--bg);
+}
+
+.sky::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--line-strong) 1px, transparent 1.4px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(70% 70% at 60% 50%, #000, transparent);
+}
+
+.starsNear,
+.starsFar {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+:global(:root[data-theme="dark"]) .sky {
+  background:
+    radial-gradient(40% 50% at 15% 20%, rgb(122 92 255 / 0.28) 0, transparent 70%),
+    radial-gradient(35% 45% at 85% 15%, rgb(255 92 163 / 0.2) 0, transparent 70%),
+    radial-gradient(50% 40% at 65% 100%, rgb(61 220 245 / 0.16) 0, transparent 70%),
+    var(--bg);
+}
+
+:global(:root[data-theme="dark"]) .sky::after {
+  opacity: 0.4;
+}
+
+:global(:root[data-theme="dark"]) .starsNear,
+:global(:root[data-theme="dark"]) .starsFar {
+  opacity: 1;
+}
+
+.starsNear {
+  background-image:
+    radial-gradient(1.6px 1.6px at 20px 30px, #fff, transparent),
+    radial-gradient(1.2px 1.2px at 140px 90px, #fff, transparent),
+    radial-gradient(1.8px 1.8px at 90px 160px, #ffe7f3, transparent),
+    radial-gradient(1.2px 1.2px at 200px 200px, #e0f8ff, transparent);
+  background-size: 240px 240px;
+  animation: twinkle 4s ease-in-out infinite alternate;
+}
+
+.starsFar {
+  background-image:
+    radial-gradient(1px 1px at 60px 70px, rgb(255 255 255 / 0.7), transparent),
+    radial-gradient(1px 1px at 170px 20px, rgb(255 255 255 / 0.6), transparent),
+    radial-gradient(1px 1px at 110px 130px, rgb(255 255 255 / 0.5), transparent);
+  background-size: 190px 190px;
+  animation: twinkle 6s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes twinkle {
+  to {
+    opacity: 0.35;
+  }
+}
+
+.backdropText {
+  position: absolute;
+  left: 50%;
+  top: 3%;
+  transform: translateX(-50%);
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: clamp(80px, 13vw, 220px);
+  font-weight: 800;
+  line-height: 0.8;
+  letter-spacing: -0.04em;
+  word-spacing: 0.22em;
+  text-align: center;
+  font-variation-settings: "wdth" 75, "opsz" 96;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1.5px color-mix(in srgb, var(--ink) 30%, transparent);
+  pointer-events: none;
+}
+
+.path {
+  position: absolute;
+  left: 34%;
+  top: 21%;
+  height: 50%;
+  width: 64%;
+  overflow: visible;
+}
+
+.path ellipse {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 8;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+
+/* ---------- Planets ---------- */
+
+.field {
+  position: absolute;
+  left: 34%;
+  width: 64%;
+  top: 0;
+  bottom: 0;
+}
+
+.slot {
+  position: absolute;
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 50%;
+  perspective: 1400px;
+  opacity: var(--o);
+  transform: translate(-50%, -50%) scale(var(--s));
+  transition: opacity 200ms linear;
+}
+
+.slot:focus-visible {
+  outline-offset: 12px;
+}
+
+.scene {
+  position: relative;
+  width: var(--planet);
+  height: var(--planet);
+  transform-style: preserve-3d;
+  animation: bob 7s ease-in-out infinite;
+}
+
+@keyframes bob {
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.halo {
+  position: absolute;
+  inset: -30%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c1) 45%, transparent) 0, transparent 62%);
+  transform: translateZ(-200px) scale(1.2);
+  opacity: 0.8;
+}
+
+.sphere {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 36% 32%, var(--c1), var(--c2) 62%, color-mix(in srgb, var(--c2) 45%, #0a0420) 100%);
+  box-shadow: 0 30px 80px -20px color-mix(in srgb, var(--c2) 70%, transparent);
+}
+
+.bands {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    172deg,
+    transparent 0 9%,
+    color-mix(in srgb, var(--c3) 45%, transparent) 9% 12%,
+    transparent 12% 20%,
+    rgb(255 255 255 / 0.14) 20% 23%,
+    transparent 23% 31%
+  );
+  mix-blend-mode: soft-light;
+}
+
+.storms {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(12% 7% at 25% 50%, color-mix(in srgb, var(--c3) 80%, transparent), transparent 70%),
+    radial-gradient(9% 5% at 75% 70%, rgb(255 255 255 / 0.4), transparent 70%),
+    radial-gradient(14% 6% at 50% 30%, color-mix(in srgb, var(--c1) 70%, #fff 10%), transparent 70%);
+  background-size: 200% 100%;
+  animation: storms 22s linear infinite;
+  mix-blend-mode: screen;
+  opacity: 0.8;
+}
+
+@keyframes storms {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.shade {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 32% 26%, rgb(255 255 255 / 0.65) 0, rgb(255 255 255 / 0.12) 16%, transparent 32%),
+    radial-gradient(circle at 60% 66%, transparent 36%, rgb(8 2 30 / 0.6) 78%);
+}
+
+.plane {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  transform: rotateZ(-14deg) rotateX(74deg);
+}
+
+.vinyl {
+  position: absolute;
+  left: calc(var(--planet) * -0.95);
+  top: calc(var(--planet) * -0.95);
+  width: calc(var(--planet) * 1.9);
+  height: calc(var(--planet) * 1.9);
+  border-radius: 50%;
+  background:
+    conic-gradient(
+      from 30deg,
+      transparent 0 8%,
+      rgb(255 255 255 / 0.28) 12%,
+      transparent 17% 55%,
+      rgb(255 255 255 / 0.2) 60%,
+      transparent 65%
+    ),
+    radial-gradient(circle, transparent 0 34.6%, var(--c3) 34.8% 36%, transparent 36.2% 48.6%, var(--c1) 48.8% 49.6%, transparent 49.8%),
+    repeating-radial-gradient(circle, #15121b 0 1.3px, #2b2535 1.3px 2.6px);
+  -webkit-mask: radial-gradient(circle, transparent 0 34.5%, #000 34.7% 49.6%, transparent 49.8%);
+  mask: radial-gradient(circle, transparent 0 34.5%, #000 34.7% 49.6%, transparent 49.8%);
+}
+
+.moonTrack {
+  position: absolute;
+  left: calc(var(--planet) * -1.12);
+  top: calc(var(--planet) * -1.12);
+  width: calc(var(--planet) * 2.24);
+  height: calc(var(--planet) * 2.24);
+  border-radius: 50%;
+  border: 1.5px dashed color-mix(in srgb, var(--ink) 22%, transparent);
+}
+
+.moonOrbit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-style: preserve-3d;
+  animation: orbit 44s linear infinite;
+  animation-delay: var(--delay);
+}
+
+@keyframes orbit {
+  from {
+    transform: rotateZ(0deg);
+  }
+  to {
+    transform: rotateZ(360deg);
+  }
+}
+
+.moon {
+  position: absolute;
+  left: calc(var(--ms) / -2);
+  top: calc(var(--ms) / -2);
+  width: var(--ms);
+  height: var(--ms);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff 0, var(--mc) 45%, color-mix(in srgb, var(--mc) 60%, #000) 100%);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--mc) 60%, transparent);
+  animation: face-camera 44s linear infinite;
+  animation-delay: var(--delay);
+}
+
+/* Undo the orbit spin and the plane tilt so each moon stays a round ball. */
+@keyframes face-camera {
+  from {
+    transform: translateX(calc(var(--planet) * 1.12)) rotateZ(0deg) rotateX(-74deg) rotateZ(14deg);
+  }
+  to {
+    transform: translateX(calc(var(--planet) * 1.12)) rotateZ(-360deg) rotateX(-74deg) rotateZ(14deg);
+  }
+}
+
+/* ---------- Info panel ---------- */
+
+.panel {
+  position: absolute;
+  left: clamp(16px, 4vw, 64px);
+  top: 50%;
+  transform: translateY(-50%);
+  width: min(400px, 30vw);
+  padding: 26px;
+  border-radius: 28px;
+  background: var(--glass);
+  border: 1px solid var(--line);
+  box-shadow: var(--lift);
+  backdrop-filter: blur(18px) saturate(1.3);
+  -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  z-index: 30;
+}
+
+.kind {
+  font: 600 12px/1 var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.title {
+  margin-top: 12px;
+  font-family: var(--font-display);
+  font-size: clamp(44px, 4.4vw, 68px);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  word-spacing: 0.04em;
+  font-variation-settings: "wdth" 84, "opsz" 96;
+}
+
+.tagline {
+  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.moonsLabel {
+  margin-top: 20px;
+  font: 600 12px/1 var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.moons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  list-style: none;
+}
+
+.moons li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.moons li::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mc);
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+
+.panelFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg);
+  font: 700 15px/1 var(--font-sans);
+  text-decoration: none;
+}
+
+.cta[aria-disabled] {
+  opacity: 0.85;
+}
+
+/* ---------- Nav ---------- */
+
+.nav {
+  position: absolute;
+  right: clamp(16px, 4vw, 64px);
+  bottom: clamp(16px, 4vh, 40px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 30;
+}
+
+.nav button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 20px;
+  box-shadow: var(--lift);
+}
+
+.nav button:disabled {
+  opacity: 0.4;
+}
+
+.count {
+  font: 600 14px/1 var(--font-mono);
+  color: var(--ink-2);
+}
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(20px, 4.5vh, 46px);
+  transform: translateX(-50%);
+  font: 500 13px/1 var(--font-mono);
+  color: var(--ink-3);
+  z-index: 30;
+}
+
+/* ---------- Small screens: planet on top, panel below ---------- */
+
+@media (max-width: 900px) {
+  .stage {
+    --planet: clamp(150px, 42vw, 240px);
+    height: auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .field {
+    position: relative;
+    left: 0;
+    width: 100%;
+    height: 62vw;
+    min-height: 340px;
+    max-height: 520px;
+  }
+
+  .path {
+    display: none;
+  }
+
+  .backdropText {
+    top: 2%;
+    font-size: 21vw;
+  }
+
+  .panel {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    width: auto;
+    margin: 0 16px;
+  }
+
+  .nav,
+  .hint {
+    position: static;
+    transform: none;
+    justify-content: center;
+    margin: 16px auto;
+    text-align: center;
+  }
+
+  .hint {
+    margin-bottom: 24px;
+  }
+}

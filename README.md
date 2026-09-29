@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Any Key
 
-## Getting Started
+**Old code. New tricks.** Any Key is a hall of classic BASIC programs from the early '80s, rebuilt
+for the web and for people who were born decades after them.
 
-First, run the development server:
+Every program gets a new look, new controls and new ideas, while keeping what made the original
+fun. Each one also ships with four docs: what the original was, how it was used, how it worked
+inside, and how the rebuild works.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## The Hall
+
+The home page is the Hall, where you pick a program. It comes in three styles, and visitors can
+switch between them at any time (the choice is remembered):
+
+| Style | Idea |
+| --- | --- |
+| **Wall** | A bento wall of bold tiles with a live preview on each program card |
+| **Orbit** | Each program is a planet you can spin; its tracks or levels are the moons |
+| **Device** | A chunky handheld player: program cartridges, a rotary knob, a tiny screen |
+
+Every page supports light and dark themes, works with keyboard and touch, and calms its motion
+when the system asks for reduced motion. Press any letter key on the Hall and see what happens.
+
+## Programs
+
+| Program | Based on | Status |
+| --- | --- | --- |
+| Bop Box (working title) | `MUSIC.BAS` (1981) | In the studio |
+
+## Project layout
+
+```
+app/                 Next.js App Router pages
+components/hall/     The Hall and its three styles
+components/previews/ Live mini previews shown on program cards
+lib/catalog.ts       The list of programs
+docs/<program>/      ABOUT, HOW-TO, ORIGINAL-ARCHITECTURE, PORT-ARCHITECTURE
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The original BASIC sources are **not** part of this repository. They belong to their publishers.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Running it
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+Then open http://localhost:3000.
 
-To learn more about Next.js, take a look at the following resources:
+## Credits and legal
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Any Key is an independent tribute. It is not affiliated with or endorsed by the
+publishers of the original programs, and all trademarks belong to their owners. Melodies used in
+the music program are public-domain compositions, transcribed for this project.
