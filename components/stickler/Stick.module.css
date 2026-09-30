@@ -169,3 +169,119 @@
     transition: opacity 200ms !important;
   }
 }
+
+/* ---------- Handfuls sweep: the whole pile goes up ---------- */
+
+/* Board sets --sweep-delay per stick: 0 for matches (together), a chain for glow and candy. */
+.swept {
+  --lift: -34px;
+  position: relative;
+  z-index: 1;
+  /* The sweep is the signature moment: every stick in it grows as it goes up. */
+  transform: translateY(var(--lift)) rotate(var(--tilt)) scale(1.45);
+  transition-delay: var(--sweep-delay, 0ms);
+}
+
+.matches.swept .flame {
+  opacity: 1;
+  transform: scale(2.6);
+  transition: transform 140ms cubic-bezier(0.2, 1.6, 0.4, 1), opacity 60ms;
+  animation: flicker 0.09s ease-in-out infinite alternate;
+}
+
+.matches.swept .burntHead {
+  opacity: 1;
+}
+
+.matches.swept .svg {
+  filter: drop-shadow(0 0 12px rgb(255 178 61 / 0.9));
+}
+
+.glow.swept .glowGroup {
+  filter: drop-shadow(0 0 16px var(--glow)) brightness(1.8);
+  transition: filter 120ms ease var(--sweep-delay, 0ms);
+}
+
+.glow.swept .svg {
+  animation:
+    snap 300ms cubic-bezier(0.3, 1.8, 0.5, 1) var(--sweep-delay, 0ms) both,
+    strobe 0.12s steps(2) calc(var(--sweep-delay, 0ms) + 300ms) infinite;
+}
+
+.candy.swept .svg {
+  animation:
+    burst 420ms cubic-bezier(0.3, 1.8, 0.5, 1) var(--sweep-delay, 0ms) both,
+    wobble 0.25s ease-in-out calc(var(--sweep-delay, 0ms) + 420ms) infinite;
+}
+
+/* Each glow stick throws a white snap-flash; each candy stick a ring of sprinkles. */
+.glow.swept::after,
+.candy.swept::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  width: 520%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  animation: ring 640ms cubic-bezier(0.1, 0.8, 0.3, 1) var(--sweep-delay, 0ms) forwards;
+}
+
+.glow.swept::after {
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.95), color-mix(in srgb, var(--glow, #39ff88) 60%, transparent) 45%, transparent 75%);
+}
+
+.candy.swept::after {
+  background: repeating-conic-gradient(#ff4f7b 0 9deg, transparent 9deg 30deg, #7ad7ff 30deg 39deg, transparent 39deg 60deg, #ffd23d 60deg 69deg, transparent 69deg 90deg);
+  mask: radial-gradient(closest-side, transparent 46%, #000 48%, #000 84%, transparent 86%);
+}
+
+@keyframes snap {
+  0% {
+    transform: none;
+  }
+  35% {
+    transform: rotate(-10deg) scale(1.08);
+  }
+  100% {
+    transform: none;
+  }
+}
+
+@keyframes burst {
+  30% {
+    transform: scale(1.35, 0.8);
+  }
+  60% {
+    transform: scale(0.9, 1.15);
+  }
+  100% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes ring {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.25);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .swept,
+  .swept .glowGroup {
+    transition-delay: 0ms !important;
+  }
+
+  .swept .svg,
+  .swept .flame,
+  .swept::after {
+    animation: none !important;
+  }
+}

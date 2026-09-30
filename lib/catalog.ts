@@ -83,10 +83,10 @@ export const programs: Program[] = [
     palette: ["#ff8a1f", "#d7263d", "#ffd23d"],
     stats: [
       { value: "23", label: "sticks" },
-      { value: "5", label: "modes" },
-      { value: "12", label: "badges" },
+      { value: "6", label: "modes" },
+      { value: "14", label: "badges" },
     ],
-    modes: ["Classic 23", "Ladder", "Daily", "Versus", "1981 mode", "Matches", "Glow sticks", "Candy sticks"],
+    modes: ["Classic 23", "Handfuls", "Ladder", "Daily", "Versus", "1981 mode", "Matches", "Glow sticks", "Candy sticks"],
     moons: ["Warm-up", "Getting warmer", "The Classic", "Sparky starts", "Take up to four", "Take up to five", "Bonfire", "Two rows", "Three rows", "Marienbad"],
     trivia: [
       "Whoever moves first from 23 can always win. The 1973 program let you go first anyway.",

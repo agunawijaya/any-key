@@ -1,7 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { dailyPuzzle, LADDER, MODES, VERSUS_PRESETS, type ModeId } from "@/lib/stickler/modes";
+import {
+  CLASSIC,
+  dailyPuzzle,
+  HANDFULS_PRESETS,
+  handfulsPile,
+  handfulsPreset,
+  handfulsRules,
+  LADDER,
+  MODES,
+  rangeLabel,
+  VERSUS_PRESETS,
+  type HandfulsSetup,
+  type ModeId,
+} from "@/lib/stickler/modes";
 import { ACHIEVEMENTS, resetProgress, SKINS, updateProgress, useProgress, type Skin } from "@/lib/stickler/progress";
 import { describeRules } from "@/lib/stickler/rules";
 import { LEVELS, type Level } from "@/lib/stickler/sparky";
@@ -11,6 +24,18 @@ import { Stick } from "./Stick";
 import styles from "./Lobby.module.css";
 
 type Props = { onPlay: (session: Session) => void; onTerminal: () => void };
+
+/** A Handfuls table from a setup. A surprise pile is drawn from `seed`, so a rematch can draw a new one. */
+export function handfulsSession(setup: HandfulsSetup, level: Level, seed: number): Session {
+  const p = handfulsPreset(setup.preset);
+  return {
+    mode: "handfuls",
+    title: `Handfuls ${rangeLabel(p)}${setup.sparkyStarts ? " · Sparky starts" : ""}`,
+    rules: handfulsRules(setup, seed),
+    level,
+    handfuls: setup,
+  };
+}
 
 export function Lobby({ onPlay, onTerminal }: Props) {
   const progress = useProgress();
@@ -23,8 +48,12 @@ export function Lobby({ onPlay, onTerminal }: Props) {
   const setSkin = (skin: Skin) =>
     updateProgress((p) => ({ ...p, skin, skinsUsed: p.skinsUsed.includes(skin) ? p.skinsUsed : [...p.skinsUsed, skin] }));
   const setLevel = (level: Level) => updateProgress((p) => ({ ...p, level }));
+  const setup = progress.handfulsSetup;
+  const setSetup = (change: Partial<HandfulsSetup>) => updateProgress((p) => ({ ...p, handfulsSetup: { ...p.handfulsSetup, ...change } }));
+  const preset = handfulsPreset(setup.preset);
+  const levelName = LEVELS.find((l) => l.id === progress.level)?.name;
 
-  const playClassic = () => onPlay({ mode: "classic", title: "Classic 23", rules: { rows: [23], maxTake: 3, first: 0 }, level: progress.level });
+  const playClassic = () => onPlay({ mode: "classic", title: "Classic 23", rules: CLASSIC, level: progress.level });
 
   function choose(mode: ModeId) {
     if (mode === "classic") playClassic();
@@ -71,7 +100,7 @@ export function Lobby({ onPlay, onTerminal }: Props) {
               </button>
             ))}
           </div>
-          <p className={styles.hintText}>{LEVELS.find((l) => l.id === progress.level)?.blurb}. Used in Classic.</p>
+          <p className={styles.hintText}>{LEVELS.find((l) => l.id === progress.level)?.blurb}. Used in Classic and Handfuls.</p>
         </div>
         <div className={styles.setting}>
           <h2 className={styles.h2}>Stick style</h2>
@@ -92,7 +121,7 @@ export function Lobby({ onPlay, onTerminal }: Props) {
 
       <section className={styles.modes} aria-label="Modes">
         {MODES.map((m) => (
-          <button key={m.id} type="button" className={styles.mode} data-mode={m.id} aria-expanded={m.id === "ladder" || m.id === "versus" ? panel === m.id : undefined} onClick={() => choose(m.id)}>
+          <button key={m.id} type="button" className={styles.mode} data-mode={m.id} aria-expanded={m.id === "ladder" || m.id === "versus" || m.id === "handfuls" ? panel === m.id : undefined} onClick={() => choose(m.id)}>
             <span className={styles.modeEmoji} aria-hidden>
               {m.emoji}
             </span>
@@ -101,13 +130,62 @@ export function Lobby({ onPlay, onTerminal }: Props) {
             <span className={styles.modeMeta}>
               {m.id === "ladder" && `${cleared}/10 cleared · ${starCount}★`}
               {m.id === "daily" && (todays ? (todays.won ? "Solved today ✓" : "Burnt today · practice on") : `#${daily.number} · ${describeRules(daily.rules)}`)}
-              {m.id === "classic" && `vs ${LEVELS.find((l) => l.id === progress.level)?.name} Sparky`}
+              {m.id === "classic" && `vs ${levelName} Sparky`}
+              {m.id === "handfuls" && `${rangeLabel(preset)} · ${setup.surprise ? "surprise" : handfulsPile(setup)} · vs ${levelName}`}
               {m.id === "versus" && "2 players"}
               {m.id === "1981" && "green screen"}
             </span>
           </button>
         ))}
       </section>
+
+      {panel === "handfuls" && (
+        <section className={styles.panel} aria-label="Handfuls setup">
+          <h2 className={styles.h2}>Handfuls</h2>
+          <p className={styles.panelLead}>
+            Every turn you take a handful: at least the smaller number, at most the bigger one. When fewer than the smaller number are left, you have to{" "}
+            <strong>sweep</strong> them all, and whoever takes the last stick still loses.
+          </p>
+          <div className={styles.handfuls} role="radiogroup" aria-label="Take range">
+            {HANDFULS_PRESETS.map((p) => {
+              const record = progress.handfuls[p.id];
+              return (
+                <button key={p.id} type="button" role="radio" aria-checked={setup.preset === p.id} className={styles.handful} onClick={() => setSetup({ preset: p.id })}>
+                  <span className={styles.handfulRange}>{rangeLabel(p)}</span>
+                  <span className={styles.handfulPile}>{setup.sparkyStarts ? p.sparkyPile : p.pile} sticks</span>
+                  <span className={styles.handfulRecord}>
+                    {record?.masterWins ? "👑 Master beaten" : record?.wins ? `${record.wins} win${record.wins > 1 ? "s" : ""}` : "not won yet"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <div className={styles.switches}>
+            <button type="button" role="switch" aria-checked={setup.surprise} className={styles.switch} onClick={() => setSetup({ surprise: !setup.surprise })}>
+              <span className={styles.track} aria-hidden />
+              <span className={styles.switchText}>
+                <strong>Surprise pile</strong>
+                <small>
+                  A random pile from {3 * (preset.min + preset.max)} to {6 * (preset.min + preset.max)}, always one you can win.
+                </small>
+              </span>
+            </button>
+            <button type="button" role="switch" aria-checked={setup.sparkyStarts} className={styles.switch} onClick={() => setSetup({ sparkyStarts: !setup.sparkyStarts })}>
+              <span className={styles.track} aria-hidden />
+              <span className={styles.switchText}>
+                <strong>Sparky starts</strong>
+                <small>He moves first, from a pile one stick shorter. Answer right and you still win.</small>
+              </span>
+            </button>
+          </div>
+          <div className={styles.panelFoot}>
+            <p className={styles.hintText}>vs {levelName} Sparky · change his level above.</p>
+            <button type="button" className={styles.deal} onClick={() => onPlay(handfulsSession(setup, progress.level, Date.now() % 1_000_000))}>
+              Deal {setup.surprise ? "a surprise pile" : `${handfulsPile(setup)} sticks`} →
+            </button>
+          </div>
+        </section>
+      )}
 
       {panel === "ladder" && (
         <section className={styles.panel} aria-label="Ladder tables">
@@ -157,7 +235,10 @@ export function Lobby({ onPlay, onTerminal }: Props) {
       <section className={styles.bottom}>
         <div className={styles.achievements}>
           <h2 className={styles.h2}>
-            Achievements <span className={styles.count}>{progress.achievements.length}/12</span>
+            Achievements{" "}
+            <span className={styles.count}>
+              {progress.achievements.filter((id) => ACHIEVEMENTS.some((a) => a.id === id)).length}/{ACHIEVEMENTS.length}
+            </span>
           </h2>
           <ul className={styles.badges}>
             {ACHIEVEMENTS.map((a) => {
@@ -190,6 +271,21 @@ export function Lobby({ onPlay, onTerminal }: Props) {
               <dd>{progress.bestStreak}</dd>
             </div>
           </dl>
+          <h3 className={styles.h3}>Handfuls wins</h3>
+          <ul className={styles.handfulStats}>
+            {HANDFULS_PRESETS.map((p) => {
+              const record = progress.handfuls[p.id];
+              return (
+                <li key={p.id} data-master={record?.masterWins ? "" : undefined} title={record?.masterWins ? "Beat Master Sparky" : undefined}>
+                  <span>{rangeLabel(p)}</span>
+                  <strong>
+                    {record?.wins ?? 0}
+                    {record?.masterWins ? " 👑" : ""}
+                  </strong>
+                </li>
+              );
+            })}
+          </ul>
           <p className={styles.privacy}>Saved in this browser only.</p>
           <button
             type="button"

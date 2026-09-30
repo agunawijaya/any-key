@@ -42,7 +42,8 @@ original and the rebuild.
 
 Take 1, 2 or 3 sticks; never the last one. The 1973 mind game *23 Matches*, rebuilt with Sparky (an
 opponent who is a stickler for rules), a coach that teaches the secret, a ten-table ladder ending in
-the Marienbad 1-3-5-7 puzzle, a shareable daily puzzle, two-player mode, twelve achievements, three
+the Marienbad 1-3-5-7 puzzle, a shareable daily puzzle, Handfuls (take 2–3, 3–5 and more, ending in a
+sweep), two-player mode, fourteen achievements, three
 stick styles (matches, glow sticks, candy) and a 1981 mode that plays exactly like the original on a
 PC. The docs are in `docs/23mtch/`.
 

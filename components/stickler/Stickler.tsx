@@ -3,23 +3,26 @@
 import Link from "next/link";
 import { useCallback, useState } from "react";
 import { PrefsSync } from "@/components/hall/PrefsSync";
+import { useHashTab } from "@/components/kit/useHashTab";
 import { Story, type DocTab } from "@/components/kit/Story";
 import { ThemeButton } from "@/components/ui/ThemeButton";
 import { LADDER } from "@/lib/stickler/modes";
 import { ACHIEVEMENTS, updateProgress, useProgress } from "@/lib/stickler/progress";
 import { setPrefs, usePrefs } from "@/lib/use-prefs";
 import { Board, type Session } from "./Board";
-import { Lobby } from "./Lobby";
+import { handfulsSession, Lobby } from "./Lobby";
 import { StickDefs } from "./Stick";
 import { Terminal } from "./Terminal";
 import styles from "./Stickler.module.css";
 
 type Screen = { kind: "lobby" } | { kind: "board"; session: Session; key: number; rematch: boolean } | { kind: "terminal" };
 
+const TABS = ["play", "story"] as const;
+
 export function Stickler({ docs }: { docs: DocTab[] }) {
   const progress = useProgress();
   const { sound } = usePrefs();
-  const [tab, setTab] = useState<"play" | "story">("play");
+  const [tab, setTab] = useHashTab(TABS);
   const [screen, setScreen] = useState<Screen>({ kind: "lobby" });
   const [toasts, setToasts] = useState<string[]>([]);
 
@@ -97,7 +100,13 @@ export function Stickler({ docs }: { docs: DocTab[] }) {
             sound={sound}
             seed={screen.key % 1_000_000}
             rematch={screen.rematch}
-            onRematch={() => setScreen({ ...screen, key: Date.now(), rematch: true })}
+            onRematch={() => {
+              // A surprise pile is drawn again for every rematch; every other table stays as it was.
+              const key = Date.now();
+              const { session } = screen;
+              const next = session.handfuls?.surprise && session.level ? handfulsSession(session.handfuls, session.level, key % 1_000_000) : session;
+              setScreen({ ...screen, session: next, key, rematch: true });
+            }}
             onExit={() => setScreen({ kind: "lobby" })}
             onNext={screen.session.mode === "ladder" ? nextTable(screen.session) : undefined}
             onUnlock={unlock}

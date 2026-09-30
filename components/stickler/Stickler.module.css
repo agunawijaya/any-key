@@ -199,6 +199,8 @@
   z-index: 60;
   display: grid;
   gap: 8px;
+  /* Toasts only announce; they must never sit on top of a button you want to press. */
+  pointer-events: none;
 }
 
 .toast {
@@ -260,5 +262,19 @@
 @media (max-width: 480px) {
   .backLabel {
     display: none;
+  }
+
+  /* On a phone the result card's buttons live at the bottom, so badges announce themselves at the top. */
+  .toasts {
+    top: 132px;
+    right: 12px;
+    bottom: auto;
+    left: 12px;
+    justify-items: center;
+  }
+
+  .toast {
+    padding: 8px 14px;
+    font-size: 13px;
   }
 }

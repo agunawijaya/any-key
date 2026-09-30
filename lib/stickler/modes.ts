@@ -2,10 +2,11 @@ import type { Rules } from "./rules";
 import { isWinning } from "./solver";
 import { mulberry, type Level } from "./sparky";
 
-export type ModeId = "classic" | "ladder" | "daily" | "versus" | "1981";
+export type ModeId = "classic" | "handfuls" | "ladder" | "daily" | "versus" | "1981";
 
 export const MODES: { id: ModeId; name: string; blurb: string; emoji: string }[] = [
   { id: "classic", name: "Classic 23", blurb: "The 1981 game: 23 sticks, take 1–3, you start.", emoji: "🔥" },
+  { id: "handfuls", name: "Handfuls", blurb: "Every turn is a handful. Never just one.", emoji: "🤲" },
   { id: "ladder", name: "Ladder", blurb: "Ten tables, new twists, one very smug final boss.", emoji: "🪜" },
   { id: "daily", name: "Daily", blurb: "One puzzle a day for everyone. Share your streak.", emoji: "📅" },
   { id: "versus", name: "Versus", blurb: "Two players, one screen. Pass it over.", emoji: "🤝" },
@@ -14,8 +15,9 @@ export const MODES: { id: ModeId; name: string; blurb: string; emoji: string }[]
 
 export type Table = { id: number; name: string; rules: Rules; level: Level; blurb: string };
 
-const one = (n: number, k: number, sparkyFirst = false): Rules => ({ rows: [n], maxTake: k, first: sparkyFirst ? 1 : 0 });
-const rows = (r: number[], sparkyFirst = false): Rules => ({ rows: r, maxTake: Infinity, first: sparkyFirst ? 1 : 0 });
+const one = (n: number, k: number, sparkyFirst = false): Rules => ({ rows: [n], minTake: 1, maxTake: k, first: sparkyFirst ? 1 : 0 });
+const rows = (r: number[], sparkyFirst = false): Rules => ({ rows: r, minTake: 1, maxTake: Infinity, first: sparkyFirst ? 1 : 0 });
+const handful = (n: number, min: number, max: number, sparkyFirst = false): Rules => ({ rows: [n], minTake: min, maxTake: max, first: sparkyFirst ? 1 : 0 });
 
 /** Every table is winnable with perfect play: the tests check it. */
 export const LADDER: Table[] = [
@@ -50,9 +52,61 @@ export function dailyPuzzle(date = new Date()) {
   return { number: day + 1, key, rules: one(sticks, maxTake), level: "master" as Level };
 }
 
+// ---------- Handfuls: every take is min..max, and fewer than min left means a sweep ----------
+
+export type HandfulsPresetId = "2-3" | "2-4" | "3-4" | "3-5" | "4-6";
+
+/**
+ * `pile` is dealt when you open and is a win for the opener. `sparkyPile` is dealt when Sparky opens:
+ * one stick fewer, which sits on the top of a magic zone, so he opens on a lost position and a player
+ * who answers correctly always wins. Every Handfuls table can be won by you: the tests check it.
+ */
+export type HandfulsPreset = { id: HandfulsPresetId; min: number; max: number; pile: number; sparkyPile: number };
+
+export const HANDFULS_PRESETS: HandfulsPreset[] = [
+  { id: "2-3", min: 2, max: 3, pile: 23, sparkyPile: 22 },
+  { id: "2-4", min: 2, max: 4, pile: 27, sparkyPile: 26 },
+  { id: "3-4", min: 3, max: 4, pile: 32, sparkyPile: 31 },
+  { id: "3-5", min: 3, max: 5, pile: 36, sparkyPile: 35 },
+  { id: "4-6", min: 4, max: 6, pile: 45, sparkyPile: 44 },
+];
+
+export type HandfulsSetup = { preset: HandfulsPresetId; surprise: boolean; sparkyStarts: boolean };
+
+export const DEFAULT_HANDFULS: HandfulsSetup = { preset: "2-3", surprise: false, sparkyStarts: false };
+
+export const handfulsPreset = (id: string) => HANDFULS_PRESETS.find((p) => p.id === id) ?? HANDFULS_PRESETS[0];
+
+/** The range as players read it: "3–5". */
+export const rangeLabel = (p: Pick<HandfulsPreset, "min" | "max">) => `${p.min}–${p.max}`;
+
+/**
+ * "Surprise pile": a count between 3 and 6 times (min + max) that you can win, drawn evenly from all
+ * such counts, like the Daily draws its pile. When you open, that is a win for the opener; when Sparky
+ * opens, it is a count inside a magic zone, a loss for the opener.
+ */
+export function surprisePile(min: number, max: number, seed: number, sparkyStarts = false) {
+  const period = min + max;
+  const fair: number[] = [];
+  for (let n = 3 * period; n <= 6 * period; n++) if (isWinning([n], { minTake: min, maxTake: max }) !== sparkyStarts) fair.push(n);
+  return fair[Math.floor(mulberry(seed)() * fair.length)];
+}
+
+/** The table for a Handfuls setup. Whoever opens, you can always win it with the right answers. */
+export function handfulsRules(setup: HandfulsSetup, seed: number): Rules {
+  const p = handfulsPreset(setup.preset);
+  const pile = setup.surprise ? surprisePile(p.min, p.max, seed, setup.sparkyStarts) : setup.sparkyStarts ? p.sparkyPile : p.pile;
+  return handful(pile, p.min, p.max, setup.sparkyStarts);
+}
+
+/** The pile a setup deals, as the lobby shows it before you play (a surprise pile is only known when dealt). */
+export const handfulsPile = (setup: HandfulsSetup) => (setup.sparkyStarts ? handfulsPreset(setup.preset).sparkyPile : handfulsPreset(setup.preset).pile);
+
 export const VERSUS_PRESETS: { name: string; rules: Rules }[] = [
   { name: "Classic 23", rules: one(23, 3) },
   { name: "Quick 15", rules: one(15, 3) },
   { name: "Big 31 · take 1–4", rules: one(31, 4) },
   { name: "Marienbad 1-3-5-7", rules: rows([1, 3, 5, 7]) },
+  { name: "Handfuls 2–3 · 23", rules: handful(23, 2, 3) },
+  { name: "Handfuls 3–5 · 36", rules: handful(36, 3, 5) },
 ];

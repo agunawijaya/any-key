@@ -1,7 +1,8 @@
 import type { Skin } from "@/lib/stickler/progress";
 import styles from "./Stick.module.css";
 
-export type StickState = "idle" | "selected" | "hinted" | "sparky" | "burning" | "flying" | "doomed";
+/** "doomed" is the last stick of a game; "swept" is every stick of a Handfuls sweep, which all go up together. */
+export type StickState = "idle" | "selected" | "hinted" | "sparky" | "burning" | "flying" | "doomed" | "swept";
 
 export const GLOW_COLORS = ["#39ff88", "#ff3df0", "#3dd8ff", "#fff23d", "#ff8a3d", "#a36bff"];
 export const CANDY_COLORS = [

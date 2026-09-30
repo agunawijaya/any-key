@@ -84,17 +84,41 @@ export function select() {
   tone({ freq: 660, dur: 0.06, level: 0.05, type: "triangle" });
 }
 
-/** The last stick: a big swell of fire, a neon blow-out, or a sugar crash. */
-export function fwoosh(skin: SkinSound) {
+/**
+ * The Handfuls sweep: every stick in the pile goes at once. Matches strike together,
+ * glow sticks snap in a chain and candy pops one after another, `step` seconds apart.
+ */
+export function sweep(skin: SkinSound, count: number, step: number) {
   if (skin === "matches") {
-    noiseBurst({ dur: 1.2, from: 180, to: 3200, q: 0.6, level: 0.7, type: "lowpass" });
-    noiseBurst({ at: 0.1, dur: 0.9, from: 900, to: 300, q: 0.8, level: 0.35 });
+    for (let i = 0; i < count; i++) noiseBurst({ at: i * 0.012, dur: 0.14, from: 5200 - i * 300, to: 1600, q: 1.2, level: 0.5 / Math.sqrt(count) });
+    noiseBurst({ at: 0.04, dur: 0.6, from: 400, to: 1600, q: 0.7, level: 0.22 + 0.04 * count, type: "lowpass" });
+    return;
+  }
+  for (let i = 0; i < count; i++) {
+    const at = i * step;
+    if (skin === "glow") {
+      noiseBurst({ at, dur: 0.05, from: 3000, to: 3000, q: 4, level: 0.5 });
+      tone({ at: at + 0.02, freq: 660 * 2 ** (i / 4), to: 1320 * 2 ** (i / 4), dur: 0.3, level: 0.11 });
+    } else {
+      noiseBurst({ at, dur: 0.08, from: 2500, to: 900, q: 2, level: 0.45 });
+      tone({ at, freq: 520 * 2 ** (i / 5), to: 1040 * 2 ** (i / 5), dur: 0.14, level: 0.14, type: "triangle" });
+    }
+  }
+}
+
+/** The last stick: a big swell of fire, a neon blow-out, or a sugar crash. A bigger sweep makes a bigger bang. */
+export function fwoosh(skin: SkinSound, count = 1) {
+  const big = Math.min(1.5, 1 + 0.12 * (count - 1));
+  const long = 1 + 0.1 * (Math.min(count, 6) - 1);
+  if (skin === "matches") {
+    noiseBurst({ dur: 1.2 * long, from: 180, to: 3200, q: 0.6, level: 0.7 * big, type: "lowpass" });
+    noiseBurst({ at: 0.1, dur: 0.9 * long, from: 900, to: 300, q: 0.8, level: 0.35 * big });
   } else if (skin === "glow") {
-    tone({ freq: 1400, to: 60, dur: 0.9, level: 0.25, type: "sawtooth" });
-    noiseBurst({ dur: 0.4, from: 6000, to: 800, q: 0.8, level: 0.3 });
+    tone({ freq: 1400, to: 60, dur: 0.9 * long, level: 0.25 * big, type: "sawtooth" });
+    noiseBurst({ dur: 0.4 * long, from: 6000, to: 800, q: 0.8, level: 0.3 * big });
   } else {
-    tone({ freq: 700, to: 90, dur: 0.8, level: 0.25, type: "triangle" });
-    noiseBurst({ at: 0.05, dur: 0.3, from: 3000, to: 500, q: 1.5, level: 0.3 });
+    tone({ freq: 700, to: 90, dur: 0.8 * long, level: 0.25 * big, type: "triangle" });
+    noiseBurst({ at: 0.05, dur: 0.3 * long, from: 3000, to: 500, q: 1.5, level: 0.3 * big });
   }
 }
 

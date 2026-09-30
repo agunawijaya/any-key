@@ -150,6 +150,12 @@
   box-shadow: 0 0 0 4px rgb(61 216 255 / 0.25);
 }
 
+/* Versus: a rule reminder replaces "your move" for a moment. */
+.turnCard[data-notice] {
+  box-shadow: 0 0 0 3px var(--accent);
+  animation: bubble 280ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
 .tray {
   position: absolute;
   z-index: 2;
@@ -205,8 +211,9 @@
   transition: background 200ms;
 }
 
+/* Board measures the table and sets --fit-w and --row-max so a big pile never spills over. */
 .sticks[data-single] .row {
-  --stick-w: clamp(16px, 2vw, 28px);
+  --stick-w: var(--fit-w, clamp(16px, 2vw, 28px));
 }
 
 .rowFocus {
@@ -228,7 +235,7 @@
   flex-wrap: wrap;
   justify-content: center;
   gap: 6px 4px;
-  max-width: calc(12 * (var(--stick-w) + 12px));
+  max-width: var(--row-max, calc(12 * (var(--stick-w) + 12px)));
 }
 
 .stickButton {
@@ -246,6 +253,25 @@
 
 .stickButton:not(:disabled):hover > span {
   --lift: -8px;
+}
+
+/* Handfuls: the rule at a glance, under the pile. */
+.hud {
+  margin-top: 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.22);
+  color: var(--table-ink);
+  font: 700 12px var(--font-mono);
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+.hud[data-sweep] {
+  background: var(--accent);
+  color: var(--on-accent-text);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent);
+  animation: bubble 280ms cubic-bezier(0.3, 1.6, 0.5, 1);
 }
 
 /* ---------- Coach and controls ---------- */
@@ -276,6 +302,11 @@
 
 .turn[data-mine] {
   color: var(--ink);
+}
+
+/* Versus: the rule reminder also shows right next to the buttons. */
+.turn[data-notice] {
+  color: var(--accent);
 }
 
 .quick {
@@ -316,6 +347,14 @@
 .rowButton:disabled,
 .hint:disabled {
   opacity: 0.45;
+}
+
+/* Handfuls: fewer than the minimum left, so one button takes the whole pile. */
+.sweepButton {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--on-accent-text);
+  font-weight: 800;
 }
 
 .controls kbd,
@@ -372,24 +411,56 @@
   cursor: default;
 }
 
+/* A refused pick: a gentle no-no shake (two names so every refusal replays it). */
+.strike[data-nudge="0"] {
+  animation: nudgeA 360ms ease-in-out;
+}
+
+.strike[data-nudge="1"] {
+  animation: nudgeB 360ms ease-in-out;
+}
+
+@keyframes nudgeA {
+  20%,
+  60% {
+    translate: -6px 0;
+  }
+  40%,
+  80% {
+    translate: 6px 0;
+  }
+}
+
+@keyframes nudgeB {
+  20%,
+  60% {
+    translate: -6px 0;
+  }
+  40%,
+  80% {
+    translate: 6px 0;
+  }
+}
+
 /* ---------- The end: fwoosh, confetti, result ---------- */
 
+/* --shake-k and --shake-t grow with the size of a Handfuls sweep; 1 is the classic last stick. */
 .shake {
-  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  animation: shake calc(0.5s * var(--shake-t, 1)) cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
 @keyframes shake {
   20% {
-    transform: translate(-8px, 4px) rotate(-0.6deg);
+    transform: translate(calc(-8px * var(--shake-k, 1)), calc(4px * var(--shake-k, 1))) rotate(calc(-0.6deg * var(--shake-k, 1)));
   }
   40% {
-    transform: translate(8px, -4px) rotate(0.6deg);
+    transform: translate(calc(8px * var(--shake-k, 1)), calc(-4px * var(--shake-k, 1))) rotate(calc(0.6deg * var(--shake-k, 1)));
   }
   60% {
-    transform: translate(-5px, 2px);
+    transform: translate(calc(-5px * var(--shake-k, 1)), calc(2px * var(--shake-k, 1)));
   }
   80% {
-    transform: translate(4px, -2px);
+    transform: translate(calc(4px * var(--shake-k, 1)), calc(-2px * var(--shake-k, 1)));
   }
 }
 
@@ -468,7 +539,7 @@
     opacity: 0.9;
   }
   100% {
-    transform: scale(1.6);
+    transform: scale(var(--flare, 1.6));
     opacity: 0;
   }
 }
@@ -479,7 +550,7 @@
     opacity: 1;
   }
   100% {
-    transform: rotate(var(--a)) translateY(calc(var(--d) * -2.2)) scale(var(--s));
+    transform: rotate(var(--a)) translateY(calc(var(--d) * -2.2 * var(--reach, 1))) scale(var(--s));
     opacity: 0;
   }
 }
@@ -575,6 +646,17 @@
   letter-spacing: 2px;
 }
 
+.resultSub strong {
+  font: 800 1.35em/1 var(--font-display);
+  color: var(--accent);
+}
+
+.sweepTag {
+  display: inline-block;
+  font-size: 1.2em;
+  transform: rotate(-12deg);
+}
+
 .keyMoment {
   max-width: 44ch;
   font-size: 14.5px;
@@ -658,7 +740,18 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shake {
+  .shake,
+  .strike[data-nudge] {
     animation: none;
+  }
+
+  /* A big sweep keeps the classic-sized flare and ember count. */
+  .fwoosh {
+    --flare: 1.6 !important;
+    --reach: 1 !important;
+  }
+
+  .ember[data-extra] {
+    display: none;
   }
 }

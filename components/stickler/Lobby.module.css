@@ -235,7 +235,7 @@
 
 .modes {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
 }
 
@@ -262,6 +262,23 @@
   background: var(--box);
   color: var(--on-box);
   border-color: transparent;
+}
+
+/* Handfuls: the matchbox label's cream and ink, with a striker-brown edge. */
+.mode[data-mode="handfuls"] {
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--accent-2) 30%, transparent), transparent 60%),
+    var(--label-bg);
+  color: var(--label-ink);
+  border: 2px solid color-mix(in srgb, var(--accent-2) 60%, transparent);
+}
+
+/* At night the cream label would glare; keep the orange edge on a dark card instead. */
+:global(:root[data-theme="dark"]) .mode[data-mode="handfuls"] {
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--accent-2) 26%, transparent), transparent 60%),
+    var(--surface);
+  color: var(--ink);
 }
 
 .mode[data-mode="1981"] {
@@ -382,7 +399,7 @@
 
 .presets {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -400,6 +417,166 @@
 .preset span {
   font: 600 12px var(--font-mono);
   color: var(--ink-3);
+}
+
+/* ---------- Handfuls setup ---------- */
+
+.panelLead {
+  max-width: 72ch;
+  margin: -4px 0 14px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.panelLead strong {
+  color: var(--accent);
+}
+
+.handfuls {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.handful {
+  display: grid;
+  gap: 2px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 2px solid var(--line);
+  background:
+    var(--grain),
+    linear-gradient(180deg, var(--table-top), var(--table-bottom));
+  color: var(--table-ink);
+  text-align: left;
+  transition: transform 160ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.handful:hover {
+  transform: translateY(-3px);
+}
+
+.handful[aria-checked="true"] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.handfulRange {
+  font: 800 34px/1 var(--font-display);
+  letter-spacing: -0.03em;
+}
+
+.handfulPile {
+  font: 600 11px var(--font-mono);
+  opacity: 0.9;
+}
+
+.handfulRecord {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.switches {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.switch {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  text-align: left;
+}
+
+.track {
+  flex: none;
+  position: relative;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 18%, var(--bg));
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  transition: background 180ms;
+}
+
+.track::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform 180ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.switch[aria-checked="true"] .track {
+  background: var(--accent);
+}
+
+.switch[aria-checked="true"] .track::after {
+  transform: translateX(18px);
+}
+
+.switchText {
+  display: grid;
+  gap: 2px;
+}
+
+.switchText strong {
+  font: 700 15px var(--font-display);
+}
+
+.switchText small {
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--ink-3);
+}
+
+.panelFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  margin-top: 14px;
+}
+
+.panelFoot .hintText {
+  margin: 0;
+  max-width: 60ch;
+}
+
+.deal {
+  height: 50px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--box);
+  color: var(--on-box);
+  font: 800 17px var(--font-display);
+  box-shadow: 0 5px 0 color-mix(in srgb, var(--box) 55%, #000);
+  transition: transform 140ms cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.deal:hover {
+  transform: translateY(-3px) rotate(-1deg);
+}
+
+.deal:active {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--box) 55%, #000);
 }
 
 /* ---------- Achievements and record ---------- */
@@ -486,6 +663,46 @@
   color: var(--accent);
 }
 
+.h3 {
+  margin: 18px 0 8px;
+  font: 700 11px var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.handfulStats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  list-style: none;
+}
+
+.handfulStats li {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.handfulStats li[data-master] {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.handfulStats span {
+  font: 600 11px var(--font-mono);
+  color: var(--ink-3);
+}
+
+.handfulStats strong {
+  font: 800 18px/1 var(--font-display);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
 .privacy {
   margin-top: 14px;
   font-size: 12.5px;
@@ -509,6 +726,10 @@
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
+  .handfuls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .ladder {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -529,6 +750,14 @@
   .ladder,
   .presets {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .switches {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .deal {
+    width: 100%;
   }
 
   .matchbox {
