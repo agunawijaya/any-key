@@ -8,6 +8,8 @@ import type { Arrangement, Track } from "./types";
 export function naturalBpm(song: Song, policy: MeterPolicy) {
   if (policy === "keep") return song.bpm;
   const { top, bottom } = song.meter;
+  // Cut time: the beat is the half note.
+  if (top === 2 && bottom === 2) return song.bpm / 2;
   if (top === 3 && bottom === 4) return (song.bpm * 4) / 3;
   if (top === 6 && bottom === 8) return song.bpm / 1.5;
   return song.bpm;
@@ -34,7 +36,7 @@ export function scaleFor(styleBpm: number, natural: number) {
 
 export function orchestra(song: Song): Arrangement {
   const c = song.character;
-  const s = new Studio(song, "orchestra", "Orchestra", { bpm: song.bpm * (c === "lyrical" ? 0.94 : 1), policy: "keep", introBars: 1 });
+  const s = new Studio(song, "orchestra", "Orchestra", { bpm: song.bpm * (c === "lyrical" ? 0.94 : 1), policy: "keep", introBars: 1, followTempo: true });
 
   const melodyPatch =
     c === "spooky" ? PATCH.bassoon : c === "march" ? PATCH.trumpet : c === "lyrical" ? (song.id === "sakura" ? PATCH.flute : PATCH.violin) : PATCH.stringsFast;
@@ -308,7 +310,7 @@ export function lofi(song: Song): Arrangement {
 
 export function solo(song: Song, instrument: SoloInstrumentId = "piano"): Arrangement {
   const choice = SOLO_INSTRUMENTS.find((i) => i.id === instrument) ?? SOLO_INSTRUMENTS[0];
-  const s = new Studio(song, `solo:${choice.id}`, `Solo · ${choice.patch.name}`, { bpm: song.bpm, policy: "keep", introBars: 0, outroBars: 0, gain: 2.6 });
+  const s = new Studio(song, `solo:${choice.id}`, `Solo · ${choice.patch.name}`, { bpm: song.bpm, policy: "keep", introBars: 0, outroBars: 0, gain: 2.6, followTempo: true });
   const track = s.track("solo", "melody", choice.patch, { reverb: 70, volume: 120 });
   s.lead(track, { vel: 100, articulation: 0.96, ornament: choice.id === "suling" ? "suling" : undefined });
   return s.finish();
@@ -321,11 +323,14 @@ export const TICK_SECONDS = 1 / 18.2;
 
 export function pc81(song: Song): Arrangement {
   const tpb = song.ticksPerBeat;
+  // A full version slows down and speeds up with its score, still in whole ticks.
+  const tempoAt = (at: number) => [...song.tempos].reverse().find((t) => t.at <= at + 1e-6)?.bpm ?? song.bpm;
+  const ticksPerBeatAt = (at: number) => (song.tempos.length < 2 ? tpb : (tpb * song.bpm) / tempoAt(at));
   const notes: { at: number; dur: number; pitch: number; vel: number }[] = [];
   const bounds: { songAt: number; arrAt: number }[] = [];
   let ticks = 0;
   for (const note of song.notes) {
-    const sound = Math.max(1, Math.round(note.dur * tpb));
+    const sound = Math.max(1, Math.round(note.dur * ticksPerBeatAt(note.at)));
     bounds.push({ songAt: note.at, arrAt: ticks / tpb });
     if (note.pitch !== null) notes.push({ at: ticks / tpb, dur: sound / tpb, pitch: note.pitch, vel: 100 });
     ticks += sound + 1;
@@ -353,6 +358,7 @@ export function pc81(song: Song): Arrangement {
 
   return {
     songId: song.id,
+    version: song.version,
     styleId: "pc81",
     label: "PC Speaker ’81",
     bpm: 60 * 18.2 / tpb,
@@ -377,6 +383,12 @@ export function pc81(song: Song): Arrangement {
       },
     ],
     passes: [{ at: 0, length }],
+    grid: song.measures.map((m, i) => {
+      const at = fromSongBeat(m.at);
+      const next = i + 1 < song.measures.length ? fromSongBeat(song.measures[i + 1].at) : length;
+      return { at, len: next - at };
+    }),
+    tempos: [{ at: 0, bpm: (60 * 18.2) / tpb }],
     toSongBeat,
     fromSongBeat,
     gain: 1,

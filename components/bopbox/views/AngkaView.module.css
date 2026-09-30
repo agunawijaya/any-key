@@ -13,6 +13,15 @@
   color: var(--stage-accent);
 }
 
+.segment + .segment {
+  margin-top: 26px;
+}
+
+/* A section's name in a long piece, before its key. */
+.section {
+  color: var(--stage-ink);
+}
+
 .bars {
   display: flex;
   flex-wrap: wrap;
@@ -62,13 +71,21 @@
 }
 
 .note[data-lines="1"] .digit,
-.note[data-lines="2"] .digit {
+.note[data-lines="2"] .digit,
+.note[data-lines="3"] .digit {
   padding-bottom: 3px;
   border-bottom: 2px solid currentColor;
 }
 
 .note[data-lines="2"] .digit {
   box-shadow: 0 4px 0 -2px currentColor;
+}
+
+/* A thirty-second note: three lines. */
+.note[data-lines="3"] .digit {
+  box-shadow:
+    0 4px 0 -2px currentColor,
+    0 8px 0 -2px currentColor;
 }
 
 .aug,

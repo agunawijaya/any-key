@@ -1,4 +1,5 @@
-import { compileSong, type Song, type SongSource } from "./score";
+import { FULL_SOURCES } from "./full";
+import { compileFull, compileSong, type Song, type SongSource, type SongVersion } from "./score";
 
 /*
  * Eleven public-domain melodies, transcribed for this project from the
@@ -242,6 +243,40 @@ const SOURCES: SongSource[] = [
   },
 ];
 
+/** The tunes as the 1981 program played them. */
 export const songs: Song[] = SOURCES.map(compileSong);
 
-export const songById = (id: string) => songs.find((s) => s.id === id) ?? songs[0];
+/** Full-length versions, keyed by tune. */
+export const fullSongs = new Map<string, Song>(
+  FULL_SOURCES.map((full) => {
+    const short = SOURCES.find((s) => s.id === full.id);
+    if (!short) throw new Error(`No 1981 tune for the full version "${full.id}"`);
+    return [full.id, compileFull(short, full)];
+  }),
+);
+
+export const hasFull = (id: string) => fullSongs.has(id);
+
+/**
+ * Keeps your place when switching versions: the 1981 excerpt maps onto the
+ * section it came from in the full piece (and anywhere else maps to the start).
+ */
+export function mapVersionBeat(id: string, beat: number, from: SongVersion, to: SongVersion) {
+  const full = fullSongs.get(id);
+  if (!full || from === to || full.excerptAt === undefined || full.excerptEnd === undefined) return beat;
+  const short = songById(id);
+  const start = full.excerptAt;
+  const end = full.excerptEnd;
+  if (from === "short") return start + Math.min(1, Math.max(0, beat / short.length)) * (end - start);
+  if (beat < start || beat >= end) return 0;
+  return ((beat - start) / (end - start)) * short.length;
+}
+
+/** A tune in the version asked for (the 1981 one when there is no full version). */
+export function songById(id: string, version: SongVersion = "short"): Song {
+  if (version === "full") {
+    const full = fullSongs.get(id);
+    if (full) return full;
+  }
+  return songs.find((s) => s.id === id) ?? songs[0];
+}

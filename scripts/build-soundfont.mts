@@ -12,7 +12,8 @@ import { BasicSoundBank, SoundBankLoader } from "spessasynth_core";
 import { arrange, STYLES } from "../lib/music/arrange";
 import { SOLO_INSTRUMENTS, PATCH } from "../lib/music/arrange/patches";
 import type { Patch } from "../lib/music/arrange/types";
-import { songs } from "../lib/music/songs";
+import { loadOriginal, ORIGINAL_SCORES } from "../lib/music/original";
+import { fullSongs, songs } from "../lib/music/songs";
 
 const source = process.argv[2];
 if (!source) throw new Error("Pass the path to MuseScore_General.sf3");
@@ -21,10 +22,14 @@ const wanted = new Map<string, Patch>();
 const keyOf = (patch: Patch) => `${patch.drums ? "kit" : patch.bank ?? 0}:${patch.program}`;
 const want = (patch: Patch) => wanted.set(keyOf(patch), patch);
 
-for (const song of songs) {
+for (const score of ORIGINAL_SCORES) await loadOriginal(score.songId);
+for (const song of [...songs, ...fullSongs.values()]) {
   for (const style of STYLES) {
     if (style.id === "pc81") continue;
-    for (const track of arrange(song.id, style.id).tracks) want(track.patch);
+    for (const track of arrange(song.id, style.id, "piano", song.version).tracks) {
+      want(track.patch);
+      for (const a of track.automation) if (a.kind === "program") want(a.patch);
+    }
   }
 }
 for (const instrument of SOLO_INSTRUMENTS) want(instrument.patch);

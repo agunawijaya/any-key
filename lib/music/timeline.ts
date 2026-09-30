@@ -23,6 +23,19 @@ function upperBound(notes: ArrNote[], beat: number) {
   return lo;
 }
 
+/** Where to start scanning for notes still sounding at `beat` (long pieces have thousands). */
+export function firstSoundingFrom(index: TrackIndex, beat: number) {
+  let lo = 0;
+  let hi = index.notes.length;
+  const from = beat - index.longest;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (index.notes[mid].at < from) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
 export function soundingIn(index: TrackIndex, beat: number): ArrNote[] {
   const out: ArrNote[] = [];
   const end = upperBound(index.notes, beat);

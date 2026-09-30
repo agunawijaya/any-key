@@ -3,17 +3,23 @@
  * so a broken style (silence, clipping, missing instruments) shows up without
  * opening a browser.
  *
- *   npx tsx scripts/render-check.mts [seconds] [outDir]
+ *   npx tsx scripts/render-check.mts [seconds] [outDir] [styles] [versions]
+ *
+ * styles and versions are comma lists ("hiphop,lofi", "short,full"); all by default.
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { audioToWav, BasicMIDI, BasicSoundBank, SoundBankLoader, SpessaSynthProcessor, SpessaSynthSequencer } from "spessasynth_core";
 import { arrange, STYLES } from "../lib/music/arrange";
 import { toMidi } from "../lib/music/midi";
-import { songs } from "../lib/music/songs";
+import { loadOriginal, ORIGINAL_SCORES } from "../lib/music/original";
+import { fullSongs, songs } from "../lib/music/songs";
+import { secondsAt } from "../lib/music/tempo";
 
 const seconds = Number(process.argv[2] ?? 10);
-const outDir = process.argv[3];
+const outDir = process.argv[3] || undefined;
+const onlyStyles = process.argv[4]?.split(",");
+const versions = process.argv[5]?.split(",") ?? ["short", "full"];
 const RATE = 22050;
 const BLOCK = 128;
 
@@ -21,13 +27,16 @@ const file = readFileSync(join(import.meta.dirname, "..", "public", "soundfont",
 await BasicSoundBank.isSF3DecoderReady;
 const bank = SoundBankLoader.fromArrayBuffer(file.buffer.slice(file.byteOffset, file.byteOffset + file.byteLength));
 
+for (const score of ORIGINAL_SCORES) await loadOriginal(score.songId);
+
 const missing = new Set<string>();
 let failures = 0;
 
-for (const song of songs) {
+const tunes = [...(versions.includes("short") ? songs : []), ...(versions.includes("full") ? fullSongs.values() : [])];
+for (const song of tunes) {
   for (const style of STYLES) {
-    if (style.id === "pc81") continue;
-    const arrangement = arrange(song.id, style.id);
+    if (style.id === "pc81" || (onlyStyles && !onlyStyles.includes(style.id))) continue;
+    const arrangement = arrange(song.id, style.id, "piano", song.version);
     const { bytes } = toMidi(arrangement);
     const midi = BasicMIDI.fromArrayBuffer(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer);
 
@@ -42,7 +51,7 @@ for (const song of songs) {
     seq.loadNewSongList([midi]);
     seq.play();
 
-    const total = Math.min(seconds, (arrangement.length * 60) / arrangement.bpm + 1) * RATE;
+    const total = Math.round(Math.min(seconds, secondsAt(arrangement.tempos, arrangement.length) + 1) * RATE);
     const left = new Float32Array(total);
     const right = new Float32Array(total);
     for (let i = 0; i < total; i += BLOCK) {
@@ -59,12 +68,12 @@ for (const song of songs) {
     const rms = Math.sqrt(sum / (2 * total));
     const flag = peak < 0.02 ? "SILENT" : peak > 0.99 ? "CLIPS" : "";
     if (flag) failures++;
-    console.log(`${song.id.padEnd(7)} ${style.id.padEnd(9)} peak ${peak.toFixed(2)} rms ${(20 * Math.log10(rms + 1e-9)).toFixed(1)} dB ${flag}`);
+    console.log(`${song.id.padEnd(7)} ${song.version.padEnd(5)} ${style.id.padEnd(9)} peak ${peak.toFixed(2)} rms ${(20 * Math.log10(rms + 1e-9)).toFixed(1)} dB ${flag}`);
 
-    if (outDir && (song.id === "sakura" || style.id === "dangdut" || style.id === "remix")) {
+    if (outDir && (onlyStyles || song.id === "sakura" || style.id === "dangdut" || style.id === "remix")) {
       mkdirSync(outDir, { recursive: true });
       const wav = audioToWav([left, right], RATE);
-      writeFileSync(join(outDir, `${song.id}-${style.id}.wav`), new Uint8Array(wav));
+      writeFileSync(join(outDir, `${song.id}-${song.version}-${style.id}.wav`), new Uint8Array(wav));
     }
   }
 }

@@ -14,7 +14,9 @@ export type ArrNote = { at: number; dur: number; pitch: number; vel: number };
 
 export type Automation =
   | { at: number; kind: "cc"; cc: number; value: number }
-  | { at: number; kind: "bend"; value: number };
+  | { at: number; kind: "bend"; value: number }
+  /** A change of sound on the same channel: strings going pizzicato and back, say. */
+  | { at: number; kind: "program"; patch: Patch };
 
 export type Track = {
   id: string;
@@ -36,6 +38,7 @@ export type Feel = "four" | "three" | "compound" | "two";
 
 export type Arrangement = {
   songId: string;
+  version: "short" | "full";
   styleId: string;
   label: string;
   bpm: number;
@@ -45,8 +48,12 @@ export type Arrangement = {
   length: number;
   swing: number;
   tracks: Track[];
-  /** Where each melody pass starts, in arrangement beats. */
+  /** Where each melody pass (or each part of a long piece) starts, in arrangement beats. */
   passes: { at: number; length: number }[];
+  /** Every bar, in arrangement beats: bars change length when the meter does. */
+  grid: { at: number; len: number }[];
+  /** Tempo changes in arrangement beats; the first one is at 0 (a piece may open slower or faster than `bpm`). */
+  tempos: { at: number; bpm: number }[];
   /** Arrangement beat → score beat (for the sheet and numbered views); null outside the tune. */
   toSongBeat: (beat: number) => number | null;
   /** Score beat → arrangement beat within the first pass (for switching styles mid-song). */

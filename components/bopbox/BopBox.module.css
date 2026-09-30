@@ -296,8 +296,69 @@
 
 .nowPlaying {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 12px 16px;
+}
+
+/* The title block takes the room; the length switch drops below it when space runs out. */
+.nowPlaying > :first-child {
+  flex: 1 1 22rem;
+  min-width: 0;
+}
+
+/* 1981 excerpt or the full piece. */
+.versions {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid var(--stage-line);
+  background: var(--stage-faint);
+}
+
+.versions button {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 64px;
+  padding: 7px 12px;
+  border-radius: 10px;
+  color: var(--stage-ink-2);
+}
+
+.versions button[aria-checked="true"] {
+  background: var(--stage-ink);
+  color: var(--stage-base);
+}
+
+.versions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.versionName {
+  font: 700 13px/1 var(--font-sans);
+}
+
+.versionTime {
+  font: 500 11px/1 var(--font-mono);
+  opacity: 0.8;
+}
+
+.versionKey {
+  margin: 0 6px 0 4px;
+  color: var(--stage-ink-3);
+  border-color: var(--stage-line);
+}
+
+@media (hover: none) {
+  .versionKey {
+    display: none;
+  }
 }
 
 .kicker {
@@ -476,13 +537,19 @@
   color: var(--ink-3);
 }
 
-.styleCard[data-card="remix"] {
-  grid-column: 1 / -1;
-  min-height: 0;
+/* The two cards that aren't a genre: Claude's remix and the tune's own score. */
+.styleCard[data-card="remix"]:not([aria-pressed="true"]),
+.styleCard[data-card="original"]:not([aria-pressed="true"]) {
+  border: 1.5px dashed color-mix(in srgb, var(--ink) 30%, transparent);
 }
 
-.styleCard[data-card="remix"]:not([aria-pressed="true"]) {
-  border: 1.5px dashed color-mix(in srgb, var(--ink) 30%, transparent);
+.styleCard:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.styleCard:disabled:hover {
+  transform: none;
 }
 
 .instrument {
@@ -595,11 +662,7 @@
   }
 
   .styleGrid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .styleCard[data-card="remix"] {
-    grid-column: auto;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 }
 
@@ -662,10 +725,6 @@
 
   .styleGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .styleCard[data-card="remix"] {
-    grid-column: 1 / -1;
   }
 
   .viewHint {

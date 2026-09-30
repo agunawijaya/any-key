@@ -3,13 +3,14 @@
 const LETTER_PC: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const SHARP_NAMES = ["C", "C♯", "D", "D♯", "E", "F", "F♯", "G", "G♯", "A", "A♯", "B"];
 
-/** "F#4" → 66, "Bb3" → 58. */
+const ACCIDENTAL: Record<string, number> = { "": 0, "#": 1, "##": 2, b: -1, bb: -2 };
+
+/** "F#4" → 66, "Bb3" → 58, "Bbb5" (B double flat) → 81. */
 export function parsePitch(name: string): number {
-  const match = /^([A-G])([#b]?)(-?\d)$/.exec(name);
+  const match = /^([A-G])(##|#|bb|b)?(-?\d)$/.exec(name);
   if (!match) throw new Error(`Bad pitch "${name}"`);
-  const [, letter, accidental, octave] = match;
-  const pc = LETTER_PC[letter] + (accidental === "#" ? 1 : accidental === "b" ? -1 : 0);
-  return 12 * (Number(octave) + 1) + pc;
+  const [, letter, accidental = "", octave] = match;
+  return 12 * (Number(octave) + 1) + LETTER_PC[letter] + ACCIDENTAL[accidental];
 }
 
 export function pitchName(midi: number) {

@@ -67,6 +67,8 @@ The menu letters, labels and titles below are the ones shown by the program. The
 | J | BLUE | Blue Danube Waltz by J.S.Strauss | *An der schönen blauen Donau*, Op. 314, by Johann Strauss II. Composed in 1866 and first performed on 15 February 1867. The program plays it in D major, the key of the famous waltz theme. |
 | K | SCALES | SCALES | Not a piece: a chromatic scale of 28 notes, from A♯3 up to C♯6 and back down. |
 
+In Bop Box every tune can also be played complete: the whole march, the whole movement, the whole waltz. And with the **Original Score** style you hear three of them the way their composers scored them: every part of Gounod's orchestra, Sousa's band and Mozart's symphony orchestra, read from free editions of the full scores. [PORT-ARCHITECTURE.md](PORT-ARCHITECTURE.md) lists the editions.
+
 ## Why the labels are jokes
 
 Every label had to be an eight-character DOS file name in version 1.00, so IBM abbreviated, sometimes with a pun:

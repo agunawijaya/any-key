@@ -30,11 +30,13 @@ when the system asks for reduced motion. Press any letter key on the Hall and se
 
 ### Bop Box
 
-Eleven tunes from the 1981 PC, each playable in ten styles: Orchestra, Pop, Jazz, House, Dangdut,
-Koplo, Lo-fi, Solo (18 instruments), PC Speaker ’81 (the original beeps, recreated exactly) and an
-AI Remix composed by Claude in a different genre for every tune. Watch it as sheet music, falling
-notes, Indonesian numbered notation (*not angka*) or a stage full of musicians, and download any
-arrangement as MIDI or WAV. The docs in `docs/music/` explain the original and the rebuild.
+Eleven tunes from the 1981 PC, as the 1981 program played them or complete, each playable in twelve
+styles: Orchestra, Pop, Jazz, House, Dangdut, Koplo, Lo-fi, Hip-hop, Solo (18 instruments), PC Speaker
+’81 (the original beeps, recreated exactly), an AI Remix composed by Claude in a different genre for
+every tune, and the Original Score: Gounod, Sousa and Mozart played part by part from their own full
+scores. Watch it as sheet music, falling notes, Indonesian numbered notation (*not angka*) or a stage
+full of musicians, and download any arrangement as MIDI or WAV. The docs in `docs/music/` explain the
+original and the rebuild.
 
 ### Stickler
 
@@ -75,7 +77,7 @@ Then open http://localhost:3000.
 Useful checks:
 
 ```bash
-npm run check:music      # every tune parses; all 110 arrangements build
+npm run check:music      # every tune parses; every arrangement builds; the 1981 versions are unchanged
 npm run check:audio      # renders every style offline and flags silence or clipping
 npm run check:stickler   # plays thousands of Stickler games to prove the maths
 npm run build:soundfont -- path/to/MuseScore_General.sf3   # rebuild public/soundfont/bopbox.sf3

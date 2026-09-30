@@ -24,7 +24,7 @@ export const programs: Program[] = [
     id: "music",
     title: "Bop Box",
     kind: "Music studio",
-    tagline: "Eleven tunes from 1981. Ten ways to make them bop.",
+    tagline: "Eleven tunes from 1981. Twelve ways to make them bop.",
     blurb:
       "A tiny jukebox from the first days of the PC, rebuilt with live sheet music, a glowing keyboard and a whole band behind every note.",
     status: "playable",
@@ -33,7 +33,7 @@ export const programs: Program[] = [
     palette: ["#ff4f9a", "#6a48ff", "#13c2e3"],
     stats: [
       { value: "11", label: "tunes" },
-      { value: "10", label: "styles" },
+      { value: "12", label: "styles" },
       { value: "1981", label: "first played" },
     ],
     modes: [
@@ -44,9 +44,11 @@ export const programs: Program[] = [
       "Dangdut",
       "Koplo",
       "Lo-fi",
+      "Hip-hop",
       "Solo",
       "PC Speaker ’81",
       "AI Remix",
+      "Original Score",
     ],
     moons: [
       "La Cucaracha",

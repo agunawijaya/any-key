@@ -1,16 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { arrange, remixInfo, STYLES, type StyleId } from "@/lib/music/arrange";
 import { SOLO_INSTRUMENTS, type SoloInstrumentId } from "@/lib/music/arrange/patches";
 import type { Arrangement } from "@/lib/music/arrange/types";
 import { BopEngine } from "@/lib/music/engine";
-import { songById, songs } from "@/lib/music/songs";
+import { loadOriginal, originalFor, originalReady, subscribeOriginal } from "@/lib/music/original";
+import { setBopPrefs, useBopPrefs } from "@/lib/music/prefs";
+import { measureAt, type SongVersion } from "@/lib/music/score";
+import { hasFull, mapVersionBeat, songById, songs } from "@/lib/music/songs";
+import { barIndexAt, bpmAt, secondsAt } from "@/lib/music/tempo";
 import { keyboardRange } from "@/lib/music/timeline";
 import { PrefsSync } from "@/components/hall/PrefsSync";
 import { ThemeButton } from "@/components/ui/ThemeButton";
 import { Keyboard } from "./Keyboard";
+import { useHashTab } from "@/components/kit/useHashTab";
 import { Story, type DocTab } from "@/components/kit/Story";
 import { Transport } from "./Transport";
 import { AngkaView } from "./views/AngkaView";
@@ -37,12 +42,19 @@ export type Clock = {
   scoreBeat: () => number;
 };
 
+const TABS = ["studio", "story"] as const;
+
+const clockText = (seconds: number) => {
+  const s = Math.round(seconds);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+};
+
 export function BopBox({ docs }: { docs: DocTab[] }) {
   const [songId, setSongId] = useState("blue");
   const [styleId, setStyleId] = useState<StyleId>("orchestra");
   const [instrument, setInstrument] = useState<SoloInstrumentId>("piano");
   const [view, setView] = useState<ViewId>("sheet");
-  const [tab, setTab] = useState<"studio" | "story">("studio");
+  const [tab, setTab] = useHashTab(TABS);
   const [loadState, setLoadState] = useState<{ state: "loading" | "ready" | "error"; progress: number }>({ state: "loading", progress: 0 });
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
@@ -50,8 +62,28 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
   const [muted, setMuted] = useState<Set<string>>(() => new Set());
   const [position, setPosition] = useState(0);
 
-  const song = songById(songId);
-  const arrangement = useMemo(() => arrange(songId, styleId, instrument), [songId, styleId, instrument]);
+  const prefs = useBopPrefs();
+  const version: SongVersion = hasFull(songId) ? prefs.version : "short";
+  const song = songById(songId, version);
+  // The Original Score's notes load on demand; until they arrive the Orchestra style stands in.
+  const score = originalFor(songId);
+  const scoreReady = useSyncExternalStore(subscribeOriginal, () => originalReady(songId), () => false);
+  const scoreLoading = styleId === "original" && !!score && !scoreReady;
+  // A tune without a score (or one still loading) plays the Orchestra style meanwhile.
+  const standIn = styleId === "original" && (!score || scoreLoading);
+  const playedStyle: StyleId = standIn ? "orchestra" : styleId;
+  useEffect(() => {
+    if (styleId === "original") void loadOriginal(songId);
+  }, [styleId, songId]);
+  const arrangement = useMemo(() => arrange(songId, playedStyle, instrument, version), [songId, playedStyle, instrument, version]);
+  // How long each version runs in this style, for the switch's labels.
+  const lengths = useMemo(() => {
+    const seconds = (v: SongVersion) => {
+      const a = arrange(songId, playedStyle, instrument, v);
+      return secondsAt(a.tempos, a.length);
+    };
+    return { short: seconds("short"), full: hasFull(songId) ? seconds("full") : null };
+  }, [songId, playedStyle, instrument]);
   const range = useMemo<[number, number]>(() => (styleId === "pc81" ? [59, 84] : keyboardRange(arrangement)), [arrangement, styleId]);
 
   const engineRef = useRef<BopEngine | null>(null);
@@ -79,7 +111,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
           // Wait three beats ahead of the playhead, then glide in so the first note lands on time.
           return Math.max(-3, (beat - start) / groovePerScoreBeat);
         }
-        return songById(a.songId).length;
+        return songById(a.songId, a.version).length;
       },
     }),
     [],
@@ -110,7 +142,10 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
     let atBeat = 0;
     if (previous && previous.songId === arrangement.songId) {
       const songBeat = previous.toSongBeat(engine.beat);
-      if (songBeat !== null) atBeat = Math.max(0, arrangement.fromSongBeat(songBeat) - 0.02);
+      if (songBeat !== null) {
+        const mapped = mapVersionBeat(arrangement.songId, songBeat, previous.version, arrangement.version);
+        atBeat = Math.max(0, arrangement.fromSongBeat(mapped) - 0.02);
+      }
     }
     loadedRef.current = arrangement;
     engine.load(arrangement, { atBeat, play: playingRef.current }).catch(() => {
@@ -177,7 +212,8 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
       const songMatch = songs.find((s) => s.letter === key);
       if (songMatch) return pickSong(songMatch.id);
       const styleMatch = STYLES.find((s) => s.key === event.key);
-      if (styleMatch) return setStyleId(styleMatch.id);
+      if (styleMatch && !(styleMatch.id === "original" && !originalFor(arrangementRef.current.songId))) return setStyleId(styleMatch.id);
+      if (key === "L") return setBopPrefs({ version: prefs.version === "full" ? "short" : "full" });
       if (event.key === " " && !/^(BUTTON|A)$/.test(target.tagName)) {
         event.preventDefault();
         void togglePlay();
@@ -186,17 +222,31 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
       } else if ((event.key === "ArrowRight" || event.key === "ArrowLeft") && target.getAttribute("role") !== "slider") {
         const engine = engineRef.current;
         if (!engine) return;
-        const step = arrangementRef.current.barBeats * (event.key === "ArrowRight" ? 1 : -1);
+        const { grid } = arrangementRef.current;
+        const bar = barIndexAt(grid, engine.beat);
+        const step = event.key === "ArrowRight" ? grid[bar].len : -grid[Math.max(0, bar - 1)].len;
         seek(engine.beat + step);
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [pickSong, seek, tab, togglePlay]);
+  }, [pickSong, prefs.version, seek, tab, togglePlay]);
 
   const style = STYLES.find((s) => s.id === styleId)!;
   const remix = remixInfo(songId);
-  const styleName = styleId === "remix" ? `AI Remix · ${remix.genre}` : styleId === "solo" ? arrangement.label : style.name;
+  const styleName =
+    styleId === "remix" ? `AI Remix · ${remix.genre}` : styleId === "solo" ? arrangement.label : styleId === "original" && scoreLoading
+          ? "Original Score · opening the score…"
+          : standIn
+            ? "Orchestra · no original score for this tune yet"
+            : styleId === "original" && score?.kind === "ours"
+              ? "Original Score · our setting"
+              : style.name;
+  const about = styleId === "remix" ? remix.why : styleId === "original" && score ? `${song.about} ${score.credit}.` : song.about;
+  // Where we are in the written music: a long piece changes section, meter and tempo along the way.
+  const here = measureAt(song, arrangement.toSongBeat(position) ?? (position < arrangement.fromSongBeat(0) ? 0 : song.length));
+  const hereBeat = arrangement.toSongBeat(position) ?? 0;
+  const sectionName = version === "full" ? [...song.sections].reverse().find((s) => s.at <= hereBeat + 1e-6)?.name : undefined;
 
   return (
     <div className={styles.app} data-style={styleId}>
@@ -256,17 +306,35 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
                 <div>
                   <p className={styles.kicker}>
                     <span className={styles.styleChip}>
-                      <span aria-hidden>{styleId === "remix" ? "🧪" : style.emoji}</span> {styleName}
+                      <span aria-hidden>{styleId === "remix" ? "🧪" : standIn ? "🎻" : style.emoji}</span> {styleName}
                     </span>
                     <span className={styles.meta}>
-                      {song.meter.top}/{song.meter.bottom} ·{" "}
-                      {styleId === "pc81" ? "timed in 1/18.2 s ticks" : `${Math.round(arrangement.bpm * rate)} BPM`}
+                      {sectionName && `${sectionName} · `}
+                      {here.meter.top}/{here.meter.bottom} ·{" "}
+                      {styleId === "pc81" ? "timed in 1/18.2 s ticks" : `${Math.round(bpmAt(arrangement.tempos, position) * rate)} BPM`}
                     </span>
                   </p>
                   <h1 className={styles.songTitle}>{song.title}</h1>
                   <p className={styles.songAbout}>
-                    <strong>{song.composer}.</strong> {styleId === "remix" ? remix.why : song.about}
+                    <strong>{song.composer}.</strong> {about}
                   </p>
+                </div>
+                <div className={styles.versions} role="radiogroup" aria-label="Length">
+                  {(["short", "full"] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="radio"
+                      aria-checked={version === v}
+                      disabled={v === "full" && lengths.full === null}
+                      title={v === "short" ? "The excerpt the 1981 program played" : lengths.full === null ? "No full version of this tune yet" : "The whole piece"}
+                      onClick={() => setBopPrefs({ version: v })}
+                    >
+                      <span className={styles.versionName}>{v === "short" ? "1981" : "Full"}</span>
+                      <span className={styles.versionTime}>{v === "short" ? clockText(lengths.short) : lengths.full === null ? "soon" : clockText(lengths.full)}</span>
+                    </button>
+                  ))}
+                  <kbd className={styles.versionKey}>L</kbd>
                 </div>
               </div>
 
@@ -293,7 +361,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
 
             <aside className={styles.controls} aria-label="Styles">
               <h2 className={styles.panelTitle}>
-                Styles <kbd>1</kbd>–<kbd>0</kbd>
+                Styles <kbd>1</kbd>–<kbd>0</kbd> <kbd>=</kbd> <kbd>-</kbd>
               </h2>
               <div className={styles.styleGrid}>
                 {STYLES.map((s) => (
@@ -303,13 +371,17 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
                     className={styles.styleCard}
                     data-card={s.id}
                     aria-pressed={s.id === styleId}
+                    disabled={s.id === "original" && !score}
+                    title={s.id === "original" && !score ? "No score for this tune yet" : undefined}
                     onClick={() => setStyleId(s.id)}
                   >
                     <span className={styles.styleEmoji} aria-hidden>
                       {s.emoji}
                     </span>
                     <span className={styles.styleName}>{s.id === "remix" ? `AI Remix` : s.name}</span>
-                    <span className={styles.styleBlurb}>{s.id === "remix" ? `${remix.genre}, arranged by Claude` : s.blurb}</span>
+                    <span className={styles.styleBlurb}>
+                      {s.id === "remix" ? `${remix.genre}, arranged by Claude` : s.id === "original" ? (score?.label ?? "No score for this tune yet") : s.blurb}
+                    </span>
                     <kbd className={styles.styleKey}>{s.key}</kbd>
                   </button>
                 ))}
@@ -358,7 +430,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
             rate={rate}
             loop={loop}
             engine={engineRef}
-            fileName={`${song.title} (${styleName})`}
+            fileName={`${song.title}${version === "full" ? " (full)" : ""} (${styleName})`}
             onToggle={togglePlay}
             onSeek={seek}
             onRate={setRate}

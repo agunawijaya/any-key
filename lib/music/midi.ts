@@ -26,9 +26,12 @@ export function toMidi(arrangement: Arrangement): { bytes: Uint8Array; channels:
   const channels = assignChannels(arrangement.tracks);
   const chunks: number[][] = [];
 
-  const tempo = Math.round(60_000_000 / arrangement.bpm);
+  const tempo = (bpm: number) => {
+    const micros = Math.round(60_000_000 / bpm);
+    return [0xff, 0x51, 0x03, (micros >> 16) & 0xff, (micros >> 8) & 0xff, micros & 0xff];
+  };
   const meta: Event[] = [
-    { tick: 0, order: 0, bytes: [0xff, 0x51, 0x03, (tempo >> 16) & 0xff, (tempo >> 8) & 0xff, tempo & 0xff] },
+    { tick: 0, order: 0, bytes: tempo(arrangement.tempos[0]?.bpm ?? arrangement.bpm) },
     {
       tick: 0,
       order: 0,
@@ -36,6 +39,17 @@ export function toMidi(arrangement: Arrangement): { bytes: Uint8Array; channels:
     },
     { tick: 0, order: 0, bytes: [0xff, 0x03, ...text(`Bop Box · ${arrangement.label}`)] },
   ];
+  for (const change of arrangement.tempos.slice(1)) meta.push({ tick: toTicks(change.at), order: 0, bytes: tempo(change.bpm) });
+  // A long piece changes meter along the way: mark every change of bar length (but not a short closing bar).
+  if (arrangement.styleId !== "pc81") {
+    const grid = arrangement.grid;
+    for (let i = 1; i < grid.length - 1; i++) {
+      const len = grid[i].len;
+      if (Math.abs(len - grid[i - 1].len) < 1e-6) continue;
+      const whole = Math.abs(len - Math.round(len)) < 1e-6;
+      meta.push({ tick: toTicks(grid[i].at), order: 0, bytes: [0xff, 0x58, 0x04, whole ? Math.round(len) : Math.round(len * 2), whole ? 2 : 3, 24, 8] });
+    }
+  }
   chunks.push(trackChunk(meta, toTicks(arrangement.length)));
 
   for (const track of arrangement.tracks) {
@@ -54,7 +68,11 @@ export function toMidi(arrangement: Arrangement): { bytes: Uint8Array; channels:
     for (const a of track.automation) {
       const tick = toTicks(a.at);
       if (a.kind === "cc") events.push({ tick, order: 2, bytes: [0xb0 | ch, a.cc, clamp(a.value)] });
-      else {
+      else if (a.kind === "program") {
+        // Before the notes that start on the same tick (order 1 would be note-offs; 2 keeps it after them).
+        events.push({ tick, order: 2, bytes: [0xb0 | ch, 0, a.patch.bank ?? 0] });
+        events.push({ tick, order: 2, bytes: [0xc0 | ch, a.patch.program] });
+      } else {
         const value = Math.max(0, Math.min(16383, 8192 + Math.round(a.value)));
         events.push({ tick, order: 2, bytes: [0xe0 | ch, value & 0x7f, (value >> 7) & 0x7f] });
       }

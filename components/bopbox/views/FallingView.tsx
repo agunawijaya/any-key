@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import type { Arrangement } from "@/lib/music/arrange/types";
-import { indexTracks, keyShapes } from "@/lib/music/timeline";
+import { barIndexAt } from "@/lib/music/tempo";
+import { firstSoundingFrom, indexTracks, keyShapes } from "@/lib/music/timeline";
 import type { Clock } from "../BopBox";
 import styles from "./FallingView.module.css";
 
@@ -51,18 +52,21 @@ export function FallingView({ arrangement, clock, range, muted }: Props) {
       // Octave lanes and moving bar lines.
       ctx.fillStyle = palette.faint;
       for (const key of keys) if (!key.black && key.pitch % 12 === 0) ctx.fillRect(key.x * unit, 0, 1, h);
-      const firstBar = Math.floor(beat / arrangement.barBeats) * arrangement.barBeats;
-      for (let b = firstBar; b <= beat + lookahead; b += arrangement.barBeats / (arrangement.barBeats % 3 === 0 ? 3 : 4)) {
-        const y = h - (b - beat) * pxPerBeat;
-        const isBar = Math.abs(b / arrangement.barBeats - Math.round(b / arrangement.barBeats)) < 1e-6;
-        ctx.fillStyle = isBar ? palette.line : palette.faint;
-        ctx.fillRect(0, y, w, 1);
+      const grid = arrangement.grid;
+      for (let i = barIndexAt(grid, beat); i < grid.length && grid[i].at <= beat + lookahead; i++) {
+        const bar = grid[i];
+        const step = bar.len / (bar.len % 3 === 0 ? 3 : 4);
+        for (let b = bar.at; b < bar.at + bar.len - 1e-6 && b <= beat + lookahead; b += step) {
+          ctx.fillStyle = b === bar.at ? palette.line : palette.faint;
+          ctx.fillRect(0, h - (b - beat) * pxPerBeat, w, 1);
+        }
       }
 
       for (const index of indexes) {
         if (muted.has(index.track.id)) continue;
         const color = darken(index.track.color, palette.shade / 100);
-        for (const note of index.notes) {
+        for (let i = firstSoundingFrom(index, beat - 0.1); i < index.notes.length; i++) {
+          const note = index.notes[i];
           if (note.at > beat + lookahead) break;
           if (note.at + note.dur < beat - 0.1) continue;
           const key = byPitch.get(note.pitch);

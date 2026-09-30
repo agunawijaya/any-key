@@ -1,4 +1,4 @@
-import type { Song } from "../score";
+import { measureAt, type Measure, type Meter, type Song } from "../score";
 import { enrich, hashString, nearestWithPc, pitchClass, seeded, voice, type Chord } from "../theory";
 import { ROLE_COLOR } from "./patches";
 import type { ArrNote, Arrangement, Feel, Patch, Role, Track } from "./types";
@@ -18,6 +18,11 @@ export type StudioOptions = {
   swing?: number;
   introBars?: number;
   outroBars?: number;
+  /**
+   * How many times the tune plays. A full-length piece is never repeated:
+   * it is split into this many parts instead, at section boundaries, so a
+   * style's "second pass" (a drop, a key change) still arrives halfway.
+   */
   passes?: number;
   /** How many groove beats one score beat lasts (2 = the tune at half speed over the groove). */
   timeScale?: number;
@@ -26,11 +31,15 @@ export type StudioOptions = {
   enrichChords?: boolean;
   crackle?: boolean;
   gain?: number;
+  /** Follow the score's tempo changes (an introduction slower than the waltz, say). */
+  followTempo?: boolean;
+  /** In four: squeeze a waltz bar into two beats of triplets instead of stretching its first beat. */
+  tripletWaltz?: boolean;
 };
 
 export type Section = "intro" | "leadin" | "main" | "outro";
 
-export type Bar = { start: number; len: number; index: number; section: Section; pass: number; barInPass: number };
+export type Bar = { start: number; len: number; index: number; section: Section; pass: number; barInPass: number; feel: Feel };
 
 /** Steps per beat in every pattern string (sixteenth notes). */
 const STEPS = 4;
@@ -39,22 +48,66 @@ export type FeelPatterns<T> = Partial<Record<Feel, T>>;
 
 type Span = { at: number; dur: number; chord: Chord };
 
+/** How a score bar sits in the groove: a waltz bar can grow to four beats, a 6/8 bar can become two. */
+type Stretch = "none" | "waltz" | "compound" | "half";
+
+type MeterPlan = { stretch: Stretch; feel: Feel; songBarLen: number; unit: number };
+
+function planMeter({ top, bottom }: Meter, policy: MeterPolicy, tripletWaltz = false): MeterPlan {
+  const is34 = top === 3 && bottom === 4;
+  const is68 = top === 6 && bottom === 8;
+  const full = (top * 4) / bottom;
+  if (policy === "four" && is34 && tripletWaltz) return { stretch: "compound", feel: "four", songBarLen: 2, unit: 4 };
+  // Cut time counts in half notes: each half note is one beat of the groove.
+  if (top === 2 && bottom === 2) return { stretch: "half", feel: policy === "four" ? "four" : "two", songBarLen: 2, unit: policy === "four" ? 4 : 2 };
+  if (policy === "four") {
+    // A waltz bar grows to four beats; a 6/8 bar's two dotted beats become two plain beats.
+    return { stretch: is34 ? "waltz" : is68 ? "compound" : "none", feel: "four", songBarLen: is34 ? 4 : is68 ? 2 : full, unit: 4 };
+  }
+  return { stretch: "none", feel: is34 ? "three" : is68 ? "compound" : top === 2 ? "two" : "four", songBarLen: full, unit: full };
+}
+
+function mapLocal(stretch: Stretch, local: number) {
+  if (stretch === "waltz") return local < 1 ? local * 2 : local + 1;
+  if (stretch === "compound") return (local * 2) / 3;
+  if (stretch === "half") return local / 2;
+  return local;
+}
+
+function unmapLocal(stretch: Stretch, local: number) {
+  if (stretch === "waltz") return local < 2 ? local / 2 : local - 1;
+  if (stretch === "compound") return (local * 3) / 2;
+  if (stretch === "half") return local * 2;
+  return local;
+}
+
+/** A score bar placed in the groove, before time scaling: `base` is where it starts. */
+type Placed = { m: Measure; plan: MeterPlan; base: number; span: number };
+
+/** One stretch of groove: a pass of the tune, or a part of a long piece. */
+type Part = { start: number; len: number; offset: number; from: number; to: number };
+
+type Tile = { start: number; len: number; feel: Feel };
+
 export class Studio {
   readonly song: Song;
   readonly opt: Required<Omit<StudioOptions, "passTranspose">> & { passTranspose: number[] };
   readonly rng: () => number;
   readonly feel: Feel;
   readonly barBeats: number;
-  /** Length of one song bar once mapped into the groove. */
-  readonly songBarLen: number;
   readonly introBeats: number;
-  readonly passLen: number;
   readonly passStarts: number[];
   readonly length: number;
   readonly bars: Bar[];
   readonly spans: Span[];
   readonly tracks: Track[] = [];
-  private stretch: "none" | "waltz" | "compound";
+  private readonly placed: Placed[] = [];
+  private pickupPlaced: Placed | null = null;
+  private readonly parts: Part[];
+  /** The tune's groove length, padded to whole bars. */
+  private readonly songSpan: number;
+  private readonly split: boolean;
+  private readonly barStarts: Set<number>;
 
   constructor(
     song: Song,
@@ -72,80 +125,165 @@ export class Studio {
       crackle: false,
       timeScale: 1,
       gain: 1,
+      followTempo: false,
+      tripletWaltz: false,
       ...options,
       passTranspose: options.passTranspose ?? [],
     };
     this.rng = seeded(hashString(`${song.id}/${styleId}`));
+    const ts = this.opt.timeScale;
+    const main = planMeter(song.meter, this.opt.policy, this.opt.tripletWaltz);
+    this.feel = main.feel;
+    this.barBeats = main.unit;
 
-    const { top, bottom } = song.meter;
-    const is34 = top === 3 && bottom === 4;
-    const is68 = top === 6 && bottom === 8;
-    if (this.opt.policy === "four") {
-      this.feel = "four";
-      this.barBeats = 4;
-      this.stretch = is34 ? "waltz" : is68 ? "compound" : "none";
-      // A waltz bar grows to four beats; a 6/8 bar's two dotted beats become two plain beats.
-      this.songBarLen = is34 ? 4 : is68 ? 2 : song.barBeats;
-    } else {
-      this.feel = is34 ? "three" : is68 ? "compound" : top === 2 ? "two" : "four";
-      this.barBeats = song.barBeats;
-      this.stretch = "none";
-      this.songBarLen = song.barBeats;
+    // Place every written bar in the groove. A pickup hangs off the front, before beat 0.
+    let base = 0;
+    song.measures.forEach((m, i) => {
+      const plan = planMeter(m.meter, this.opt.policy, this.opt.tripletWaltz);
+      if (m.number === 0) {
+        this.pickupPlaced = { m, plan, base: -plan.songBarLen, span: plan.songBarLen };
+        return;
+      }
+      // The closing bar keeps its whole length, so the ending chord has room.
+      const span = i === song.measures.length - 1 ? plan.songBarLen : mapLocal(plan.stretch, m.len);
+      this.placed.push({ m, plan, base, span });
+      base += span;
+    });
+
+    // Groove bars for the tune: whole bars of each stretch's unit; the very end is padded.
+    const tiles: Tile[] = [];
+    let runStart = 0;
+    for (let i = 1; i <= this.placed.length; i++) {
+      const p = this.placed[i];
+      const prev = this.placed[i - 1];
+      if (p && p.plan.unit === prev.plan.unit && p.plan.feel === prev.plan.feel) continue;
+      const end = (p ? p.base : base) * ts;
+      const unit = prev.plan.unit;
+      const until = p ? end : runStart + Math.ceil((end - runStart) / unit - 1e-6) * unit;
+      for (let t = runStart; t < until - 1e-6; t += unit) tiles.push({ start: t, len: Math.min(unit, until - t), feel: prev.plan.feel });
+      runStart = until;
     }
+    this.songSpan = runStart;
 
+    const first = this.pickupPlaced ?? this.placed[0];
+    const last = this.placed[this.placed.length - 1] ?? first;
     const leadIn = song.pickup > 0 && this.opt.introBars === 0 ? 1 : 0;
-    this.introBeats = (this.opt.introBars + leadIn) * this.barBeats;
-    this.passLen = Math.ceil((song.bars * this.songBarLen * this.opt.timeScale) / this.barBeats - 1e-6) * this.barBeats;
-    this.passStarts = Array.from({ length: this.opt.passes }, (_, p) => this.introBeats + p * this.passLen);
-    this.length = this.introBeats + this.opt.passes * this.passLen + this.opt.outroBars * this.barBeats;
+    this.introBeats = (this.opt.introBars + leadIn) * first.plan.unit;
+    this.split = song.version === "full" && this.opt.passes > 1;
+    this.parts = this.split
+      ? this.splitParts(tiles)
+      : Array.from({ length: this.opt.passes }, (_, p) => {
+          const offset = this.introBeats + p * this.songSpan;
+          return { start: offset, len: this.songSpan, offset, from: -Infinity, to: Infinity };
+        });
+    this.passStarts = this.parts.map((part) => part.start);
+    const tuneEnd = this.introBeats + (this.split ? 1 : this.opt.passes) * this.songSpan;
+    this.length = tuneEnd + this.opt.outroBars * last.plan.unit;
 
     this.bars = [];
-    for (let start = 0, index = 0; start < this.length - 1e-6; start += this.barBeats, index++) {
-      let section: Section = "main";
+    const perPart = new Map<number, number>();
+    const push = (start: number, len: number, section: Section, feel: Feel) => {
       let pass = 0;
-      if (start < this.introBeats) section = index < this.opt.introBars ? "intro" : "leadin";
-      else if (start >= this.introBeats + this.opt.passes * this.passLen) section = "outro";
-      else pass = Math.floor((start - this.introBeats) / this.passLen);
-      const barInPass = section === "main" ? Math.round((start - this.passStarts[pass]) / this.barBeats) : -1;
-      this.bars.push({ start, len: Math.min(this.barBeats, this.length - start), index, section, pass, barInPass });
+      let barInPass = -1;
+      if (section === "main") {
+        pass = this.partIndexAt(start);
+        barInPass = perPart.get(pass) ?? 0;
+        perPart.set(pass, barInPass + 1);
+      }
+      this.bars.push({ start, len: Math.min(len, this.length - start), index: this.bars.length, section, pass, barInPass, feel });
+    };
+    for (let i = 0; i < this.opt.introBars + leadIn; i++) push(i * first.plan.unit, first.plan.unit, i < this.opt.introBars ? "intro" : "leadin", first.plan.feel);
+    for (let c = 0; c < (this.split ? 1 : this.opt.passes); c++) {
+      for (const tile of tiles) push(this.introBeats + c * this.songSpan + tile.start, tile.len, "main", tile.feel);
     }
+    for (let i = 0; i < this.opt.outroBars; i++) push(tuneEnd + i * last.plan.unit, last.plan.unit, "outro", last.plan.feel);
+    this.barStarts = new Set(this.bars.map((b) => b.start));
 
     this.spans = this.buildSpans();
   }
 
+  /** Splits a long piece into parts at the section starts nearest to equal shares. */
+  private splitParts(tiles: Tile[]): Part[] {
+    const count = this.opt.passes;
+    const boundaries = this.song.sections
+      .map((s) => tiles.find((t) => t.start >= this.relative(s.at) - 1e-6)?.start)
+      .filter((g): g is number => g !== undefined && g > 0 && g < this.songSpan);
+    const cuts: number[] = [0];
+    for (let p = 1; p < count; p++) {
+      const target = (this.songSpan * p) / count;
+      const best = boundaries.reduce((a, b) => (Math.abs(b - target) < Math.abs(a - target) ? b : a), boundaries[0] ?? target);
+      cuts.push(Math.max(best, cuts[cuts.length - 1]));
+    }
+    cuts.push(this.songSpan);
+    return Array.from({ length: count }, (_, p) => ({
+      start: this.introBeats + cuts[p],
+      len: cuts[p + 1] - cuts[p],
+      offset: this.introBeats,
+      from: p === 0 ? -Infinity : this.unrelative(cuts[p]),
+      to: p === count - 1 ? Infinity : this.unrelative(cuts[p + 1]),
+    }));
+  }
+
+  private partIndexAt(beat: number) {
+    for (let p = this.parts.length - 1; p >= 0; p--) if (beat >= this.parts[p].start - 1e-6) return p;
+    return 0;
+  }
+
   // ---------- Time mapping ----------
 
-  private mapLocal(local: number) {
-    if (this.stretch === "waltz") return local < 1 ? local * 2 : local + 1;
-    if (this.stretch === "compound") return (local * 2) / 3;
-    return local;
+  private placedAt(songBeat: number): Placed {
+    const list = this.placed;
+    const pickup = this.pickupPlaced;
+    if (pickup && (songBeat < pickup.m.at + pickup.m.len - 1e-9 || !list.length)) return pickup;
+    let lo = 0;
+    let hi = list.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (list[mid].m.at <= songBeat + 1e-9) lo = mid;
+      else hi = mid - 1;
+    }
+    return list[lo];
   }
 
-  private unmapLocal(local: number) {
-    if (this.stretch === "waltz") return local < 2 ? local / 2 : local - 1;
-    if (this.stretch === "compound") return (local * 3) / 2;
-    return local;
-  }
-
-  /** Score beat → beat relative to the start of song bar 1 in the groove. */
+  /** Score beat → beat relative to the start of the first whole bar, in the groove. */
   relative(songBeat: number) {
-    const B = this.song.barBeats;
-    const v = songBeat - this.song.pickup;
-    const k = Math.floor(v / B + 1e-9);
-    return (k * this.songBarLen + this.mapLocal(v - k * B)) * this.opt.timeScale;
+    const p = this.placedAt(songBeat);
+    const local = p === this.pickupPlaced ? p.m.full - p.m.len + (songBeat - p.m.at) : songBeat - p.m.at;
+    return (p.base + mapLocal(p.plan.stretch, local)) * this.opt.timeScale;
   }
 
   private unrelative(scaled: number) {
     const r = scaled / this.opt.timeScale;
-    const k = Math.floor(r / this.songBarLen + 1e-9);
-    return this.song.pickup + k * this.song.barBeats + this.unmapLocal(r - k * this.songBarLen);
+    const list = this.placed;
+    const pickup = this.pickupPlaced;
+    if (pickup && (r < 0 || !list.length)) {
+      return pickup.m.at + unmapLocal(pickup.plan.stretch, r + pickup.plan.songBarLen) - (pickup.m.full - pickup.m.len);
+    }
+    let lo = 0;
+    let hi = list.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (list[mid].base <= r + 1e-9) lo = mid;
+      else hi = mid - 1;
+    }
+    const p = list[lo];
+    return p.m.at + unmapLocal(p.plan.stretch, r - p.base);
+  }
+
+  /** Where the written music ends in the groove (its closing bar at full length). */
+  private placedEnd() {
+    const last = this.placed[this.placed.length - 1];
+    return last ? (last.base + last.span) * this.opt.timeScale : 0;
   }
 
   toSongBeat = (beat: number) => {
     const pickupSpan = -this.relative(0);
-    for (let p = this.opt.passes - 1; p >= 0; p--) {
-      const r = beat - this.passStarts[p];
-      if (r >= -pickupSpan - 1e-6 && r < this.song.bars * this.songBarLen * this.opt.timeScale) {
+    for (let p = this.parts.length - 1; p >= 0; p--) {
+      const part = this.parts[p];
+      const r = beat - part.offset;
+      const lo = p === 0 || !this.split ? -pickupSpan : part.start - part.offset;
+      const hi = this.split && p < this.parts.length - 1 ? part.start + part.len - part.offset : this.placedEnd();
+      if (r >= lo - 1e-6 && r < hi) {
         const s = this.unrelative(r);
         return s >= 0 && s <= this.song.length ? s : null;
       }
@@ -155,44 +293,96 @@ export class Studio {
 
   fromSongBeat = (songBeat: number) => this.passStarts[0] + this.relative(songBeat);
 
+  /** The groove's tempo over time: the style's own, or the score's changes when the style follows them. */
+  private tempoMap(bpm: number) {
+    const song = this.song;
+    // Styles that keep the score's meter give its tempo in quarter notes; cut time then counts halves.
+    const halved = (meter: Meter) => this.opt.policy === "keep" && planMeter(meter, this.opt.policy).stretch === "half";
+    const steady = song.tempos.length < 2 && song.measures.every((m) => halved(m.meter) === halved(song.meter));
+    if (!this.opt.followTempo || steady) return [{ at: 0, bpm }];
+    const factor = bpm / (song.bpm * (halved(song.meter) ? 0.5 : 1));
+    const grooveBpm = (songBeat: number) => {
+      const p = this.placedAt(songBeat);
+      const tempo = [...song.tempos].reverse().find((t) => t.at <= songBeat + 1e-6)?.bpm ?? song.bpm;
+      return tempo * factor * (halved(p.m.meter) ? 0.5 : 1);
+    };
+    const points = [...new Set([...song.tempos.map((t) => t.at), ...song.measures.map((m) => m.at)])].sort((a, b) => a - b);
+    const events = [{ at: 0, bpm: grooveBpm(0) }];
+    for (const part of this.parts) {
+      for (const at of points) {
+        if (at < part.from - 1e-6 || at >= part.to - 1e-6) continue;
+        events.push({ at: Math.max(0, part.offset + this.relative(at)), bpm: grooveBpm(at) });
+      }
+    }
+    events.sort((a, b) => a.at - b.at);
+    const out: { at: number; bpm: number }[] = [];
+    for (const e of events) {
+      const prev = out[out.length - 1];
+      if (prev && Math.abs(prev.at - e.at) < 1e-6) prev.bpm = e.bpm;
+      else if (!prev || Math.abs(prev.bpm - e.bpm) > 1e-6) out.push({ ...e });
+    }
+    return out;
+  }
+
   // ---------- Chords ----------
 
   private buildSpans(): Span[] {
-    const tonic = this.song.tonicPc;
+    const song = this.song;
     const spans: Span[] = [];
-    const take = (chord: Chord) => (this.opt.enrichChords ? enrich(chord, tonic) : chord);
-    const first = this.song.chords.find((c) => c.at >= this.song.pickup - 1e-6) ?? this.song.chords[0];
-    const last = this.song.chords[this.song.chords.length - 1];
+    // Jazz colour depends on the key at that moment: the tonic gets a major seventh.
+    const take = (chord: Chord, at: number) => (this.opt.enrichChords ? enrich(chord, measureAt(song, at).key.tonicPc) : chord);
+    const first = song.chords.find((c) => c.at >= song.pickup - 1e-6) ?? song.chords[0];
+    const last = song.chords[song.chords.length - 1];
 
-    spans.push({ at: 0, dur: this.introBeats, chord: take(first.chord) });
-    this.passStarts.forEach((passStart, p) => {
+    spans.push({ at: 0, dur: this.introBeats, chord: take(first.chord, first.at) });
+    this.parts.forEach((part, p) => {
       const shift = this.opt.passTranspose[p] ?? 0;
-      for (const c of this.song.chords) {
-        const at = passStart + this.relative(c.at);
-        const end = passStart + this.relative(c.at + c.dur);
+      for (const c of song.chords) {
+        const from = Math.max(c.at, part.from);
+        const to = Math.min(c.at + c.dur, part.to);
+        if (to <= from + 1e-9) continue;
+        const at = part.offset + this.relative(from);
+        const end = part.offset + this.relative(to);
         if (end <= 0) continue;
-        spans.push({ at: Math.max(0, at), dur: end - Math.max(0, at), chord: transposeChord(take(c.chord), shift) });
+        spans.push({ at: Math.max(0, at), dur: end - Math.max(0, at), chord: transposeChord(take(c.chord, c.at), shift) });
       }
     });
-    const outroStart = this.introBeats + this.opt.passes * this.passLen;
-    const lastShift = this.opt.passTranspose[this.opt.passes - 1] ?? 0;
-    spans.push({ at: outroStart, dur: this.length - outroStart, chord: transposeChord(take(last.chord), lastShift) });
+    const outroStart = this.introBeats + (this.split ? 1 : this.opt.passes) * this.songSpan;
+    const lastShift = this.opt.passTranspose[this.parts.length - 1] ?? 0;
+    spans.push({ at: outroStart, dur: this.length - outroStart, chord: transposeChord(take(last.chord, last.at), lastShift) });
     spans.sort((a, b) => a.at - b.at);
     return spans;
   }
 
   chordAt(beat: number): Chord {
-    let found = this.spans[0];
-    for (const span of this.spans) {
-      if (span.at <= beat + 1e-6) found = span;
-      else break;
+    const spans = this.spans;
+    let lo = 0;
+    let hi = spans.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (spans[mid].at <= beat + 1e-6) lo = mid;
+      else hi = mid - 1;
     }
-    return found.chord;
+    return spans[lo].chord;
+  }
+
+  /** The groove bar a beat falls in. */
+  barAt(beat: number): Bar {
+    const bars = this.bars;
+    let lo = 0;
+    let hi = bars.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (bars[mid].start <= beat + 1e-9) lo = mid;
+      else hi = mid - 1;
+    }
+    return bars[lo];
   }
 
   /** The chord of the next bar, for walking and approach notes. */
   nextChord(beat: number) {
-    return this.chordAt(Math.floor(beat / this.barBeats + 1) * this.barBeats);
+    const bar = this.barAt(beat);
+    return this.chordAt(bar.start + bar.len);
   }
 
   // ---------- Tracks ----------
@@ -226,8 +416,13 @@ export class Studio {
     return this.bars.filter((bar) => sections.includes(bar.section));
   }
 
-  patternFor<T>(patterns: FeelPatterns<T>): T | undefined {
-    return patterns[this.feel] ?? (this.feel === "two" ? patterns.four : undefined) ?? (this.feel === "compound" ? patterns.three : undefined) ?? patterns.four;
+  patternFor<T>(patterns: FeelPatterns<T>, feel: Feel = this.feel): T | undefined {
+    return patterns[feel] ?? (feel === "two" ? patterns.four : undefined) ?? (feel === "compound" ? patterns.three : undefined) ?? patterns.four;
+  }
+
+  /** A bar's pattern as single-character cells (empty when the bar's feel has none). */
+  private cellsFor(patterns: FeelPatterns<string>, bar: Bar) {
+    return [...(this.patternFor(patterns, bar.feel) ?? "").replace(/\s/g, "")];
   }
 
   // ---------- Drums ----------
@@ -251,11 +446,12 @@ export class Studio {
       when?: (bar: Bar) => boolean;
     } = {},
   ) {
-    const main = this.patternFor(patterns);
-    const fillPattern = fill ? this.patternFor(fill) : undefined;
-    if (!main) return;
+    if (!this.patternFor(patterns)) return;
     for (const bar of this.barsIn(sections)) {
       if (when && !when(bar)) continue;
+      const main = this.patternFor(patterns, bar.feel);
+      if (!main) continue;
+      const fillPattern = fill ? this.patternFor(fill, bar.feel) : undefined;
       const position = bar.section === "main" ? bar.barInPass : bar.index;
       const isFill = fillPattern && (position + 1) % fillEvery === 0;
       const pattern = isFill ? fillPattern : main;
@@ -308,11 +504,10 @@ export class Studio {
     patterns: FeelPatterns<string>,
     { center = 40, sections = ["intro", "main"] as Section[], vel = 100, when }: { center?: number; sections?: Section[]; vel?: number; when?: (bar: Bar) => boolean } = {},
   ) {
-    const pattern = this.patternFor(patterns);
-    if (!pattern) return;
-    const cells = [...pattern.replace(/\s/g, "")];
+    if (!this.patternFor(patterns)) return;
     for (const bar of this.barsIn(sections)) {
       if (when && !when(bar)) continue;
+      const cells = this.cellsFor(patterns, bar);
       const limit = Math.round(bar.len * STEPS);
       for (let step = 0; step < Math.min(cells.length, limit); step++) {
         const ch = cells[step];
@@ -389,12 +584,11 @@ export class Studio {
     patterns: FeelPatterns<string>,
     { center = 64, size = 3, sections = ["intro", "main"] as Section[], vel = 84, when }: { center?: number; size?: number; sections?: Section[]; vel?: number; when?: (bar: Bar) => boolean } = {},
   ) {
-    const pattern = this.patternFor(patterns);
-    if (!pattern) return;
-    const cells = [...pattern.replace(/\s/g, "")];
+    if (!this.patternFor(patterns)) return;
     let previous: number[] | undefined;
     for (const bar of this.barsIn(sections)) {
       if (when && !when(bar)) continue;
+      const cells = this.cellsFor(patterns, bar);
       const limit = Math.round(bar.len * STEPS);
       for (let step = 0; step < Math.min(cells.length, limit); step++) {
         const ch = cells[step];
@@ -428,11 +622,10 @@ export class Studio {
     patterns: FeelPatterns<string>,
     { center = 64, sections = ["intro", "main"] as Section[], vel = 80, when }: { center?: number; sections?: Section[]; vel?: number; when?: (bar: Bar) => boolean } = {},
   ) {
-    const pattern = this.patternFor(patterns);
-    if (!pattern) return;
-    const cells = [...pattern.replace(/\s/g, "")];
+    if (!this.patternFor(patterns)) return;
     for (const bar of this.barsIn(sections)) {
       if (when && !when(bar)) continue;
+      const cells = this.cellsFor(patterns, bar);
       const limit = Math.round(bar.len * STEPS);
       for (let step = 0; step < Math.min(cells.length, limit); step++) {
         const ch = cells[step];
@@ -457,16 +650,17 @@ export class Studio {
 
   /** The tune in groove time, one entry per pass, ties merged. */
   melodyNotes(pass = 0): ArrNote[] {
+    const part = this.parts[pass];
     const shift = this.opt.passTranspose[pass] ?? 0;
     const out: ArrNote[] = [];
     let tied: ArrNote | null = null;
     for (const note of this.song.notes) {
-      if (note.pitch === null) {
+      if (note.pitch === null || note.at < part.from - 1e-6 || note.at >= part.to - 1e-6) {
         tied = null;
         continue;
       }
-      const at = this.passStarts[pass] + this.relative(note.at);
-      const end = this.passStarts[pass] + this.relative(note.at + note.dur);
+      const at = part.offset + this.relative(note.at);
+      const end = part.offset + this.relative(note.at + note.dur);
       const pitch = note.pitch + shift;
       if (tied && tied.pitch === pitch && Math.abs(tied.at + tied.dur - at) < 1e-6) {
         tied.dur = end - tied.at;
@@ -507,7 +701,7 @@ export class Studio {
         const room = next ? Math.max(0.05, next.at - note.at) : note.dur;
         const dur = Math.min(note.dur * articulation, room);
         const pitch = note.pitch + octave * 12;
-        const onBeat = Math.abs(note.at - Math.round(note.at)) < 1e-6 && Math.round(note.at) % this.barBeats === 0;
+        const onBeat = Math.abs(note.at - Math.round(note.at)) < 1e-6 && this.barStarts.has(Math.round(note.at));
         const v = vel + (accentDownbeats && onBeat ? 8 : 0) + (this.rng() - 0.5) * 10;
 
         if (tremolo && note.dur >= 0.5) {
@@ -603,18 +797,23 @@ export class Studio {
           : this.feel === "three"
             ? { top: 3, bottom: 4 as const }
             : { top: 6, bottom: 8 as const };
+    // Cut time counts half notes, so the groove's beat is twice as long as the score's.
+    const bpm = this.opt.bpm * (this.opt.policy === "keep" && planMeter(this.song.meter, this.opt.policy).stretch === "half" ? 0.5 : 1);
     return {
       songId: this.song.id,
+      version: this.song.version,
       styleId: this.styleId,
       label: this.label,
-      bpm: this.opt.bpm,
+      bpm,
       meter,
       barBeats: this.barBeats,
       feel: this.feel,
       length: this.length,
       swing,
       tracks: this.tracks.filter((t) => t.notes.length > 0),
-      passes: this.passStarts.map((at) => ({ at, length: this.passLen })),
+      passes: this.parts.map((part) => ({ at: part.start, length: part.len })),
+      grid: this.bars.map((bar) => ({ at: bar.start, len: bar.len })),
+      tempos: this.tempoMap(bpm),
       toSongBeat: this.toSongBeat,
       fromSongBeat: this.fromSongBeat,
       crackle: this.opt.crackle,

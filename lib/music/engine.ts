@@ -4,6 +4,7 @@ import { audioBufferToWav, Sequencer, WorkletSynthesizer } from "spessasynth_lib
 import { BasicMIDI } from "spessasynth_core";
 import type { Arrangement } from "./arrange/types";
 import { toMidi } from "./midi";
+import { beatAt, secondsAt } from "./tempo";
 
 const SOUND_BANK_URL = "/soundfont/bopbox.sf3";
 const PROCESSOR_URL = "/spessasynth/spessasynth_processor.min.js";
@@ -74,7 +75,7 @@ export class BopEngine {
     if (!a) return 0;
     if (this.isPc81) return this.speaker.beat;
     if (!this.seq) return 0;
-    return (this.songSeconds() * a.bpm) / 60;
+    return beatAt(a.tempos, this.songSeconds());
   }
 
   /**
@@ -151,7 +152,7 @@ export class BopEngine {
     seq.loopCount = this.loop ? -1 : 0;
     seq.playbackRate = this.rate;
     seq.pause();
-    seq.currentTime = (atBeat * 60) / arrangement.bpm;
+    seq.currentTime = secondsAt(arrangement.tempos, atBeat);
     this.applyMutes();
     if (play) await this.play();
   }
@@ -180,7 +181,7 @@ export class BopEngine {
     const clamped = Math.max(0, Math.min(beat, a.length - 0.01));
     this.resetClock();
     if (this.isPc81) this.speaker.seek(clamped);
-    else if (this.seq) this.seq.currentTime = (clamped * 60) / a.bpm;
+    else if (this.seq) this.seq.currentTime = secondsAt(a.tempos, clamped);
   }
 
   setRate(rate: number) {
@@ -252,7 +253,7 @@ export class BopEngine {
   /** Renders the current arrangement to a WAV file, faster than real time. */
   async renderWav(arrangement: Arrangement): Promise<Blob> {
     await this.init();
-    const seconds = (arrangement.length * 60) / arrangement.bpm + 2;
+    const seconds = secondsAt(arrangement.tempos, arrangement.length) + 2;
     const sampleRate = 44100;
     const offline = new OfflineAudioContext({ numberOfChannels: 2, length: Math.ceil(seconds * sampleRate), sampleRate });
     if (arrangement.styleId === "pc81") {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Song } from "@/lib/music/score";
+import type { Measure, Song } from "@/lib/music/score";
 import type { Clock } from "../BopBox";
 import styles from "./SheetView.module.css";
 
@@ -17,17 +17,22 @@ const DURATIONS: [number, string, boolean][] = [
   [0.5, "8", false],
   [0.375, "16", true],
   [0.25, "16", false],
+  [0.125, "32", false],
 ];
 
 /** Pixels per quarter-note beat. Every note sits exactly where its time says, so the scroll never lurches. */
 const PX_PER_BEAT = 110;
 const SCALE = 1.2;
+const STAVE_Y = 62;
+const HEIGHT = 200;
+/** Bars drawn together; a long piece is drawn a stretch at a time, just ahead of the music. */
+const CHUNK_BARS = 16;
 
 /** Splits a length into written note values ("a dotted half tied to an eighth"). */
 function spell(length: number) {
   const parts: { code: string; dotted: boolean; beats: number }[] = [];
   let left = length;
-  while (left > 0.2) {
+  while (left > 0.1) {
     const fit = DURATIONS.find(([beats]) => beats <= left + 1e-6) ?? DURATIONS[DURATIONS.length - 1];
     parts.push({ code: fit[1], dotted: fit[2], beats: fit[0] });
     left -= fit[0];
@@ -35,21 +40,111 @@ function spell(length: number) {
   return parts;
 }
 
+/** A note as written: one score note can become several tied ones. */
+type Written = { key: string; code: string; dotted: boolean; rest: boolean; beat: number; tieOn: boolean; chord?: string };
+
+/** Everything a bar's stave needs: where it goes and what it announces. */
+type BarPlan = {
+  measure: Measure;
+  x: number;
+  width: number;
+  /** Where the bar's first beat sits, from the stave's left edge. */
+  noteStart: number;
+  clef: boolean;
+  key?: { spec: string; cancel?: string };
+  time?: string;
+  section?: string;
+  tempo?: number;
+  end?: "double" | "end";
+  notes: Written[];
+};
+
+const timeSpec = (m: Measure) => (m.meter.top === 2 && m.meter.bottom === 2 ? "C|" : `${m.meter.top}/${m.meter.bottom}`);
+
+type VexFlow = typeof import("vexflow/bravura").default;
+
+/** Works out every bar of the piece, without drawing anything yet. */
+function plan(VF: VexFlow, song: Song): BarPlan[] {
+  const chordAtBeat = new Map(song.chords.map((c) => [Math.round(c.at * 1000), c.chord.symbol]));
+  const sectionAtBar = new Map<number, string>();
+  for (const section of song.sections) {
+    if (song.version !== "full") break;
+    const bar = song.measures.findIndex((m) => section.at < m.at + m.len - 1e-6);
+    if (bar >= 0 && !sectionAtBar.has(bar)) sectionAtBar.set(bar, section.name);
+  }
+
+  const bars: BarPlan[] = [];
+  const plain = new VF.Stave(0, STAVE_Y, 100).getNoteStartX();
+  let x = 10;
+  let noteIndex = 0;
+  song.measures.forEach((m, i) => {
+    const previous = song.measures[i - 1];
+    const next = song.measures[i + 1];
+    const bar: BarPlan = { measure: m, x, width: 0, noteStart: 0, clef: i === 0, notes: [] };
+    if (!previous || previous.key.doName !== m.key.doName) bar.key = { spec: m.key.doName, cancel: previous?.key.doName };
+    if (!previous || timeSpec(previous) !== timeSpec(m)) bar.time = timeSpec(m);
+    if (song.version === "full") {
+      bar.section = sectionAtBar.get(i);
+      if (previous && Math.abs(previous.bpm - m.bpm) > 0.5) bar.tempo = m.bpm;
+    }
+    if (!next) bar.end = "end";
+    else if (next.key.doName !== m.key.doName || timeSpec(next) !== timeSpec(m)) bar.end = "double";
+
+    const stave = decorate(VF, new VF.Stave(x, STAVE_Y, 100), bar);
+    bar.noteStart = stave.getNoteStartX() - x;
+    // Widths that keep every downbeat exactly its length in beats after the previous one, plus room for signatures.
+    bar.width = m.len * PX_PER_BEAT + bar.noteStart - plain;
+    x += bar.width;
+
+    while (noteIndex < song.notes.length && song.notes[noteIndex].at < m.at + m.len - 1e-6) {
+      const note = song.notes[noteIndex++];
+      const parts = spell(note.dur);
+      let at = note.at;
+      parts.forEach((part, p) => {
+        bar.notes.push({
+          key: note.name ? `${note.name[0].toLowerCase()}${note.name.slice(1, -1)}/${note.name.slice(-1)}` : "b/4",
+          code: part.code,
+          dotted: part.dotted,
+          rest: note.pitch === null,
+          beat: at,
+          tieOn: note.pitch !== null && (p < parts.length - 1 || !!note.tie),
+          chord: p === 0 ? chordAtBeat.get(Math.round(note.at * 1000)) : undefined,
+        });
+        at += part.beats;
+      });
+    }
+    bars.push(bar);
+  });
+  return bars;
+}
+
+function decorate(VF: VexFlow, stave: InstanceType<VexFlow["Stave"]>, bar: BarPlan) {
+  if (bar.clef) stave.addClef("treble");
+  if (bar.key) stave.addKeySignature(bar.key.spec, bar.key.cancel);
+  if (bar.time) stave.addTimeSignature(bar.time);
+  if (bar.section) stave.setSection(bar.section.toUpperCase(), -6, 0, 10, false);
+  if (bar.tempo) stave.setTempo({ duration: "q", bpm: Math.round(bar.tempo) }, bar.section ? -2 : -14);
+  if (bar.end === "double") stave.setEndBarType(VF.BarlineType.DOUBLE);
+  if (bar.end === "end") stave.setEndBarType(VF.BarlineType.END);
+  return stave;
+}
+
 /**
- * Sheet music for the tune, drawn once with VexFlow on a strict time grid
+ * Sheet music for the tune, drawn with VexFlow on a strict time grid
  * (x = beat × a fixed width) and slid under a fixed playhead at constant speed.
+ * Key, meter and tempo changes are printed where they happen.
  */
 export function SheetView({ song, clock }: { song: Song; clock: Clock }) {
   const hostRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const marksRef = useRef<Mark[]>([]);
-  const originRef = useRef(0);
   const [ready, setReady] = useState(false);
+  const stateRef = useRef<{ bars: BarPlan[]; marks: Mark[]; drawn: Set<number>; draw: (chunk: number) => void; shift: number } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    const host = hostRef.current;
-    if (!host) return;
+    const found = hostRef.current;
+    if (!found) return;
+    const host: HTMLDivElement = found;
 
     (async () => {
       const VF = (await import("vexflow/bravura")).default;
@@ -58,97 +153,92 @@ export function SheetView({ song, clock }: { song: Song; clock: Clock }) {
       host.innerHTML = "";
       const { Renderer, Stave, StaveNote, Voice, Formatter, Beam, Accidental, Dot, Annotation, StaveTie, Fraction } = VF;
 
-      const barBeats = song.barBeats;
-      const keySig = song.doName;
-      const timeSig = `${song.meter.top}/${song.meter.bottom}`;
+      const bars = plan(VF, song);
+      const last = bars[bars.length - 1];
+      const totalWidth = last.x + last.width + 40;
+      host.style.width = `${totalWidth * SCALE}px`;
+      host.style.height = `${HEIGHT * SCALE}px`;
+      const marks: Mark[] = [];
+      const drawn = new Set<number>();
+      const state = { bars, marks, drawn, draw: drawChunk, shift: 0 };
 
-      // Group score notes into bars (the pickup, if any, is bar 0).
-      type Bar = { start: number; length: number; notes: Song["notes"] };
-      const bars: Bar[] = [];
-      let start = 0;
-      let length = song.pickup > 0 ? song.pickup : barBeats;
-      while (start < song.length - 1e-6) {
-        const end = start + length;
-        bars.push({ start, length, notes: song.notes.filter((n) => n.at >= start - 1e-6 && n.at < end - 1e-6) });
-        start = end;
-        length = barBeats;
+      function drawChunk(chunk: number) {
+        if (drawn.has(chunk) || cancelled) return;
+        drawn.add(chunk);
+        const first = chunk * CHUNK_BARS;
+        const slice = bars.slice(first, first + CHUNK_BARS);
+        if (!slice.length) return;
+        const left = slice[0].x - (chunk === 0 ? 10 : 0);
+        const right = slice[slice.length - 1].x + slice[slice.length - 1].width + (first + CHUNK_BARS >= bars.length ? 40 : 0);
+        const box = document.createElement("div");
+        box.className = styles.chunk;
+        box.style.left = `${left * SCALE}px`;
+        host.appendChild(box);
+        const renderer = new Renderer(box, Renderer.Backends.SVG);
+        renderer.resize((right - left) * SCALE, HEIGHT * SCALE);
+        const context = renderer.getContext();
+        context.scale(SCALE, SCALE);
+
+        const ties: InstanceType<typeof StaveTie>[] = [];
+        let pending: InstanceType<typeof StaveNote> | null = null;
+        // A tie arriving from the previous stretch is drawn from this stretch's left edge.
+        const before = bars[first - 1]?.notes.at(-1);
+        let incoming = !!before?.tieOn;
+
+        slice.forEach((bar, index) => {
+          const stave = decorate(VF, new Stave(bar.x - left, STAVE_Y, 100), bar);
+          stave.setWidth(bar.width);
+          stave.setContext(context).draw();
+          const m = bar.measure;
+
+          const vfNotes = bar.notes.map((w) => {
+            const n = new StaveNote({ keys: [w.key], duration: `${w.code}${w.rest ? "r" : ""}`, autoStem: true });
+            if (w.dotted) Dot.buildAndAttach([n], { all: true });
+            if (w.chord) n.addModifier(new Annotation(w.chord).setVerticalJustification(Annotation.VerticalJustify.TOP), 0);
+            return n;
+          });
+          bar.notes.forEach((w, i) => {
+            const n = vfNotes[i];
+            if (w.rest) {
+              incoming = false;
+              pending = null;
+              return;
+            }
+            if (pending) ties.push(new StaveTie({ firstNote: pending, lastNote: n, firstIndexes: [0], lastIndexes: [0] }));
+            else if (incoming) ties.push(new StaveTie({ firstNote: null, lastNote: n, firstIndexes: [0], lastIndexes: [0] }));
+            incoming = false;
+            pending = w.tieOn ? n : null;
+          });
+
+          const voice = new Voice({ numBeats: Math.round(m.len * (m.meter.bottom / 4) * 4) / 4, beatValue: m.meter.bottom });
+          voice.setMode(Voice.Mode.SOFT);
+          voice.addTickables(vfNotes);
+          Accidental.applyAccidentals([voice], m.key.doName);
+          const groups = m.meter.bottom === 8 ? [new Fraction(3, 8)] : m.meter.bottom === 2 ? [new Fraction(2, 4)] : undefined;
+          const beams = Beam.generateBeams(vfNotes, groups ? { groups } : undefined);
+          new Formatter().joinVoices([voice]).format([voice], m.len * PX_PER_BEAT);
+          // Replace VexFlow's spacing with pure time: each note starts at (its beat) × PX_PER_BEAT.
+          vfNotes.forEach((n, i) => n.getTickContext().setX((bar.notes[i].beat - m.at) * PX_PER_BEAT));
+          voice.draw(context, stave);
+          beams.forEach((b) => b.setContext(context).draw());
+
+          // The one constant VexFlow adds between a stave's note start and a notehead, measured on the very first note.
+          if (chunk === 0 && index === 0 && vfNotes.length) state.shift = vfNotes[0].getAbsoluteX() - (stave.getNoteStartX() + (bar.notes[0].beat - m.at) * PX_PER_BEAT);
+          vfNotes.forEach((n, i) => marks.push({ beat: bar.notes[i].beat, el: n.getSVGElement() }));
+        });
+        if (pending) ties.push(new StaveTie({ firstNote: pending, lastNote: null, firstIndexes: [0], lastIndexes: [0] }));
+        ties.forEach((t) => t.setContext(context).draw());
+        marks.sort((a, b) => a.beat - b.beat);
       }
 
-      // How far a plain stave's first note sits from its left edge; the first stave also carries clef, key and time.
-      const plainOffset = new Stave(0, 0, 100).getNoteStartX();
-      const staveY = 50;
-      const height = 190;
-      const first = new Stave(10, staveY, 100).addClef("treble").addKeySignature(keySig).addTimeSignature(timeSig);
-      const firstOffset = first.getNoteStartX() - 10;
-      const totalWidth = 10 + firstOffset + song.length * PX_PER_BEAT + 40;
-
-      const renderer = new Renderer(host, Renderer.Backends.SVG);
-      renderer.resize(totalWidth * SCALE, height * SCALE);
-      const context = renderer.getContext();
-      context.scale(SCALE, SCALE);
-
-      const marks: Mark[] = [];
-      const ties: InstanceType<typeof StaveTie>[] = [];
-      // The last written note tied onward (inside a split note or across a barline).
-      let pendingTie: InstanceType<typeof StaveNote> | null = null;
-      let x = 10;
-      let origin = 0;
-
-      bars.forEach((bar, index) => {
-        const stave = index === 0 ? first : new Stave(x, staveY, 100);
-        const offset = stave.getNoteStartX() - x;
-        // Widths that keep every downbeat exactly bar.length beats after the previous one.
-        stave.setWidth(bar.length * PX_PER_BEAT + offset - plainOffset);
-        stave.setContext(context).draw();
-
-        const vfNotes: InstanceType<typeof StaveNote>[] = [];
-        const noteBeats: number[] = [];
-        for (const note of bar.notes) {
-          const parts = spell(note.dur);
-          let at = note.at;
-          parts.forEach((part, p) => {
-            const key = note.name ? `${note.name[0].toLowerCase()}${note.name.slice(1, -1)}/${note.name.slice(-1)}` : "b/4";
-            const staveNote = new StaveNote({ keys: [key], duration: `${part.code}${note.pitch === null ? "r" : ""}`, autoStem: true });
-            if (part.dotted) Dot.buildAndAttach([staveNote], { all: true });
-            const chord = song.chords.find((c) => Math.abs(c.at - at) < 1e-6);
-            if (chord && p === 0) {
-              staveNote.addModifier(new Annotation(chord.chord.symbol).setVerticalJustification(Annotation.VerticalJustify.TOP), 0);
-            }
-            if (pendingTie && note.pitch !== null) {
-              ties.push(new StaveTie({ firstNote: pendingTie, lastNote: staveNote, firstIndexes: [0], lastIndexes: [0] }));
-            }
-            pendingTie = note.pitch !== null && (p < parts.length - 1 || note.tie) ? staveNote : null;
-            vfNotes.push(staveNote);
-            noteBeats.push(at);
-            at += part.beats;
-          });
-        }
-
-        const voice = new Voice({ numBeats: Math.round(bar.length * (song.meter.bottom / 4) * 4) / 4, beatValue: song.meter.bottom });
-        voice.setMode(Voice.Mode.SOFT);
-        voice.addTickables(vfNotes);
-        Accidental.applyAccidentals([voice], keySig);
-        const beams = Beam.generateBeams(vfNotes, song.meter.bottom === 8 ? { groups: [new Fraction(3, 8)] } : undefined);
-        new Formatter().joinVoices([voice]).format([voice], bar.length * PX_PER_BEAT);
-        // Replace VexFlow's spacing with pure time: each note starts at (its beat) × PX_PER_BEAT.
-        vfNotes.forEach((n, i) => n.getTickContext().setX((noteBeats[i] - bar.start) * PX_PER_BEAT));
-        voice.draw(context, stave);
-        beams.forEach((b) => b.setContext(context).draw());
-
-        if (index === 0 && vfNotes.length) origin = vfNotes[0].getAbsoluteX() - noteBeats[0] * PX_PER_BEAT;
-        vfNotes.forEach((n, i) => marks.push({ beat: noteBeats[i], el: n.getSVGElement() }));
-        x += stave.getWidth();
-      });
-      ties.forEach((t) => t.setContext(context).draw());
-
-      marksRef.current = marks.sort((a, b) => a.beat - b.beat);
-      // A notehead's visual centre sits about 6 px right of its x.
-      originRef.current = (origin + 6) * SCALE;
+      stateRef.current = state;
+      state.draw(0);
       setReady(true);
     })();
 
     return () => {
       cancelled = true;
+      stateRef.current = null;
       setReady(false);
     };
   }, [song]);
@@ -159,19 +249,29 @@ export function SheetView({ song, clock }: { song: Song; clock: Clock }) {
     let current: SVGElement | undefined;
     const tick = () => {
       const scroller = scrollerRef.current;
-      const marks = marksRef.current;
-      if (scroller) {
+      const state = stateRef.current;
+      if (scroller && state) {
+        const { bars, marks } = state;
         // Before the tune starts (an intro) this beat is negative, so the music glides in from the right.
         const beat = clock.scoreBeat();
-        const x = originRef.current + beat * PX_PER_BEAT * SCALE;
-        scroller.style.transform = `translate3d(${(-x).toFixed(2)}px, 0, 0)`;
+        const index = barIndex(bars, beat);
+        const bar = bars[index];
+        const x = bar.x + bar.noteStart + (beat - bar.measure.at) * PX_PER_BEAT + state.shift + 6;
+        scroller.style.transform = `translate3d(${(-x * SCALE).toFixed(2)}px, 0, 0)`;
+
+        // Draw the stretch under the playhead first, then the next one ahead of it (one per frame).
+        const chunk = Math.floor(index / CHUNK_BARS);
+        const wanted = [chunk, chunk + 1, chunk - 1].find((c) => c >= 0 && c * CHUNK_BARS < bars.length && !state.drawn.has(c));
+        if (wanted !== undefined) state.draw(wanted);
+
         let now: SVGElement | undefined;
         if (clock.songBeat() !== null) {
-          for (let i = marks.length - 1; i >= 0; i--) {
-            if (marks[i].beat <= beat + 1e-6) {
-              now = marks[i].el;
-              break;
-            }
+          for (let lo = 0, hi = marks.length - 1; lo <= hi; ) {
+            const mid = (lo + hi) >> 1;
+            if (marks[mid].beat <= beat + 1e-6) {
+              now = marks[mid].el;
+              lo = mid + 1;
+            } else hi = mid - 1;
           }
         }
         if (now !== current) {
@@ -195,4 +295,15 @@ export function SheetView({ song, clock }: { song: Song; clock: Clock }) {
       {!ready && <p className={styles.loading}>Writing the sheet music…</p>}
     </div>
   );
+}
+
+function barIndex(bars: BarPlan[], beat: number) {
+  let lo = 0;
+  let hi = bars.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi + 1) >> 1;
+    if (bars[mid].measure.at <= beat + 1e-9) lo = mid;
+    else hi = mid - 1;
+  }
+  return lo;
 }
