@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { programs, type Program } from "@/lib/catalog";
+import { programs, yearLabel, type Program } from "@/lib/catalog";
 import { Sticker } from "@/components/ui/Sticker";
 import styles from "./OrbitView.module.css";
 
@@ -157,7 +157,7 @@ export function OrbitView() {
               </span>
             )}
             <Sticker color="var(--lime)" tilt={-4}>
-              Est. {program.original.year}
+              Est. {yearLabel(program)}
             </Sticker>
           </div>
         </aside>

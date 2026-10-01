@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { oldestYear, programs, type Program } from "@/lib/catalog";
+import { oldestYear, programs, yearLabel, type Program } from "@/lib/catalog";
 import { ProgramPreview } from "@/components/previews/ProgramPreview";
 import { Sticker } from "@/components/ui/Sticker";
 import { pressAnyKey } from "./AnyKeyToy";
@@ -119,7 +119,7 @@ function ProgramTile({ program, wide = false }: { program: Program; wide?: boole
         <span className={styles.kind}>{program.kind}</span>
         <div className={styles.programStickers}>
           <Sticker color="var(--lime)" tilt={-6}>
-            Est. {program.original.year}
+            Est. {yearLabel(program)}
           </Sticker>
           <Sticker color="#ffffff" tilt={4}>
             {program.stats[0].value} {program.stats[0].label}
@@ -164,7 +164,7 @@ function ProgramTile({ program, wide = false }: { program: Program; wide?: boole
           </span>
         )}
         <span className={styles.source}>
-          Based on {program.original.file} · {program.original.year}
+          Based on {program.original.file} · {yearLabel(program)}
         </span>
       </div>
     </Tile>

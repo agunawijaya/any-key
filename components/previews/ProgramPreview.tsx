@@ -1,4 +1,5 @@
 import { MusicPreview } from "./MusicPreview";
+import { OuttaPreview } from "./OuttaPreview";
 import { SticklerPreview } from "./SticklerPreview";
 
 /** Each program brings its own living preview; the halls just place it. */
@@ -8,6 +9,8 @@ export function ProgramPreview({ id }: { id: string }) {
       return <MusicPreview />;
     case "23mtch":
       return <SticklerPreview />;
+    case "escape":
+      return <OuttaPreview />;
     default:
       return null;
   }

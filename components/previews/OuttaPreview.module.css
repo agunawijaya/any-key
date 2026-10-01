@@ -1,0 +1,16 @@
+.preview {
+  width: 100%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #e4d8c3;
+}
+
+:global(:root[data-theme="dark"]) .preview {
+  background: #151b3d;
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 40 / 18;
+}

@@ -8,7 +8,7 @@ export type Program = {
   blurb: string;
   status: ProgramStatus;
   href?: string;
-  original: { title: string; file: string; publisher: string; year: number };
+  original: { title: string; file: string; publisher: string; year: number; /** The year is a best guess, shown as "c. 1980". */ yearCirca?: boolean };
   /** Three colours that drive the card gradient, the planet and the cartridge. */
   palette: [string, string, string];
   stats: { value: string; label: string }[];
@@ -95,6 +95,34 @@ export const programs: Program[] = [
       "The credits in the original file misspell the author's name as ALBRECHR.",
     ],
   },
+  {
+    id: "escape",
+    title: "Outta Here",
+    kind: "Escape game",
+    tagline: "The walls grow while you hesitate.",
+    blurb:
+      "A tiny 1980 TRS-80 game about an asterisk trying to reach the exit, rebuilt with wood to push, glass to bomb, three chasers, thirty screens on five old computers and a daily escape.",
+    status: "playable",
+    href: "/outta-here",
+    original: { title: "Escape", file: "ESCAPE.BAS", publisher: "Unknown author", year: 1980, yearCirca: true },
+    palette: ["#ff6b4a", "#2ef2a0", "#151b3d"],
+    stats: [
+      { value: "30", label: "screens" },
+      { value: "3", label: "chasers" },
+      { value: "12", label: "badges" },
+    ],
+    modes: ["Run", "Screens", "Daily Escape", "Versus", "1980 mode", "Chill", "Normal", "Hard"],
+    moons: ["Green Screen", "Amber Terminal", "Home Micro", "Pocket LCD", "The Last Machine"],
+    trivia: [
+      "The 1980 program never says you won. Reach the exit and it simply stops at BASIC's READY prompt.",
+      "Its check for the top of the screen can never be true, so you can walk up into the keyboard's memory and vanish.",
+      "Step down from the bottom-left corner and the star is written over the computer's own memory. It almost certainly crashed.",
+      "Blocks only fall while no key is down, so the faster you press keys, the fewer blocks fall.",
+    ],
+  },
 ];
 
 export const oldestYear = Math.min(...programs.map((p) => p.original.year));
+
+/** The original's year as the Hall shows it: "1973", or "c. 1980" when it is a best guess. */
+export const yearLabel = (p: Program) => `${p.original.yearCirca ? "c. " : ""}${p.original.year}`;

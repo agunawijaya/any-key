@@ -27,6 +27,7 @@ when the system asks for reduced motion. Press any letter key on the Hall and se
 | --- | --- | --- |
 | **Bop Box** (`/music`) | `MUSIC.BAS`, IBM, 1981–82 | Playable |
 | **Stickler** (`/stickler`) | `23MTCH.BAS`, Bob Albrecht / People's Computer Company, DEC 1973 | Playable |
+| **Outta Here** (`/outta-here`) | `ESCAPE.BAS`, author unknown (TRS-80), c. 1980 | Playable |
 
 ### Bop Box
 
@@ -47,6 +48,16 @@ sweep), two-player mode, fourteen achievements, three
 stick styles (matches, glow sticks, candy) and a 1981 mode that plays exactly like the original on a
 PC. The docs are in `docs/23mtch/`.
 
+### Outta Here
+
+The walls grow while you hesitate. A tiny TRS-80 game from around 1980, in which an asterisk has to
+reach the exit while blocks fall whenever you stop pressing keys, rebuilt with wood to push, glass
+to bomb, chain bonuses and three chasers (a Bouncer, an Eraser that follows your trail and a
+Glitch that hunts you). The original's bugs became tricks: the edge tunnels and the hiding place
+under the keyboard. Play a Run on Chill, Normal or Hard, thirty Screens on five old computers, a
+shareable Daily Escape, two-player Versus on one keyboard, or the 1980 mode, which runs the original
+address by address, crash included. The docs are in `docs/escape/`.
+
 ## Project layout
 
 ```
@@ -58,6 +69,8 @@ lib/music/           Bop Box: tunes, arranger, styles, MIDI writer, audio engine
 components/bopbox/   Bop Box studio screen and its views
 lib/stickler/        Stickler: rules, solver, Sparky, modes, progress, sounds
 components/stickler/ Stickler lobby, board, 1981 terminal
+lib/outta/           Outta Here: engine, levels, campaign, daily, bot, 1980 simulation, progress
+components/outta/    Outta Here lobby, canvas renderer, screens map, Versus, 1980 terminal
 components/kit/      Pieces every program shares (the Story tab)
 docs/<program>/      ABOUT, HOW-TO, ORIGINAL-ARCHITECTURE, PORT-ARCHITECTURE
 scripts/             Checks and the sound bank builder
@@ -81,6 +94,7 @@ Useful checks:
 npm run check:music      # every tune parses; every arrangement builds; the 1981 versions are unchanged
 npm run check:audio      # renders every style offline and flags silence or clipping
 npm run check:stickler   # plays thousands of Stickler games to prove the maths
+npm run check:outta      # Outta Here's rules, the 1980 simulation, and human-like bots on every level and screen
 npm run build:soundfont -- path/to/MuseScore_General.sf3   # rebuild public/soundfont/bopbox.sf3
 ```
 

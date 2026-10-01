@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { programs } from "@/lib/catalog";
+import { programs, yearLabel } from "@/lib/catalog";
 import { ProgramPreview } from "@/components/previews/ProgramPreview";
 import styles from "./DeviceView.module.css";
 
@@ -84,7 +84,7 @@ export function DeviceView() {
             style={{ "--c1": c1, "--c2": c2, "--c3": c3 } as React.CSSProperties}
           >
             <span className={styles.cartLabel}>{program.title}</span>
-            <span className={styles.cartYear}>{program.original.year}</span>
+            <span className={styles.cartYear}>{yearLabel(program)}</span>
           </div>
         </div>
 
