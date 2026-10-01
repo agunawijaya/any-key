@@ -28,6 +28,7 @@ when the system asks for reduced motion. Press any letter key on the Hall and se
 | **Bop Box** (`/music`) | `MUSIC.BAS`, IBM, 1981–82 | Playable |
 | **Stickler** (`/stickler`) | `23MTCH.BAS`, Bob Albrecht / People's Computer Company, DEC 1973 | Playable |
 | **Outta Here** (`/outta-here`) | `ESCAPE.BAS`, author unknown (TRS-80), c. 1980 | Playable |
+| **Don't Crater** (`/dont-crater`) | `LANDER.BAS`, Simutek (TRS-80), 1979 | Playable |
 
 ### Bop Box
 
@@ -58,6 +59,19 @@ under the keyboard. Play a Run on Chill, Normal or Hard, thirty Screens on five 
 shareable Daily Escape, two-player Versus on one keyboard, or the 1980 mode, which runs the original
 address by address, crash included. The docs are in `docs/escape/`.
 
+### Don't Crater
+
+Fall from orbit at 5,000 km/h and land like a feather. The 1979 TRS-80 descent simulator, rebuilt with
+four worlds drawn like travel postcards (Earth, the Moon, Mars and the metal asteroid Psyche), where the
+light theme is the day side and the dark theme the night side. Fly it live with a throttle lever and
+time warp, or in the original's ten-second turns with a predicted path; learn the "hoverslam" from the
+burn guide and the flight recorder, or fly by eye with the landing assist's green (5 km/h) and amber
+(20 km/h) lines; take on ten missions and a shareable Daily Drop; tilt the lander in Free Flight and
+steer across generated terrain to a marked flat (or a drifting barge off Earth's coast) without tipping
+over; design the flag your astronaut plants; or play the 1979 mode, which runs the original's
+arithmetic turn for turn, quirks included. A fuel setting (Generous, Standard, Tight) applies to every
+mode but 1979. The docs are in `docs/lander/`.
+
 ## Project layout
 
 ```
@@ -71,6 +85,8 @@ lib/stickler/        Stickler: rules, solver, Sparky, modes, progress, sounds
 components/stickler/ Stickler lobby, board, 1981 terminal
 lib/outta/           Outta Here: engine, levels, campaign, daily, bot, 1980 simulation, progress
 components/outta/    Outta Here lobby, canvas renderer, screens map, Versus, 1980 terminal
+lib/lander/          Don't Crater: worlds, flight model, hoverslam solver, missions, 1979 maths, Free Flight terrain
+components/dontcrater/ Don't Crater lobby, canvas scenes, flight screens, 1979 terminal
 components/kit/      Pieces every program shares (the Story tab)
 docs/<program>/      ABOUT, HOW-TO, ORIGINAL-ARCHITECTURE, PORT-ARCHITECTURE
 scripts/             Checks and the sound bank builder
@@ -95,6 +111,7 @@ npm run check:music      # every tune parses; every arrangement builds; the 1981
 npm run check:audio      # renders every style offline and flags silence or clipping
 npm run check:stickler   # plays thousands of Stickler games to prove the maths
 npm run check:outta      # Outta Here's rules, the 1980 simulation, and human-like bots on every level and screen
+npm run check:lander     # 1979 maths; every world, mission, Daily Drop and Free Flight site can be landed by human-like pilots
 npm run build:soundfont -- path/to/MuseScore_General.sf3   # rebuild public/soundfont/bopbox.sf3
 ```
 
@@ -112,4 +129,5 @@ Third-party work, with thanks:
 - [SpessaSynth](https://github.com/spessasus/spessasynth_lib) SoundFont synthesizer (Apache-2.0).
 - [VexFlow](https://github.com/vexflow/vexflow) music engraving (MIT).
 - [Mermaid](https://github.com/mermaid-js/mermaid) diagrams and [marked](https://github.com/markedjs/marked) Markdown (MIT).
-- [VT323](https://fonts.google.com/specimen/VT323) font for Stickler's 1981 mode (SIL Open Font License).
+- [VT323](https://fonts.google.com/specimen/VT323) font for Stickler's 1981 mode and Don't Crater's 1979 mode (SIL Open Font License).
+- Psyche's size and gravity are public figures; Don't Crater is not affiliated with NASA or the Psyche mission.

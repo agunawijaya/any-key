@@ -1,0 +1,39 @@
+/* The Free Flight recorder's extras, on top of Recorder.module.css. */
+
+.target {
+  stroke: #d9a300;
+  stroke-width: 1.5;
+  stroke-dasharray: 2 3;
+}
+
+.left {
+  fill: #3f7fe0;
+  background: #3f7fe0;
+}
+
+.right {
+  fill: #9a5ae8;
+  background: #9a5ae8;
+}
+
+.keys i {
+  display: inline-block;
+  width: 10px;
+  height: 8px;
+  margin: 0 3px 0 6px;
+  border-radius: 2px;
+  vertical-align: middle;
+}
+
+.keys::before {
+  display: none;
+}
+
+.legend {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+
+.legend > span {
+  white-space: nowrap;
+}

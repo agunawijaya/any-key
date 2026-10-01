@@ -11,7 +11,8 @@
     "check:audio": "tsx scripts/render-check.mts 8",
     "build:soundfont": "tsx scripts/build-soundfont.mts",
     "check:stickler": "tsx scripts/check-stickler.ts",
-    "check:outta": "tsx scripts/check-outta.ts"
+    "check:outta": "tsx scripts/check-outta.ts",
+    "check:lander": "tsx scripts/check-lander.ts"
   },
   "dependencies": {
     "lucide-react": "^1.48.0",

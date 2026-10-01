@@ -1,3 +1,4 @@
+import { DontCraterPreview } from "./DontCraterPreview";
 import { MusicPreview } from "./MusicPreview";
 import { OuttaPreview } from "./OuttaPreview";
 import { SticklerPreview } from "./SticklerPreview";
@@ -11,6 +12,8 @@ export function ProgramPreview({ id }: { id: string }) {
       return <SticklerPreview />;
     case "escape":
       return <OuttaPreview />;
+    case "lander":
+      return <DontCraterPreview />;
     default:
       return null;
   }

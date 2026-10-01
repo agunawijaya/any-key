@@ -47,7 +47,8 @@
   grid-row: span 4;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
-  grid-template-rows: auto auto auto auto 1fr auto;
+  /* Row 5 is a spacer that takes up any slack, so the marquee row never gets squeezed. */
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto auto;
   column-gap: clamp(20px, 3vw, 40px);
 }
 
@@ -63,11 +64,16 @@
 }
 
 .programWide .programTitle {
-  margin-top: 18px;
+  margin-top: 8px;
 }
 
 .programWide .marquee {
+  grid-row: 6;
   margin-right: 0;
+}
+
+.programWide .programFoot {
+  grid-row: 7;
 }
 
 /* ---------- Hero ---------- */
@@ -317,6 +323,8 @@
 
 .marquee {
   flex-shrink: 0;
+  /* It hides its overflow sideways, so without this a grid or flex parent may squash it vertically. */
+  min-height: max-content;
   margin: 16px calc(-1 * clamp(20px, 2.2vw, 30px)) 0;
   overflow: hidden;
   mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
@@ -369,6 +377,29 @@
   color: var(--on-accent);
   font: 700 14px/1 var(--font-sans);
   text-decoration: none;
+}
+
+.actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.story {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1.5px solid rgb(255 255 255 / 0.7);
+  color: #fff;
+  font: 700 14px/1 var(--font-sans);
+  text-decoration: none;
+  transition: background 160ms;
+}
+
+.story:hover {
+  background: rgb(255 255 255 / 0.14);
 }
 
 .pulse {
@@ -580,7 +611,7 @@
     grid-row: auto;
   }
 
-  .programWide {
+  .program.programWide {
     min-height: 0;
   }
 

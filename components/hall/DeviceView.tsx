@@ -194,6 +194,17 @@ export function DeviceView() {
               <KeyButton label="info" onClick={showNextFact} pressed={factIndex !== null}>
                 i
               </KeyButton>
+              {program.status === "playable" && program.href && (
+                <a className={styles.key} href={`${program.href}#story`} aria-label={`Read the story of ${program.title}`}>
+                  <span className={styles.keyFace} aria-hidden>
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
+                      <path d="M3 5.5C5.5 4.2 8.7 4.2 12 6c3.3-1.8 6.5-1.8 9-.5V19c-2.5-1.3-5.7-1.3-9 .5-3.3-1.8-6.5-1.8-9-.5z" />
+                      <path d="M12 6v13.5" />
+                    </svg>
+                  </span>
+                  <span className={styles.label}>story</span>
+                </a>
+              )}
               {program.status === "playable" && program.href ? (
                 <a className={`${styles.key} ${styles.play}`} href={program.href}>
                   <span className={styles.keyFace}>PLAY</span>

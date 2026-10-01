@@ -113,8 +113,9 @@ export function OrbitView() {
                 className={styles.slot}
                 style={
                   {
-                    left: `${50 + Math.sin(theta) * 47}%`,
-                    top: `${46 + depth * 8}%`,
+                    // Rounded so the server and the browser write the same style.
+                    left: `${(50 + Math.sin(theta) * 47).toFixed(3)}%`,
+                    top: `${(46 + depth * 8).toFixed(3)}%`,
                     zIndex: Math.round(nearness * 20),
                     "--s": (0.45 + 0.55 * nearness).toFixed(3),
                     "--o": (0.35 + 0.65 * nearness).toFixed(3),
@@ -136,7 +137,7 @@ export function OrbitView() {
           <p className={styles.tagline}>{program.tagline}</p>
 
           <p className={styles.moonsLabel}>
-            {program.moons.length} tunes in orbit
+            {program.moons.length} {program.moonsName} in orbit
           </p>
           <ul className={styles.moons}>
             {program.moons.map((moon, k) => (
@@ -148,9 +149,14 @@ export function OrbitView() {
 
           <div className={styles.panelFoot}>
             {program.status === "playable" && program.href ? (
-              <a className={styles.cta} href={program.href}>
-                Land here
-              </a>
+              <span className={styles.ctas}>
+                <a className={styles.cta} href={program.href}>
+                  Land here
+                </a>
+                <a className={styles.ctaStory} href={`${program.href}#story`} aria-label={`Read the story of ${program.title}`}>
+                  Story
+                </a>
+              </span>
             ) : (
               <span className={styles.cta} aria-disabled>
                 Landing soon

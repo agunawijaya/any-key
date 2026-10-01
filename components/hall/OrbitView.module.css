@@ -405,6 +405,28 @@
   text-decoration: none;
 }
 
+.ctas {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ctaStory {
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line-strong);
+  color: var(--ink);
+  font: 700 15px/1 var(--font-sans);
+  text-decoration: none;
+}
+
+.ctaStory:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
 .cta[aria-disabled] {
   opacity: 0.85;
 }

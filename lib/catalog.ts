@@ -16,6 +16,8 @@ export type Program = {
   modes: string[];
   /** What orbits the planet in the Orbit hall: tracks, levels, rooms... */
   moons: string[];
+  /** What to call them: "tunes", "ladder tables"... */
+  moonsName: string;
   trivia: string[];
 };
 
@@ -50,6 +52,7 @@ export const programs: Program[] = [
       "AI Remix",
       "Original Score",
     ],
+    moonsName: "tunes",
     moons: [
       "La Cucaracha",
       "Blue Danube",
@@ -87,12 +90,39 @@ export const programs: Program[] = [
       { value: "14", label: "badges" },
     ],
     modes: ["Classic 23", "Handfuls", "Ladder", "Daily", "Versus", "1981 mode", "Matches", "Glow sticks", "Candy sticks"],
+    moonsName: "ladder tables",
     moons: ["Warm-up", "Getting warmer", "The Classic", "Sparky starts", "Take up to four", "Take up to five", "Bonfire", "Two rows", "Three rows", "Marienbad"],
     trivia: [
       "Whoever moves first from 23 can always win. The 1973 program let you go first anyway.",
       "The original's “random” move used RND(0), which on a PC never changes. When losing, the computer always took exactly 1.",
       "Type 4 into the original and it called you a cheater. Sparky is just as strict.",
       "The credits in the original file misspell the author's name as ALBRECHR.",
+    ],
+  },
+  {
+    id: "lander",
+    title: "Don't Crater",
+    kind: "Descent sim",
+    tagline: "5,000 km/h down. Land like a feather.",
+    blurb:
+      "A 1979 descent simulator, rebuilt with four worlds drawn like travel posters, a throttle lever, ten missions, a daily drop, free flight over real terrain and a flag you design yourself.",
+    status: "playable",
+    href: "/dont-crater",
+    original: { title: "Lander", file: "LANDER.BAS", publisher: "Simutek", year: 1979 },
+    palette: ["#ff6b1a", "#1b2a6b", "#ffd23d"],
+    stats: [
+      { value: "4", label: "worlds" },
+      { value: "10", label: "missions" },
+      { value: "5,000", label: "km/h" },
+    ],
+    modes: ["Live", "Ten-Second", "Free Flight", "Missions", "Daily Drop", "1979 mode", "Day side", "Night side", "Flag designer"],
+    moonsName: "worlds and missions",
+    moons: ["Moon", "Mars", "Psyche", "Earth", "First Contact", "Cargo Run", "Hot Entry", "Instruments Out", "Needle", "Express Delivery"],
+    trivia: [
+      "Burn nothing at all and the 1979 game said you had struck oil. On the Moon, too.",
+      "At exactly 19 to 20 km/h the original showed a wrecked lander while its text said you had landed.",
+      "The 1979 game never reset its clock: your second landing's time included the first one.",
+      "Only landings at 5 km/h or less showed a tiny astronaut planting a flag. Most players never saw it.",
     ],
   },
   {
@@ -112,6 +142,7 @@ export const programs: Program[] = [
       { value: "12", label: "badges" },
     ],
     modes: ["Run", "Screens", "Daily Escape", "Versus", "1980 mode", "Chill", "Normal", "Hard"],
+    moonsName: "computers",
     moons: ["Green Screen", "Amber Terminal", "Home Micro", "Pocket LCD", "The Last Machine"],
     trivia: [
       "The 1980 program never says you won. Reach the exit and it simply stops at BASIC's READY prompt.",

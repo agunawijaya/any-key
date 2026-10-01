@@ -1,0 +1,114 @@
+.preview {
+  --loop: 5.2s;
+  width: 100%;
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+}
+
+/* Lander feet sit 20 units below its origin; the ground is at y = 142. */
+.drop {
+  animation: drop var(--loop) cubic-bezier(0.25, 0, 0.35, 1) infinite;
+}
+
+@keyframes drop {
+  0% {
+    transform: translate(200px, -30px);
+  }
+  58%,
+  88% {
+    transform: translate(200px, 122px);
+  }
+  100% {
+    transform: translate(200px, 122px);
+    opacity: 0;
+  }
+}
+
+.drop :global(.dc-flame) {
+  transform-origin: 0 18px;
+  animation: burn var(--loop) linear infinite;
+}
+
+@keyframes burn {
+  0%,
+  22% {
+    transform: scaleY(0.15);
+  }
+  26%,
+  54% {
+    transform: scaleY(1.2);
+  }
+  58%,
+  100% {
+    transform: scaleY(0);
+  }
+}
+
+.dust {
+  transform-box: fill-box;
+  transform-origin: center;
+  opacity: 0;
+  animation: dust var(--loop) ease-out infinite;
+}
+
+@keyframes dust {
+  0%,
+  50% {
+    opacity: 0;
+    transform: scale(0.2, 1);
+  }
+  60% {
+    opacity: 0.9;
+    transform: scale(1.4, 1.6);
+  }
+  78%,
+  100% {
+    opacity: 0;
+    transform: scale(2.4, 1.2);
+  }
+}
+
+.flag {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  opacity: 0;
+  animation: flag var(--loop) ease-out infinite;
+}
+
+@keyframes flag {
+  0%,
+  64% {
+    opacity: 0;
+    transform: scaleY(0);
+  }
+  70%,
+  92% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop,
+  .drop :global(.dc-flame),
+  .dust,
+  .flag {
+    animation: none;
+  }
+
+  .drop {
+    transform: translate(200px, 122px);
+  }
+
+  .flag {
+    opacity: 1;
+  }
+}

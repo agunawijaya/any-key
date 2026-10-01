@@ -155,9 +155,14 @@ function ProgramTile({ program, wide = false }: { program: Program; wide?: boole
 
       <div className={styles.programFoot}>
         {program.status === "playable" && program.href ? (
-          <a className={styles.play} href={program.href}>
-            Play now
-          </a>
+          <span className={styles.actions}>
+            <a className={styles.play} href={program.href}>
+              Play now
+            </a>
+            <a className={styles.story} href={`${program.href}#story`} aria-label={`Read the story of ${program.title}`}>
+              Story
+            </a>
+          </span>
         ) : (
           <span className={styles.soon}>
             <span className={styles.pulse} aria-hidden /> In the studio · coming soon

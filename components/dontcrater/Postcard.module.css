@@ -1,0 +1,184 @@
+.postcard {
+  --sky0: var(--sky0-d);
+  --sky1: var(--sky1-d);
+  --sky2: var(--sky2-d);
+  --g0: var(--g0-d);
+  --g1: var(--g1-d);
+  --g2: var(--g2-d);
+  --rim: var(--rim-d);
+  --shade: var(--shade-d);
+  --pc-ink: var(--ink-d);
+  --pc-paper: var(--paper-d);
+  --stars: var(--stars-d);
+  --sun: var(--sun-d);
+  --glow: var(--glow-d);
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: var(--pc-paper);
+  box-shadow: inset 0 0 0 6px var(--pc-paper), 0 20px 40px -26px rgb(0 0 0 / 0.55);
+  isolation: isolate;
+}
+
+:global(:root[data-theme="dark"]) .postcard {
+  --sky0: var(--sky0-n);
+  --sky1: var(--sky1-n);
+  --sky2: var(--sky2-n);
+  --g0: var(--g0-n);
+  --g1: var(--g1-n);
+  --g2: var(--g2-n);
+  --rim: var(--rim-n);
+  --shade: var(--shade-n);
+  --pc-ink: var(--ink-n);
+  --pc-paper: var(--paper-n);
+  --stars: var(--stars-n);
+  --sun: var(--sun-n);
+  --glow: var(--glow-n);
+}
+
+.art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.card {
+  aspect-ratio: 4 / 5;
+}
+
+.hero {
+  aspect-ratio: 4 / 5;
+  border-radius: 30px;
+}
+
+.stars {
+  opacity: var(--stars);
+}
+
+.nightOnly {
+  opacity: 0;
+  transition: opacity 400ms;
+}
+
+:global(:root[data-theme="dark"]) .nightOnly {
+  opacity: 1;
+}
+
+:global(:root[data-theme="dark"]) .dayOnly {
+  opacity: 0;
+}
+
+.lights {
+  opacity: 0;
+}
+
+:global(:root[data-theme="dark"]) .lights {
+  opacity: 1;
+}
+
+:global(:root[data-theme="dark"]) .postcard[data-world="mars"] .sun {
+  transform: translate(0, 116px) scale(0.6);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.glint {
+  animation: glint 2.4s ease-in-out infinite;
+}
+
+.glint:nth-child(odd) {
+  animation-delay: -1.2s;
+}
+
+@keyframes glint {
+  0%,
+  100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* The lander drifts down onto the postcard, puffs, and does it again. */
+.lander {
+  transform: translate(120px, 196px);
+  animation: descend 5.5s cubic-bezier(0.3, 0, 0.3, 1) infinite;
+}
+
+.postcard[data-world="earth"] .lander {
+  --land: 206px;
+}
+
+@keyframes descend {
+  0% {
+    transform: translate(120px, 40px);
+  }
+  62%,
+  100% {
+    transform: translate(120px, var(--land, 196px));
+  }
+}
+
+.lander :global(.dc-flame) {
+  transform-origin: 0 18px;
+  animation: flame 5.5s linear infinite;
+}
+
+@keyframes flame {
+  0%,
+  30% {
+    transform: scaleY(0.2);
+  }
+  34%,
+  58% {
+    transform: scaleY(1);
+  }
+  62%,
+  100% {
+    transform: scaleY(0);
+  }
+}
+
+.label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  padding: 14px 16px 14px;
+  background: linear-gradient(transparent, color-mix(in srgb, var(--pc-paper) 92%, transparent) 38%);
+  color: var(--pc-ink);
+}
+
+.visit {
+  font: 700 11px var(--font-mono);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.name {
+  font: 800 34px/0.95 var(--font-display);
+  letter-spacing: -0.03em;
+  font-variation-settings: "wdth" 78;
+  text-transform: uppercase;
+}
+
+.hero .name {
+  font-size: clamp(44px, 6vw, 72px);
+}
+
+.meta {
+  margin-top: 4px;
+  font: 500 11px var(--font-mono);
+  opacity: 0.8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lander,
+  .lander :global(.dc-flame),
+  .glint {
+    animation: none;
+  }
+}

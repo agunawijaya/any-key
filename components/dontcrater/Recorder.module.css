@@ -1,0 +1,75 @@
+.recorder {
+  margin: 0;
+}
+
+.recorder svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.tick,
+.label,
+.labelEnd {
+  font: 500 10px var(--font-mono);
+  fill: var(--ink-3);
+  dominant-baseline: middle;
+  text-anchor: end;
+}
+
+.label {
+  text-anchor: start;
+  dominant-baseline: auto;
+}
+
+.labelEnd {
+  dominant-baseline: auto;
+}
+
+.ideal {
+  fill: none;
+  stroke: var(--ink-3);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 4;
+}
+
+.you {
+  fill: none;
+  stroke: var(--dc-accent);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
+}
+
+.burn {
+  fill: var(--dc-flame);
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+  font: 500 12px var(--font-mono);
+  color: var(--ink-2);
+}
+
+.legend span::before {
+  content: "";
+  display: inline-block;
+  width: 18px;
+  height: 0;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.keyYou::before {
+  border-top: 3px solid var(--dc-accent);
+}
+
+.keyIdeal::before {
+  border-top: 2px dashed var(--ink-3);
+}
