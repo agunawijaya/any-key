@@ -1,10 +1,15 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { forgetGame } from "@/lib/kit/forget";
+import { LEGACY_SAVES, LEGACY_VERSION } from "@/lib/kit/legacy";
+import { createProgress, withoutAchievements } from "@/lib/kit/progress";
+import { createStore } from "@/lib/kit/save";
 import type { Game } from "./engine";
 import type { LevelId } from "./levels";
+import { outtaManifest } from "./manifest";
 
-/** Everything Outta Here remembers lives in this browser only. */
+/** Everything Outta Here remembers lives in this browser only, in the kit store `anykey.escape.save`. */
 
 export type Progress = {
   runs: number;
@@ -19,78 +24,34 @@ export type Progress = {
   level: LevelId;
 };
 
-const KEY = "anykey.outta.v1";
-
 const EMPTY: Progress = { runs: 0, escapes: 0, best: {}, screens: {}, daily: {}, achievements: [], level: "normal" };
 
-export const ACHIEVEMENTS: { id: string; name: string; how: string; icon: string }[] = [
-  { id: "scape", name: "*SCAPE", how: "Get out in 1980 mode", icon: "✳️" },
-  { id: "under-keys", name: "Under the Keys", how: "Hide under the keyboard", icon: "⌨️" },
-  { id: "wraparound", name: "Wraparound", how: "Take an edge tunnel", icon: "↪️" },
-  { id: "chain-reaction", name: "Chain Reaction", how: "Break 15 glass blocks with one chain bomb", icon: "🔗" },
-  { id: "rush-hour", name: "Rush Hour", how: "Pick up a Chain Rush", icon: "⏱️" },
-  { id: "spelled-it", name: "Spelled It", how: "Collect E-S-C-A-P-E in one run", icon: "🔤" },
-  { id: "no-hesitation", name: "No Hesitation", how: "Get out on Normal or Hard with the meter never past half", icon: "⚡" },
-  { id: "untouched", name: "Untouched", how: "Get out on Hard without a single hit", icon: "🛡️" },
-  { id: "pop", name: "Pop!", how: "Pop a chaser with a bomb", icon: "💥" },
-  { id: "crash-test", name: "Crash Test", how: "Crash the computer in 1980 mode", icon: "🪦" },
-  { id: "daily-driver", name: "Daily Driver", how: "Get out of five Daily Escapes", icon: "📅" },
-  { id: "out-of-the-machine", name: "Out of the Machine", how: "Clear all thirty Screens", icon: "🖥️" },
-];
+type Saved = Omit<Progress, "achievements">;
 
-let current: Progress = EMPTY;
-let loaded = false;
-const listeners = new Set<() => void>();
+export const outtaStore = createStore<Saved>(outtaManifest.id, {
+  version: 2,
+  defaults: withoutAchievements(EMPTY),
+  legacy: { key: LEGACY_SAVES[outtaManifest.id], version: LEGACY_VERSION },
+  // Version 2 moved the achievements into the Keyring, which imports them from the old save itself.
+  migrations: { 2: (old) => withoutAchievements(old as Progress) },
+});
 
-function read(): Progress {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? { ...EMPTY, ...JSON.parse(raw) } : EMPTY;
-  } catch {
-    return EMPTY;
-  }
-}
+const progress = createProgress<Progress>(outtaManifest.id, outtaStore, {
+  dailies: (p) => p.daily,
+  play: (before, after) => (after.runs > before.runs ? { won: after.escapes > before.escapes } : null),
+  seed: (p) => ({ plays: p.runs, wins: p.escapes }),
+});
 
-function snapshot() {
-  if (!loaded) {
-    current = read();
-    loaded = true;
-  }
-  return current;
-}
-
-export function getProgress() {
-  return snapshot();
-}
+export const getProgress = progress.get;
 
 /** Updates progress; returns the achievements this update unlocked. */
-export function updateProgress(change: (p: Progress) => Progress): string[] {
-  const before = snapshot();
-  const next = change(before);
-  const unlocked = next.achievements.filter((a) => !before.achievements.includes(a));
-  current = next;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {
-    // Private windows may refuse storage; progress then lasts for this visit only.
-  }
-  listeners.forEach((l) => l());
-  return unlocked;
-}
+export const updateProgress = progress.update;
 
-export function resetProgress() {
-  updateProgress(() => ({ ...EMPTY }));
-}
+/** Forgets everything Outta Here remembers, its keycaps included. */
+export const resetProgress = () => forgetGame(outtaManifest.id);
 
 export function useProgress() {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-    snapshot,
-    () => EMPTY,
-  );
+  return useSyncExternalStore(progress.subscribe, progress.get, () => progress.empty);
 }
 
 export const withAchievement = (p: Progress, id: string): Progress =>

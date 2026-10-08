@@ -27,7 +27,8 @@ for (const song of songs) {
     // Fields added for the full versions (grid, tempo map, version) are not part of the 1981 sound.
     const { toSongBeat: _t, fromSongBeat: _f, grid: _g, tempos: _tp, version: _v, ...rest } = a;
     void [_t, _f, _g, _tp, _v];
-    const data = JSON.stringify({ ...rest, probes });
+    // How an instrument is pictured (`family`) is not part of the sound either.
+    const data = JSON.stringify({ ...rest, probes }, (key, value) => (key === "family" ? undefined : value));
     fingerprints[`${song.id}/${style}/${style === "solo" ? instrument : ""}`] = createHash("sha256").update(data).digest("hex").slice(0, 16);
   }
 }

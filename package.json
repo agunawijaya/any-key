@@ -7,12 +7,18 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run check:guardrails && npm run check:music && npm run check:audio && npm run check:stickler && npm run check:outta && npm run check:lander",
+    "check:guardrails": "tsx scripts/guardrails.ts",
     "check:music": "tsx scripts/check-songs.ts && tsx scripts/check-arrangements.mts && tsx scripts/check-1981.mts",
     "check:audio": "tsx scripts/render-check.mts 8",
-    "build:soundfont": "tsx scripts/build-soundfont.mts",
     "check:stickler": "tsx scripts/check-stickler.ts",
     "check:outta": "tsx scripts/check-outta.ts",
-    "check:lander": "tsx scripts/check-lander.ts"
+    "check:lander": "tsx scripts/check-lander.ts",
+    "e2e": "next build && playwright test",
+    "shots": "next build && playwright test --config playwright.shots.config.ts",
+    "build:soundfont": "tsx scripts/build-soundfont.mts"
   },
   "dependencies": {
     "lucide-react": "^1.48.0",
@@ -26,14 +32,16 @@
     "vexflow": "^5.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.3"
   }
 }

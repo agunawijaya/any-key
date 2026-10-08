@@ -5,9 +5,9 @@ import styles from "./Story.module.css";
 
 export type DocTab = { id: string; label: string; html: string };
 
-/** The four docs, rendered in the app. Mermaid diagrams are drawn on demand. */
-export function Story({ docs }: { docs: DocTab[] }) {
-  const [active, setActive] = useState(docs[0]?.id);
+/** The game's six docs, rendered in the app. Mermaid diagrams are drawn on demand. */
+export function Story({ docs, chapter }: { docs: DocTab[]; chapter?: string }) {
+  const [active, setActive] = useState(chapter ?? docs[0]?.id);
   const bodyRef = useRef<HTMLDivElement>(null);
   const doc = docs.find((d) => d.id === active) ?? docs[0];
 

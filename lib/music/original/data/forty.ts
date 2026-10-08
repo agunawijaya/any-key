@@ -1,4 +1,4 @@
-// Generated from a reading of the printed score (see docs/music/PORT-ARCHITECTURE.md). Do not edit by hand.
+// Generated from a reading of the printed score (see docs/music/ARCHITECTURE.md). Do not edit by hand.
 // Mozart, Symphony No. 40 in G minor, K. 550, first movement. Full score engraved by Gaylon Babcock (IMSLP), CC BY 4.0.
 import type { ScoreData } from "../types";
 

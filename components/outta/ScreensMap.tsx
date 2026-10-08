@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { StarIcon } from "@/components/kit/icons";
 import { COMPUTERS, SCREENS, type Screen } from "@/lib/outta/campaign";
 import { useProgress } from "@/lib/outta/progress";
 import { WORLDS } from "./render";
@@ -36,18 +38,29 @@ export function ScreensMap({ onPlay, onExit }: { onPlay: (s: Screen) => void; on
   const progress = useProgress();
   const total = Object.values(progress.screens).reduce((a, b) => a + b.stars, 0);
 
+  // The map is part of the game menu: Esc steps back to the main menu rather than out to the Hall.
+  useEffect(() => {
+    const back = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      onExit();
+    };
+    window.addEventListener("keydown", back);
+    return () => window.removeEventListener("keydown", back);
+  }, [onExit]);
+
   return (
     <div className={styles.map}>
       <header className={styles.head}>
         <button type="button" className={styles.back} onClick={onExit}>
-          ← Lobby
+          Game menu
         </button>
         <div className={styles.titles}>
           <h2>Screens</h2>
           <p>Five old computers, six screens each. Every computer adds one trick, most of them from the 1980 program&rsquo;s own bugs.</p>
         </div>
         <p className={styles.total}>
-          <span aria-hidden>★</span> {total} / {SCREENS.length * 3}
+          <StarIcon size={18} /> {total} / {SCREENS.length * 3}
         </p>
       </header>
 
@@ -89,7 +102,7 @@ export function ScreensMap({ onPlay, onExit }: { onPlay: (s: Screen) => void; on
                         <span className={styles.stars} aria-hidden>
                           {[0, 1, 2].map((k) => (
                             <i key={k} data-got={k < (record?.stars ?? 0)}>
-                              ★
+                              <StarIcon size={12} />
                             </i>
                           ))}
                         </span>

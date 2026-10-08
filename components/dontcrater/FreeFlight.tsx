@@ -1,7 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { difficultyTag, type Difficulty } from "@/lib/lander/difficulty";
+import { ShareButton } from "@/components/kit/ShareButton";
+import { usePlayScreen, useShell } from "@/components/kit/shell-context";
+import { TargetIcon } from "@/components/kit/icons";
+import { Stars } from "@/components/kit/Stars";
+import { AssistIcon, DivertIcon, GradeIcon, GuideIcon, ScanIcon, WarpIcon, WorldIcon } from "./icons";
+import { holdAnnouncements } from "@/lib/kit/achievements";
+import { difficultyLabel, type Difficulty } from "@/lib/lander/difficulty";
 import { flagSvg, type FlagDesign } from "@/lib/lander/flags";
 import { freeFlight, onTarget, targetAt, type FreeFlight as Flight2D, type FreeStart } from "@/lib/lander/freeflight";
 import { GRADES, type GradeId } from "@/lib/lander/grades";
@@ -13,7 +19,8 @@ import * as sfx from "@/lib/lander/sfx";
 import { bargeTarget, flatTarget, autopilot } from "@/lib/lander/solver2d";
 import { footSlope, heightAt, SITE_HALF, siteProfile } from "@/lib/lander/terrain";
 import type { WorldId } from "@/lib/lander/worlds";
-import { fmtAlt, fmtSpeed } from "./Flight";
+import { fmtAlt, fmtKm, fmtSpeed } from "@/lib/lander/format";
+import { freeFlightShare } from "@/lib/lander/share";
 import { FreeScene, type FreeEnding } from "./freescene";
 import { FreeSim, type FreeEvent, type Sample2D } from "./freesim";
 import { useNight, useReducedMotion } from "./hooks";
@@ -57,7 +64,6 @@ type Props = {
   onExit: () => void;
   onRetry: () => void;
   onNewSite: () => void;
-  onUnlock: (ids: string[]) => void;
 };
 
 const DEG = Math.PI / 180;
@@ -66,11 +72,6 @@ const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
 function fmtTime(t: number) {
   const s = Math.max(0, Math.floor(t));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-
-function fmtKm(km: number) {
-  const a = Math.abs(km);
-  return a >= 10 ? `${Math.round(a)} km` : a >= 1 ? `${a.toFixed(1)} km` : `${Math.round(a * 1000)} m`;
 }
 
 /** "Butter · 14 m ledge · dead centre": the landing in words. */
@@ -97,7 +98,7 @@ function siteLabel(flight: Flight2D) {
   return flight.named ? flight.named.name : `${flight.world.name} · site ${flight.seed}`;
 }
 
-export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn, scan: scanOn, onExit, onRetry, onNewSite, onUnlock }: Props) {
+export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn, scan: scanOn, onExit, onRetry, onNewSite }: Props) {
   const flight = useMemo(() => freeFlight(spec.world, spec.start, spec.pick, spec.difficulty), [spec]);
   const world = flight.world;
   const night = useNight();
@@ -110,7 +111,11 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
   const endingRef = useRef<FreeEnding | null>(null);
   const flagImgRef = useRef<HTMLImageElement | null>(null);
   const phaseRef = useRef<Phase>("ready");
-  const liveRef = useRef({ sound, night: night || forcedNight, reduced, onUnlock });
+  const liveRef = useRef({ sound, night: night || forcedNight, reduced });
+  /** Lets the held unlock toasts out; called when the card appears or the flight is left. */
+  const releaseRef = useRef<(() => void) | null>(null);
+  /** Where Resume goes back to: a flight can be paused before it starts. */
+  const pausedFrom = useRef<Phase>("flying");
   const timersRef = useRef<number[]>([]);
   const keysRef = useRef({ left: false, right: false, touchLeft: false, touchRight: false, level: false, fine: false });
   const altRef = useRef<HTMLElement>(null);
@@ -137,8 +142,9 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
   const [scan, setScan] = useState(scanOn);
   const [banner, setBanner] = useState<Banner | null>(null);
   const [result, setResult] = useState<Result | null>(null);
-  const [copied, setCopied] = useState(false);
   const [turning, setTurning] = useState<"left" | "right" | "level" | null>(null);
+  const [flown, setFlown] = useState(false);
+  const shell = useShell();
 
   const setPhase = useCallback((p: Phase) => {
     phaseRef.current = p;
@@ -147,9 +153,9 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
   const say = useCallback((text: string, tone: Banner["tone"] = "info") => setBanner({ text, tone, key: performance.now() }), []);
 
   useEffect(() => {
-    liveRef.current = { sound, night: night || forcedNight, reduced, onUnlock };
+    liveRef.current = { sound, night: night || forcedNight, reduced };
     if (!sound) sfx.engineStop();
-  }, [sound, night, forcedNight, reduced, onUnlock]);
+  }, [sound, night, forcedNight, reduced]);
 
   useEffect(() => {
     const img = new Image();
@@ -194,8 +200,24 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       const stars = stands ? (hit ? g.stars : Math.min(1, g.stars)) : 0;
       const fuelPct = fuel / flight.setup.fuel;
       const insight = insightFor(sim, flight, grade, verdict);
-      const share = shareText(flight, grade, verdict, fuelPct, sim.samples, detail, sim.scanUsed, sim.assistUsed, hit, missBy);
-      const unlocked = updateProgress((p) => {
+      const share = freeFlightShare({
+        site: flight.named ? flight.named.name : `site ${flight.seed}`,
+        world: flight.world,
+        grade,
+        speed: verdict ? verdict.speed : null,
+        stands: !!verdict?.stands,
+        detail,
+        onTarget: hit,
+        missBy,
+        fuelPct,
+        samples: sim.samples,
+        scanned: sim.scanUsed,
+        assisted: sim.assistUsed,
+        difficulty: flight.difficulty,
+      });
+      // New keycaps wait for the card, so the toast doesn't land on top of the landing.
+      releaseRef.current = holdAnnouncements();
+      updateProgress((p) => {
         let n = { ...p, flights: p.flights + 1, freeSeed: flight.named ? p.freeSeed : flight.seed };
         if (stands) {
           const speed = Math.abs(verdict!.speed);
@@ -230,7 +252,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       timersRef.current.push(
         window.setTimeout(() => {
           setResult(r);
-          liveRef.current.onUnlock(unlocked);
+          releaseRef.current?.();
         }, delay),
       );
       if (liveRef.current.sound && g.flag) timersRef.current.push(window.setTimeout(() => sfx.flagFlap(), liveRef.current.reduced ? 0 : 3100));
@@ -568,7 +590,10 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
 
     raf = requestAnimationFrame(frame);
     const onHide = () => {
-      if (document.hidden && phaseRef.current === "flying") setPhase("paused");
+      if (document.hidden && phaseRef.current === "flying") {
+        pausedFrom.current = "flying";
+        setPhase("paused");
+      }
     };
     document.addEventListener("visibilitychange", onHide);
     return () => {
@@ -576,6 +601,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       ro.disconnect();
       document.removeEventListener("visibilitychange", onHide);
       timers.forEach((t) => window.clearTimeout(t));
+      releaseRef.current?.();
       sfx.engineStop();
     };
     // The flight is created once per mount; a retry remounts the component.
@@ -585,13 +611,32 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
   const start = useCallback(() => {
     if (phaseRef.current !== "ready") return;
     setPhase("flying");
+    setFlown(true);
     if (liveRef.current.sound) sfx.engineStart();
   }, [setPhase]);
 
-  const togglePause = useCallback(() => {
-    if (phaseRef.current === "flying") setPhase("paused");
-    else if (phaseRef.current === "paused") setPhase("flying");
+  const pause = useCallback(() => {
+    if (phaseRef.current !== "flying" && phaseRef.current !== "ready") return;
+    pausedFrom.current = phaseRef.current;
+    setPhase("paused");
   }, [setPhase]);
+
+  const resume = useCallback(() => {
+    if (phaseRef.current === "paused") setPhase(pausedFrom.current);
+  }, [setPhase]);
+
+  const togglePause = useCallback(() => (phaseRef.current === "paused" ? resume() : pause()), [pause, resume]);
+
+  usePlayScreen({
+    screen: result ? "results" : "play",
+    paused: phase === "paused",
+    onPause: pause,
+    onResume: resume,
+    items: [{ label: "Restart flight", shortcut: "R", onSelect: onRetry }],
+    losesProgress: flown && phase !== "ended",
+    roundName: "this flight",
+    onMenu: onExit,
+  });
 
   const nudge = useCallback((d: number) => setLever((v) => clamp(Math.round(v + d), 0, 100)), []);
 
@@ -607,17 +652,22 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
     const down = (e: KeyboardEvent) => {
       const k = e.key;
       keysRef.current.fine = e.shiftKey;
-      if (k === "Escape") {
-        e.preventDefault();
-        onExit();
-        return;
-      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      // While the pause menu is open only its shortcuts work: R restarts, P resumes.
+      if (phaseRef.current === "paused" && !/^[rRpP]$/.test(k)) return;
       if (k === "r" || k === "R") {
+        e.preventDefault();
         onRetry();
         return;
       }
       if ((k === "n" || k === "N") && result) {
+        e.preventDefault();
         onNewSite();
+        return;
+      }
+      if ((k === "h" || k === "H") && result) {
+        e.preventDefault();
+        shell.toHall();
         return;
       }
       if (phaseRef.current === "ended") return;
@@ -680,7 +730,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       window.removeEventListener("keyup", up);
       window.removeEventListener("blur", blur);
     };
-  }, [onExit, onRetry, onNewSite, result, start, togglePause, nudge, toggleScan]);
+  }, [shell, onRetry, onNewSite, result, start, togglePause, nudge, toggleScan]);
 
   useEffect(() => {
     if (!banner) return;
@@ -719,7 +769,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
 
       <div className={styles.top}>
         <div className={styles.chip}>
-          <span aria-hidden>{world.emoji}</span>
+          <WorldIcon world={world.id} size={18} />
           <span>
             <span className={free.chipMode}>Free Flight · </span>
             {named ? named.name : world.name}
@@ -727,23 +777,20 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
         </div>
         <div className={`${styles.topTools} ${free.tools}`}>
           <button type="button" className={styles.small} aria-pressed={autoWarp} onClick={() => setAutoWarp((v) => !v)} title="Time warp (T)" aria-label={`Time warp ${autoWarp ? "auto" : "off"}`}>
-            ⏩<span className={styles.lbl}> Warp {autoWarp ? "auto" : "off"}</span>
+            <WarpIcon size={16} />
+            <span className={styles.lbl}> Warp {autoWarp ? "auto" : "off"}</span>
           </button>
           <button type="button" className={styles.small} aria-pressed={scan} onClick={toggleScan} title="Scan assist (S)" aria-label={`Scan assist ${scan ? "on" : "off"}`}>
-            🛰️<span className={styles.lbl}> Scan {scan ? "on" : "off"}</span>
+            <ScanIcon size={16} />
+            <span className={styles.lbl}> Scan {scan ? "on" : "off"}</span>
           </button>
           <button type="button" className={styles.small} aria-pressed={assist} onClick={() => setAssist((v) => !v)} title="Landing assist (A)" aria-label={`Landing assist ${assist ? "on" : "off"}`}>
-            🛟<span className={styles.lbl}> Assist {assist ? "on" : "off"}</span>
+            <AssistIcon size={16} />
+            <span className={styles.lbl}> Assist {assist ? "on" : "off"}</span>
           </button>
           <button type="button" className={styles.small} aria-pressed={guide} onClick={() => setGuide((v) => !v)} title="Burn guide (G)" aria-label={`Burn guide ${guide ? "on" : "off"}`}>
-            ◎<span className={styles.lbl}> Guide {guide ? "on" : "off"}</span>
-          </button>
-          <button type="button" className={styles.small} onClick={togglePause} disabled={phase === "ready" || phase === "ended"} title="Pause (P)" aria-label={phase === "paused" ? "Resume" : "Pause"}>
-            {phase === "paused" ? "▶" : "❚❚"}
-            <span className={styles.lbl}>{phase === "paused" ? " Resume" : " Pause"}</span>
-          </button>
-          <button type="button" className={styles.small} onClick={onExit} title="Back to the lobby (Esc)" aria-label="Back to the lobby">
-            ✕
+            <GuideIcon size={16} />
+            <span className={styles.lbl}> Guide {guide ? "on" : "off"}</span>
           </button>
         </div>
       </div>
@@ -878,8 +925,8 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
         <div className={styles.overlay}>
           <div className={styles.card}>
             <p className={styles.kicker}>
-              {world.emoji} {siteLabel(flight)} · {spec.start === "full" ? "full descent" : "final approach"}
-              {flight.difficulty !== "standard" && ` · ${difficultyTag(flight.difficulty)}`}
+              <WorldIcon world={world.id} size={16} /> {siteLabel(flight)} · {spec.start === "full" ? "full descent" : "final approach"}
+              {flight.difficulty !== "standard" && ` · ${difficultyLabel(flight.difficulty)}`}
             </p>
             <h2 className={styles.cardTitle}>Free Flight</h2>
             <p className={styles.cardText}>
@@ -905,17 +952,6 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
         </div>
       )}
 
-      {phase === "paused" && (
-        <div className={styles.overlay}>
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Paused</h2>
-            <button type="button" className={styles.go} onClick={togglePause}>
-              Resume <kbd>P</kbd>
-            </button>
-          </div>
-        </div>
-      )}
-
       {result && grade && (
         <section className={styles.result} data-grade={result.grade} aria-live="polite">
           <p className={styles.kicker}>
@@ -923,12 +959,20 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
             {!named && ` · site ${flight.seed}`}
           </p>
           <h2 className={styles.gradeTitle}>
-            <span aria-hidden>{grade.emoji}</span> {grade.title}
+            <GradeIcon grade={result.grade} size={32} className={styles.gradeIcon} /> {grade.title}
           </h2>
           <p className={styles.gradeLine}>{result.detail || grade.line(world.name)}</p>
           {result.verdict?.stands && (
             <p className={free.target} data-hit={result.onTarget || undefined}>
-              {result.onTarget ? "🎯 On target" : `↪️ Diverted: ${fmtKm(result.missBy)} from the target. Safe, but only one star.`}
+              {result.onTarget ? (
+                <>
+                  <TargetIcon size={16} /> On target
+                </>
+              ) : (
+                <>
+                  <DivertIcon size={16} /> Diverted: {fmtKm(result.missBy)} from the target. Safe, but only one star.
+                </>
+              )}
             </p>
           )}
           {result.verdict && !result.verdict.stands && result.verdict.reasons.length > 0 && result.grade === "tipped" && <p className={free.reasons}>{result.verdict.reasons.join(" · ")}</p>}
@@ -947,42 +991,30 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
             </div>
           </dl>
           {(named || result.stars > 0) && (
-            <p className={styles.stars} aria-label={`${result.stars} of 3 stars`}>
-              <span>{"★".repeat(result.stars)}</span>
-              <span className={styles.starsOff}>{"★".repeat(3 - result.stars)}</span>{" "}
+            <p className={styles.stars}>
+              <Stars value={result.stars} size={22} />{" "}
               {result.narrow && <span className={free.bonus}>narrow ledge</span>} {result.centre && <span className={free.bonus}>dead centre</span>}
             </p>
           )}
           <Recorder2D you={result.you} ideal={result.ideal} scanned={result.scanned} />
           <p className={styles.insight}>{result.insight}</p>
           <div className={styles.actions}>
-            <button type="button" className={styles.go} onClick={onRetry}>
-              Fly again <kbd>R</kbd>
-            </button>
             {!named && (
               <button type="button" className={styles.secondary} onClick={onNewSite}>
                 New site <kbd>N</kbd>
               </button>
             )}
-            <button
-              type="button"
-              className={styles.secondary}
-              onClick={async () => {
-                try {
-                  if (navigator.share) await navigator.share({ text: result.share });
-                  else {
-                    await navigator.clipboard.writeText(result.share);
-                    setCopied(true);
-                  }
-                } catch {
-                  // The share sheet was dismissed.
-                }
-              }}
-            >
-              {copied ? "Copied!" : "Share"}
+            <ShareButton text={result.share} className={styles.secondary} />
+          </div>
+          <div className={styles.actions} data-standard>
+            <button type="button" className={styles.go} onClick={onRetry}>
+              Fly again <kbd>R</kbd>
             </button>
             <button type="button" className={styles.secondary} onClick={onExit}>
-              Lobby <kbd>Esc</kbd>
+              Game menu <kbd>Esc</kbd>
+            </button>
+            <button type="button" className={styles.secondary} onClick={shell.toHall}>
+              Back to the Hall <kbd>H</kbd>
             </button>
           </div>
         </section>
@@ -1008,26 +1040,6 @@ function insightFor(sim: FreeSim, flight: Flight2D, grade: GradeId, v: Verdict |
   if (grade === "splash") return "That was the sea. The barges are the only flat ground out there: steer onto one before you come down.";
   if (sim.state.fuel <= 1) return "You ran dry. Kill the drift during the main burn, when the engine is running anyway: it costs far less than fixing it later.";
   return "Too fast at the end. Brake harder in the last few hundred metres, and keep the speed under 20 km/h.";
-}
-
-function shareText(flight: Flight2D, grade: GradeId, v: Verdict | null, fuelPct: number, samples: Sample2D[], detail: string, scanned: boolean, assisted: boolean, hit: boolean, missBy: number) {
-  const g = GRADES[grade];
-  const world = flight.world;
-  const head = `Don't Crater · Free Flight · ${flight.named ? flight.named.name : `site ${flight.seed}`}`;
-  const end = samples[samples.length - 1]?.t ?? 1;
-  let line = "";
-  for (let i = 0; i < 8; i++) {
-    const from = (end * i) / 8;
-    const to = (end * (i + 1)) / 8;
-    const part = samples.filter((s) => s.t >= from && s.t < to);
-    const avg = part.length ? part.reduce((a, s) => a + s.throttle, 0) / part.length : 0;
-    line += avg < 8 ? "⬛" : avg < 65 ? "🟧" : "🔥";
-  }
-  const where = detail ? ` · ${detail.split(" · ").slice(1).join(" · ")}` : "";
-  const speed = v ? fmtSpeed(v.speed) : "";
-  const aim = v?.stands ? (hit ? " · 🎯" : ` · ↪️ ${fmtKm(missBy)} off`) : "";
-  const fuel = flight.difficulty !== "standard" ? ` · ${difficultyTag(flight.difficulty)}` : "";
-  return `${head}\n${world.emoji} ${world.name} · ${g.emoji} ${speed}${where}${aim} · ⛽ ${Math.round(fuelPct * 100)}%${fuel}${scanned ? " · 🛰️" : ""}${assisted ? " · 🛟" : ""}\n${line}${g.emoji}`;
 }
 
 /** Climbing: when the rise tops out, if gravity is winning; or still climbing under power. */

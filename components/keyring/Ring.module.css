@@ -1,0 +1,158 @@
+.ring {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: calc(100dvh - 150px);
+  overflow: visible;
+  touch-action: none;
+  cursor: grab;
+}
+
+.ring:active {
+  cursor: grabbing;
+}
+
+/* A click focuses the ring (so the arrow keys work next); only keyboard focus shows, as a glow on the steel. */
+.ring:focus,
+.ring:focus-visible {
+  outline: none;
+}
+
+.ring:focus-visible .steel {
+  filter: drop-shadow(0 0 6px var(--focus));
+}
+
+/* ---------- Steel ---------- */
+
+.steelLight {
+  stop-color: #ffffff;
+}
+
+.steelMid {
+  stop-color: #b8bec8;
+}
+
+.steelDark {
+  stop-color: #6d7480;
+}
+
+:root[data-theme="dark"] .steelLight {
+  stop-color: #e9edf3;
+}
+
+:root[data-theme="dark"] .steelMid {
+  stop-color: #8a919d;
+}
+
+:root[data-theme="dark"] .steelDark {
+  stop-color: #3d434d;
+}
+
+.steel,
+.steelOuter {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+
+/* A dark hairline on each side gives the steel an edge against the cream deck. */
+.edge {
+  fill: none;
+  stroke: rgb(70 60 50 / 0.35);
+  stroke-width: 12;
+}
+
+:root[data-theme="dark"] .edge {
+  stroke: rgb(0 0 0 / 0.6);
+}
+
+.steelOuter {
+  stroke-width: 6;
+  opacity: 0.85;
+}
+
+.shine {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 1.4;
+  stroke-dasharray: 60 460 30 200;
+  opacity: 0.75;
+}
+
+:root[data-theme="dark"] .shine {
+  opacity: 0.35;
+}
+
+.ringShadow {
+  fill: none;
+  stroke: rgb(60 40 10 / 0.16);
+  stroke-width: 10;
+  filter: blur(4px);
+}
+
+:root[data-theme="dark"] .ringShadow {
+  stroke: rgb(0 0 0 / 0.5);
+}
+
+/* A soft pool of light under the bunch. */
+.poolCore {
+  stop-color: #ffffff;
+  stop-opacity: 0.55;
+}
+
+.poolEdge {
+  stop-color: #ffffff;
+  stop-opacity: 0;
+}
+
+:root[data-theme="dark"] .poolCore {
+  stop-color: #8f7bff;
+  stop-opacity: 0.18;
+}
+
+:root[data-theme="dark"] .poolEdge {
+  stop-color: #8f7bff;
+  stop-opacity: 0;
+}
+
+/* ---------- Jump rings and links ---------- */
+
+.jump {
+  fill: none;
+  stroke: #9aa2ad;
+  stroke-width: 3.2;
+}
+
+:root[data-theme="dark"] .jump {
+  stroke: #7c838f;
+}
+
+.link {
+  fill: none;
+  stroke: #b3b9c2;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+}
+
+:root[data-theme="dark"] .link {
+  stroke: #6b727d;
+}
+
+.hole {
+  fill: none;
+  stroke: #9aa2ad;
+  stroke-width: 2.6;
+}
+
+.cap {
+  will-change: transform;
+}
+
+/* The bunch casts one soft shadow on the deck behind it (none at night: the caps light it instead). */
+.bunch {
+  filter: drop-shadow(10px 22px 16px rgb(70 45 10 / 0.18));
+}
+
+:root[data-theme="dark"] .bunch {
+  filter: none;
+}

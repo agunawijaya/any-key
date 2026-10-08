@@ -1,0 +1,16 @@
+{
+  "runs": 40,
+  "escapes": 22,
+  "best": { "normal": { "time": 31.4, "score": 1820 }, "hard": { "time": 44.9, "score": 2410 } },
+  "screens": {
+    "green-1": { "stars": 3, "time": 28.1 },
+    "green-2": { "stars": 2, "time": 39.5 },
+    "amber-1": { "stars": 1, "time": 51.2 }
+  },
+  "daily": {
+    "2026-10-04": { "won": true, "time": 33.3, "share": "Outta Here · Daily #277\n33.3 s · ★★☆ · 0 hits\n🟩🟩🟨🟩🟦🟩🟧🟩🟩🟩 ➕" },
+    "2026-10-06": { "won": false, "time": 18.0, "share": "Outta Here · Daily #279\ncaught · ★☆☆ · 3 hits\n🟩🟨🟥🟩🟥🟥🟩🟩🟩🟥 ✖️" }
+  },
+  "achievements": ["under-keys", "wraparound", "rush-hour", "pop", "scape", "crash-test"],
+  "level": "hard"
+}

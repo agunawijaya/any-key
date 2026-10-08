@@ -1,17 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useState } from "react";
-import { PrefsSync } from "@/components/hall/PrefsSync";
-import { Story, type DocTab } from "@/components/kit/Story";
-import { useHashTab } from "@/components/kit/useHashTab";
-import { ThemeButton } from "@/components/ui/ThemeButton";
+import { GameShell } from "@/components/kit/GameShell";
+import { usePrefs } from "@/components/kit/hooks";
+import type { DocTab } from "@/components/kit/Story";
 import { COMPUTERS, nextScreen, SCREENS, type Screen } from "@/lib/outta/campaign";
 import { dailyFor, shareText } from "@/lib/outta/daily";
 import type { Game } from "@/lib/outta/engine";
 import { LEVELS, type LevelId } from "@/lib/outta/levels";
-import { ACHIEVEMENTS, earnedBy, getProgress, updateProgress, useProgress, withAchievement, type Progress } from "@/lib/outta/progress";
-import { setPrefs, usePrefs } from "@/lib/use-prefs";
+import { outtaManifest } from "@/lib/outta/manifest";
+import { earnedBy, getProgress, updateProgress, useProgress, withAchievement, type Progress } from "@/lib/outta/progress";
 import { Lobby, type ModeId } from "./Lobby";
 import { Play, type Finish, type Session } from "./Play";
 import { isOpen, ScreensMap } from "./ScreensMap";
@@ -21,7 +19,12 @@ import styles from "./OuttaHere.module.css";
 
 type View = { kind: "lobby" } | { kind: "screens" } | { kind: "play"; session: Session } | { kind: "versus" } | { kind: "1980" };
 
-const TABS = ["play", "story"] as const;
+const SHORTCUTS = [
+  { keys: "Arrows  WASD", does: "Move (hold to keep going)" },
+  { keys: "Space  B", does: "Drop a bomb" },
+  { keys: "R  N", does: "Try again, new screen" },
+  { keys: "P", does: "Pause" },
+];
 
 const runSession = (level: LevelId, seed = 1 + Math.floor(Math.random() * 99999)): Session => ({
   kind: "run",
@@ -68,15 +71,7 @@ function record(p: Progress, g: Game, session: Session, finish: Finish): Progres
 export function OuttaHere({ docs }: { docs: DocTab[] }) {
   const progress = useProgress();
   const { sound } = usePrefs();
-  const [tab, setTab] = useHashTab(TABS);
   const [view, setView] = useState<View>({ kind: "lobby" });
-  const [toasts, setToasts] = useState<string[]>([]);
-
-  const unlock = useCallback((ids: string[]) => {
-    if (!ids.length) return;
-    setToasts((t) => [...t, ...ids]);
-    window.setTimeout(() => setToasts((t) => t.slice(ids.length)), 4200);
-  }, []);
 
   const toLobby = useCallback(() => setView({ kind: "lobby" }), []);
   const toScreens = useCallback(() => setView({ kind: "screens" }), []);
@@ -93,14 +88,10 @@ export function OuttaHere({ docs }: { docs: DocTab[] }) {
     } else setView({ kind: mode });
   }, []);
 
-  const finished = useCallback(
-    (session: Session) => (g: Game, finish: Finish) => unlock(updateProgress((p) => record(p, g, session, finish))),
-    [unlock],
-  );
+  const finished = useCallback((session: Session) => (g: Game, finish: Finish) => updateProgress((p) => record(p, g, session, finish)), []);
 
   let main: React.ReactNode;
-  if (tab === "story") main = <Story docs={docs} />;
-  else if (view.kind === "play") {
+  if (view.kind === "play") {
     const { session } = view;
     const next = session.screenId ? nextScreen(session.screenId) : undefined;
     main = (
@@ -108,8 +99,8 @@ export function OuttaHere({ docs }: { docs: DocTab[] }) {
         key={`${session.kind}-${session.seed}-${session.screenId ?? ""}`}
         session={session}
         sound={sound}
-        exitLabel={session.kind === "screen" ? "Screens" : "Lobby"}
-        onExit={session.kind === "screen" ? toScreens : toLobby}
+        onExit={toLobby}
+        onScreens={session.kind === "screen" ? toScreens : undefined}
         onNewScreen={session.kind === "run" ? () => setView({ kind: "play", session: runSession(session.settings.id as LevelId) }) : undefined}
         onNext={next && isOpen(progress.screens, next) ? () => setView({ kind: "play", session: screenSession(next) }) : undefined}
         onFinish={finished(session)}
@@ -117,56 +108,12 @@ export function OuttaHere({ docs }: { docs: DocTab[] }) {
     );
   } else if (view.kind === "screens") main = <ScreensMap onPlay={(s) => setView({ kind: "play", session: screenSession(s) })} onExit={toLobby} />;
   else if (view.kind === "versus") main = <Versus level={progress.level} sound={sound} onExit={toLobby} />;
-  else if (view.kind === "1980") main = <Terminal1980 onExit={toLobby} onUnlock={unlock} />;
+  else if (view.kind === "1980") main = <Terminal1980 onExit={toLobby} />;
   else main = <Lobby onChoose={choose} />;
 
   return (
-    <div className={styles.app} data-view={tab === "story" ? "story" : view.kind}>
-      <PrefsSync />
-      <header className={styles.header}>
-        <Link href="/" className={styles.back} aria-label="Back to the Any Key hall">
-          <span aria-hidden>←</span>
-          <span className={styles.backLabel}>any key</span>
-        </Link>
-        <div className={styles.brand}>
-          <span className={styles.logo}>Outta Here</span>
-          <span className={styles.origin}>based on ESCAPE · TRS-80 BASIC · c. 1980</span>
-        </div>
-        <div className={styles.tabs} role="tablist" aria-label="Sections">
-          <button type="button" role="tab" aria-selected={tab === "play"} onClick={() => setTab("play")}>
-            Play
-          </button>
-          <button type="button" role="tab" aria-selected={tab === "story"} onClick={() => setTab("story")}>
-            Story
-          </button>
-        </div>
-        <div className={styles.tools}>
-          <button
-            type="button"
-            className={styles.tool}
-            aria-pressed={sound}
-            aria-label={sound ? "Sound on" : "Sound off"}
-            title={sound ? "Sound on" : "Sound off"}
-            onClick={() => setPrefs({ sound: !sound })}
-          >
-            {sound ? "🔊" : "🔇"}
-          </button>
-          <ThemeButton />
-        </div>
-      </header>
-
+    <GameShell game={outtaManifest} docs={docs} className={styles.app} shortcuts={SHORTCUTS} dataset={{ screen: view.kind }}>
       <main className={styles.main}>{main}</main>
-
-      <div className={styles.toasts} aria-live="polite">
-        {toasts.map((id, i) => {
-          const a = ACHIEVEMENTS.find((x) => x.id === id);
-          return a ? (
-            <p key={`${id}-${i}`} className={styles.toast}>
-              <span aria-hidden>{a.icon}</span> <strong>{a.name}</strong> unlocked
-            </p>
-          ) : null;
-        })}
-      </div>
-    </div>
+    </GameShell>
   );
 }

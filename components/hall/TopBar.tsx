@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { HALL_STYLES, type HallStyle } from "@/lib/prefs";
-import { setPrefs, usePrefs } from "@/lib/use-prefs";
-import { ThemeButton } from "@/components/ui/ThemeButton";
+import { usePrefs } from "@/components/kit/hooks";
+import { HALL_STYLES, setPrefs, type HallStyle } from "@/lib/kit/appearance";
+import { BarTools } from "@/components/kit/BarTools";
 import styles from "./TopBar.module.css";
 
 const HALL_LABELS: Record<HallStyle, string> = { wall: "Wall", orbit: "Orbit", device: "Device" };
@@ -36,23 +36,7 @@ export function TopBar() {
         ))}
       </div>
 
-      <div className={styles.tools}>
-        <button
-          type="button"
-          className={styles.tool}
-          aria-pressed={prefs.sound}
-          aria-label={prefs.sound ? "Key sounds on" : "Key sounds off"}
-          title={prefs.sound ? "Key sounds on" : "Key sounds off"}
-          onClick={() => setPrefs({ sound: !prefs.sound })}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden className={styles.soundIcon}>
-            <path d="M4 9.5h3.5L12 5v14l-4.5-4.5H4z" />
-            <path className={styles.waves} d="M15.5 9a4.2 4.2 0 0 1 0 6M18 6.5a7.8 7.8 0 0 1 0 11" />
-            <path className={styles.mute} d="M16 9.5l5 5M21 9.5l-5 5" />
-          </svg>
-        </button>
-        <ThemeButton />
-      </div>
+      <BarTools className={styles.tools} />
     </header>
   );
 }

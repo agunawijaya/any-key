@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { noteForKey, pluck } from "@/lib/sound";
-import { getPrefs } from "@/lib/use-prefs";
+import { getPrefs, prefersReducedMotion } from "@/lib/kit/appearance";
+import { noteForKey, pluck } from "@/lib/kit/sound";
+import { hasModifier, isTypingTarget } from "@/lib/kit/keys";
 import styles from "./AnyKeyToy.module.css";
 
 const COLORS = ["var(--lime)", "var(--pink)", "var(--blue)", "var(--orange)", "var(--violet)", "var(--cyan)"];
@@ -20,7 +21,6 @@ export function AnyKeyToy() {
   const layer = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let releaseTimer = 0;
 
     function burst(key: string) {
@@ -32,7 +32,7 @@ export function AnyKeyToy() {
       if (getPrefs().sound) pluck(noteForKey(key));
 
       const host = layer.current;
-      if (!host || reduceMotion.matches) return;
+      if (!host || prefersReducedMotion()) return;
       while (host.childElementCount > MAX_KEYCAPS * 7) host.firstElementChild?.remove();
 
       const x = 8 + Math.random() * 84;
@@ -58,10 +58,8 @@ export function AnyKeyToy() {
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.repeat || event.ctrlKey || event.metaKey || event.altKey) return;
+      if (event.repeat || hasModifier(event) || isTypingTarget(event.target)) return;
       if (!/^[a-z0-9]$/i.test(event.key)) return;
-      const target = event.target as HTMLElement | null;
-      if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
       burst(event.key);
     }
 

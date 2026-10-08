@@ -5,6 +5,7 @@ import type { Arrangement } from "@/lib/music/arrange/types";
 import { pitchName } from "@/lib/music/theory";
 import { indexTracks, soundingIn, startingIn } from "@/lib/music/timeline";
 import type { Clock } from "../BopBox";
+import { InstrumentIcon } from "../icons";
 import styles from "./StageView.module.css";
 
 const ROLE_LABEL: Record<string, string> = {
@@ -68,7 +69,7 @@ export function StageView({ arrangement, clock, muted, onToggle }: Props) {
             title={muted.has(track.id) ? `Unmute ${track.name}` : `Mute ${track.name}`}
           >
             <span className={styles.icon} aria-hidden>
-              {track.patch.icon}
+              <InstrumentIcon family={track.patch.family} size={34} />
             </span>
             <span className={styles.name}>{track.name}</span>
             <span className={styles.role}>{ROLE_LABEL[track.role] ?? track.role}</span>

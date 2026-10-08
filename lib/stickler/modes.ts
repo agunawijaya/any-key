@@ -1,16 +1,19 @@
 import type { Rules } from "./rules";
 import { isWinning } from "./solver";
-import { mulberry, type Level } from "./sparky";
+import { dailyDate } from "@/lib/kit/daily";
+import { mulberry32 } from "@/lib/kit/rng";
+import { sticklerManifest } from "./manifest";
+import type { Level } from "./sparky";
 
 export type ModeId = "classic" | "handfuls" | "ladder" | "daily" | "versus" | "1981";
 
-export const MODES: { id: ModeId; name: string; blurb: string; emoji: string }[] = [
-  { id: "classic", name: "Classic 23", blurb: "The 1981 game: 23 sticks, take 1–3, you start.", emoji: "🔥" },
-  { id: "handfuls", name: "Handfuls", blurb: "Every turn is a handful. Never just one.", emoji: "🤲" },
-  { id: "ladder", name: "Ladder", blurb: "Ten tables, new twists, one very smug final boss.", emoji: "🪜" },
-  { id: "daily", name: "Daily", blurb: "One puzzle a day for everyone. Share your streak.", emoji: "📅" },
-  { id: "versus", name: "Versus", blurb: "Two players, one screen. Pass it over.", emoji: "🤝" },
-  { id: "1981", name: "1981 mode", blurb: "The original behaviour, text and all.", emoji: "📟" },
+export const MODES: { id: ModeId; name: string; blurb: string }[] = [
+  { id: "classic", name: "Classic 23", blurb: "The 1981 game: 23 sticks, take 1–3, you start." },
+  { id: "handfuls", name: "Handfuls", blurb: "Every turn is a handful. Never just one." },
+  { id: "ladder", name: "Ladder", blurb: "Ten tables, new twists, one very smug final boss." },
+  { id: "daily", name: "Daily", blurb: "One puzzle a day for everyone. Share your streak." },
+  { id: "versus", name: "Versus", blurb: "Two players, one screen. Pass it over." },
+  { id: "1981", name: "1981 mode", blurb: "The original game, move for move, on a green screen." },
 ];
 
 export type Table = { id: number; name: string; rules: Rules; level: Level; blurb: string };
@@ -43,13 +46,12 @@ export const CLASSIC: Rules = one(23, 3);
 
 /** The Daily: the same puzzle for everyone on a given date. Always winnable for you. */
 export function dailyPuzzle(date = new Date()) {
-  const day = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(2026, 0, 1)) / 86_400_000);
-  const rng = mulberry(9_000 + day);
+  const { day, key, number } = dailyDate(date, sticklerManifest.daily?.epoch);
+  const rng = mulberry32(9_000 + day);
   const maxTake = [3, 4, 5][Math.floor(rng() * 3)];
   let sticks = 17 + Math.floor(rng() * 25);
   while (!isWinning([sticks], { maxTake })) sticks++;
-  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  return { number: day + 1, key, rules: one(sticks, maxTake), level: "master" as Level };
+  return { number, key, rules: one(sticks, maxTake), level: "master" as Level };
 }
 
 // ---------- Handfuls: every take is min..max, and fewer than min left means a sweep ----------
@@ -89,7 +91,7 @@ export function surprisePile(min: number, max: number, seed: number, sparkyStart
   const period = min + max;
   const fair: number[] = [];
   for (let n = 3 * period; n <= 6 * period; n++) if (isWinning([n], { minTake: min, maxTake: max }) !== sparkyStarts) fair.push(n);
-  return fair[Math.floor(mulberry(seed)() * fair.length)];
+  return fair[Math.floor(mulberry32(seed)() * fair.length)];
 }
 
 /** The table for a Handfuls setup. Whoever opens, you can always win it with the right answers. */

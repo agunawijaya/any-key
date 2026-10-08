@@ -756,8 +756,9 @@ export class Scene {
     ctx.font = "700 11px ui-monospace, SFMono-Regular, Menlo, monospace";
     ctx.textBaseline = "middle";
     // Labels sit left of the lines on wide screens, just above them on narrow ones.
-    const pill = (y: number, text: string, color: string, below = false) => {
-      const tw = ctx.measureText(text).width;
+    const pill = (y: number, text: string, color: string, below = false, flag = false) => {
+      const lead = flag ? 12 : 0;
+      const tw = ctx.measureText(text).width + lead;
       const x = narrow ? x0 : x0 - 8 - tw - 12;
       const yy = narrow ? y + (below ? 13 : -13) : y;
       ctx.fillStyle = "rgba(8,10,20,0.75)";
@@ -765,7 +766,16 @@ export class Scene {
       ctx.roundRect(x, yy - 10, tw + 12, 20, 10);
       ctx.fill();
       ctx.fillStyle = color;
-      ctx.fillText(text, x + 6, yy + 0.5);
+      if (flag) {
+        // A little flag on its pole: the flag-planting line.
+        ctx.fillRect(x + 7, yy - 6, 1.5, 12);
+        ctx.beginPath();
+        ctx.moveTo(x + 8.5, yy - 6);
+        ctx.lineTo(x + 15, yy - 3.5);
+        ctx.lineTo(x + 8.5, yy - 1);
+        ctx.fill();
+      }
+      ctx.fillText(text, x + 6 + lead, yy + 0.5);
     };
     const soft = "#39e58c";
     const limit = "#ffb020";
@@ -819,8 +829,8 @@ export class Scene {
     }
     // Labels on the left; when the two lines are close, they share one row.
     const close = !!sft && Math.abs(lim.y - sft.y) < 22;
-    const softText = narrow ? `🚩 5 KM/H${strained ? " · FULL" : ""}` : `🚩 UNDER 5 KM/H${strained ? " · FULL POWER" : ""}`;
-    if (sft) pill(sft.y - (close && !narrow ? 11 : 0), `${sft.pinned ? "▲ " : ""}${softText}`, soft);
+    const softText = narrow ? `5 KM/H${strained ? " · FULL" : ""}` : `UNDER 5 KM/H${strained ? " · FULL POWER" : ""}`;
+    if (sft) pill(sft.y - (close && !narrow ? 11 : 0), `${sft.pinned ? "▲ " : ""}${softText}`, soft, false, true);
     pill(lim.y + (close && !narrow ? 11 : 0), `${lim.pinned ? "▲ " : ""}${narrow ? "20 LIMIT" : "20 KM/H LIMIT"}`, limit, narrow);
 
     // Close in: where holding this throttle would put you down.

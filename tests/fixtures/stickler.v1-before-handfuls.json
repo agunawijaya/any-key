@@ -1,0 +1,13 @@
+{
+  "wins": 3,
+  "losses": 1,
+  "streak": 1,
+  "bestStreak": 2,
+  "ladder": { "1": 2 },
+  "daily": {},
+  "achievements": ["first-light"],
+  "skinsUsed": ["matches"],
+  "skin": "matches",
+  "level": "clever",
+  "hintsSeen": 0
+}

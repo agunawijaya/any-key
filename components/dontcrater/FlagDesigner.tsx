@@ -1,6 +1,8 @@
 "use client";
 
-import { EMBLEMS, FLAG_COLORS, FLAG_PATTERNS, FLAG_SHAPES, flagSvg, randomFlag, type FlagDesign } from "@/lib/lander/flags";
+import { DiceIcon, LockIcon } from "@/components/kit/icons";
+import { EMBLEMS } from "@/lib/lander/emblems";
+import { FLAG_COLORS, FLAG_PATTERNS, FLAG_SHAPES, flagSvg, randomFlag, type FlagDesign } from "@/lib/lander/flags";
 import styles from "./FlagDesigner.module.css";
 
 /** The flag as inline SVG, waving on a pole. */
@@ -66,15 +68,24 @@ export function FlagDesigner({ design, unlocked, onChange, onClose }: Props) {
               const locked = !!e.unlock && !unlocked.includes(e.unlock);
               return (
                 <button
-                  key={e.emoji || "none"}
+                  key={e.id || "none"}
                   type="button"
                   className={styles.emblem}
-                  aria-pressed={design.emblem === e.emoji}
+                  aria-pressed={design.emblem === e.id}
+                  aria-label={locked ? `${e.label}: earned with an achievement` : e.label}
                   disabled={locked}
-                  title={locked ? "Earned with an achievement" : e.emoji || "No emblem"}
-                  onClick={() => set({ emblem: e.emoji })}
+                  title={locked ? "Earned with an achievement" : e.label}
+                  onClick={() => set({ emblem: e.id })}
                 >
-                  {locked ? "🔒" : e.emoji || "∅"}
+                  {locked ? (
+                    <LockIcon size={18} />
+                  ) : e.path ? (
+                    <svg viewBox="0 0 24 24" width={22} height={22} aria-hidden>
+                      <path d={e.path} fill="currentColor" fillRule="evenodd" />
+                    </svg>
+                  ) : (
+                    "None"
+                  )}
                 </button>
               );
             })}
@@ -82,7 +93,7 @@ export function FlagDesigner({ design, unlocked, onChange, onClose }: Props) {
         </fieldset>
         <div className={styles.row}>
           <button type="button" className={styles.dice} onClick={() => onChange(randomFlag(unlocked))}>
-            🎲 Surprise me
+            <DiceIcon size={18} /> Surprise me
           </button>
           <button type="button" className={styles.done} onClick={onClose}>
             Done

@@ -1,4 +1,5 @@
 import styles from "./Recorder.module.css";
+import { ScanIcon } from "./icons";
 import own from "./Recorder2D.module.css";
 
 /** One recorded moment: height above the ground (km), distance to the target (km, signed), throttle and tilt. */
@@ -7,7 +8,7 @@ export type Track = { t: number; alt: number; off: number; throttle: number; til
 type Props = {
   you: Track;
   ideal: Track;
-  /** Scan assist was used: the recorder carries the 🛰️ mark, as the share text does. */
+  /** Scan assist was used: the recorder carries the satellite mark, as the share text does. */
   scanned: boolean;
 };
 
@@ -62,9 +63,11 @@ export function Recorder2D({ you, ideal, scanned }: Props) {
           height
         </text>
         <line x1={PAD.l} x2={W - PAD.r} y1={H1 + H2 / 2} y2={H1 + H2 / 2} className={own.target} />
-        <text x={PAD.l - 6} y={H1 + H2 / 2} className={styles.tick}>
-          🎯
-        </text>
+        {/* The target line's mark: a small bullseye at the left of the axis. */}
+        <g transform={`translate(${PAD.l - 18} ${H1 + H2 / 2 - 6})`} className={own.targetMark}>
+          <circle cx="6" cy="6" r="5.5" />
+          <circle cx="6" cy="6" r="2.5" />
+        </g>
         {offs.map((k) => (
           <g key={`o${k}`}>
             {[-1, 1].map((sgn) => (
@@ -104,7 +107,15 @@ export function Recorder2D({ you, ideal, scanned }: Props) {
         </text>
       </svg>
       <figcaption className={`${styles.legend} ${own.legend}`}>
-        <span className={styles.keyYou}>You{scanned ? " 🛰️" : ""}</span>
+        <span className={styles.keyYou}>
+          You
+          {scanned && (
+            <>
+              {" "}
+              <ScanIcon size={13} />
+            </>
+          )}
+        </span>
         <span className={styles.keyIdeal} title="The autopilot knows every rock">
           Autopilot
         </span>

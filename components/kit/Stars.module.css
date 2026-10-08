@@ -1,0 +1,14 @@
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  vertical-align: -0.15em;
+}
+
+.on {
+  color: inherit;
+}
+
+.off {
+  opacity: 0.28;
+}

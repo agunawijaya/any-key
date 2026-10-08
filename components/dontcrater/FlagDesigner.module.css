@@ -158,11 +158,14 @@
 }
 
 .emblem {
+  display: grid;
+  place-items: center;
   height: 38px;
   border-radius: 10px;
   border: 1px solid var(--line);
   background: var(--surface-2);
-  font-size: 20px;
+  color: var(--ink);
+  font: 600 11px/1 var(--font-sans);
 }
 
 .emblem[aria-pressed="true"] {

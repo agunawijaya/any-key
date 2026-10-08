@@ -183,3 +183,21 @@
     display: flex;
   }
 }
+
+/* The standard three after a run: Play again, Game menu, Back to the Hall. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.actions .again {
+  margin-left: 0;
+}
+
+.actions .again:not(:first-child) {
+  border-color: var(--oh-line);
+  background: var(--oh-panel);
+  color: var(--oh-ink);
+}

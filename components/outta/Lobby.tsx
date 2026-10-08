@@ -4,7 +4,10 @@ import { useEffect, useSyncExternalStore } from "react";
 import { SCREENS } from "@/lib/outta/campaign";
 import { dailyFor, type Daily } from "@/lib/outta/daily";
 import { LEVELS, type LevelId } from "@/lib/outta/levels";
-import { ACHIEVEMENTS, updateProgress, useProgress } from "@/lib/outta/progress";
+import { BadgeCap, badgeText } from "@/components/kit/BadgeCap";
+import { outtaManifest } from "@/lib/outta/manifest";
+import { updateProgress, useProgress } from "@/lib/outta/progress";
+import { hasModifier, isTypingTarget } from "@/lib/kit/keys";
 import { fmt } from "./shared";
 import styles from "./Lobby.module.css";
 
@@ -106,10 +109,11 @@ export function Lobby({ onChoose }: { onChoose: (mode: ModeId) => void }) {
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target as HTMLElement).tagName)) return;
+      if (hasModifier(e) || e.repeat || isTypingTarget(e.target)) return;
       const mode = MODES.find((m) => m.key.toLowerCase() === e.key.toLowerCase());
-      if (mode) onChoose(mode.id);
+      if (!mode) return;
+      e.preventDefault();
+      onChoose(mode.id);
     };
     window.addEventListener("keydown", down);
     return () => window.removeEventListener("keydown", down);
@@ -120,7 +124,7 @@ export function Lobby({ onChoose }: { onChoose: (mode: ModeId) => void }) {
       const best = progress.best[level];
       return `${LEVELS[level].name}${best ? ` · best ${fmt(best.time)} s` : ""}`;
     }
-    if (id === "screens") return `${starCount} / ${SCREENS.length * 3} ★`;
+    if (id === "screens") return `${starCount} of ${SCREENS.length * 3} stars`;
     if (id === "daily") {
       if (!daily) return " ";
       return today ? (today.won ? `#${daily.number} · out in ${fmt(today.time)} s ✓` : `#${daily.number} · caught today, practise on`) : `#${daily.number} · not tried yet`;
@@ -219,19 +223,20 @@ export function Lobby({ onChoose }: { onChoose: (mode: ModeId) => void }) {
 
       <section className={styles.badges} aria-label="Badges">
         <h2 className={styles.h2}>
-          Badges <span>{progress.achievements.length} / {ACHIEVEMENTS.length}</span>
+          Badges <span>{progress.achievements.length} / {outtaManifest.achievements.length}</span>
         </h2>
         <ul>
-          {ACHIEVEMENTS.map((a) => {
+          {outtaManifest.achievements.map((a) => {
             const got = progress.achievements.includes(a.id);
+            const { title, hint } = badgeText(a, got);
             return (
               <li key={a.id} data-got={got}>
                 <span className={styles.badgeIcon} aria-hidden>
-                  {got ? a.icon : "?"}
+                  <BadgeCap game={outtaManifest} achievement={a} earned={got} />
                 </span>
                 <span>
-                  <strong>{a.name}</strong>
-                  <small>{a.how}</small>
+                  <strong>{title}</strong>
+                  <small>{hint}</small>
                 </span>
               </li>
             );

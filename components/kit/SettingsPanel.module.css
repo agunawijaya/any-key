@@ -1,0 +1,166 @@
+.panel {
+  display: grid;
+  gap: 18px;
+}
+
+.group {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.group legend {
+  margin-bottom: 8px;
+  color: var(--ink-3);
+  font: 600 11px/1 var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.switchRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  font: 600 15px/1.2 var(--font-sans);
+  cursor: pointer;
+}
+
+.switchRow input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.switch {
+  position: relative;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--line-strong);
+  transition: background 160ms ease;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 2px 4px rgb(0 0 0 / 0.25);
+  transition: transform 180ms cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+.switchRow input:checked + .switch {
+  background: var(--ink);
+}
+
+.switchRow input:checked + .switch::after {
+  transform: translateX(18px);
+}
+
+.switchRow input:focus-visible + .switch {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.slider {
+  display: grid;
+  grid-template-columns: 64px 1fr 48px;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-2);
+  font: 500 14px/1 var(--font-sans);
+}
+
+.slider input {
+  width: 100%;
+  accent-color: var(--ink);
+}
+
+.slider output {
+  color: var(--ink);
+  font: 600 13px/1 var(--font-mono);
+  text-align: right;
+}
+
+.segments {
+  display: inline-grid;
+  grid-auto-flow: column;
+  padding: 4px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: var(--bg-2);
+  width: fit-content;
+}
+
+.segments label {
+  position: relative;
+  cursor: pointer;
+}
+
+.segments input,
+.option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.segments span {
+  display: block;
+  padding: 9px 16px;
+  border-radius: 10px;
+  color: var(--ink-2);
+  font: 600 14px/1 var(--font-sans);
+}
+
+.segments input:checked + span {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.segments input:focus-visible + span,
+.option input:focus-visible + span {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.options {
+  display: grid;
+  gap: 6px;
+}
+
+.option {
+  cursor: pointer;
+}
+
+.option span {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.option strong {
+  color: var(--ink);
+  font: 600 14px/1.2 var(--font-sans);
+}
+
+.option small {
+  color: var(--ink-3);
+  font: 500 12px/1.3 var(--font-sans);
+}
+
+.option input:checked + span {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}

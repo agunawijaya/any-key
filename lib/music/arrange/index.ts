@@ -13,24 +13,23 @@ export type StyleId = "orchestra" | "original" | "pop" | "jazz" | "house" | "dan
 export type StyleInfo = {
   id: StyleId;
   name: string;
-  emoji: string;
   blurb: string;
   key: string;
 };
 
 export const STYLES: StyleInfo[] = [
-  { id: "orchestra", name: "Orchestra", emoji: "🎻", blurb: "Strings, winds, brass and timpani", key: "1" },
-  { id: "pop", name: "Pop", emoji: "🎤", blurb: "Piano, synths and a punchy kit", key: "2" },
-  { id: "jazz", name: "Jazz", emoji: "🎷", blurb: "Swing, walking bass, sax on top", key: "3" },
-  { id: "house", name: "House", emoji: "🪩", blurb: "124 BPM, four on the floor", key: "4" },
-  { id: "dangdut", name: "Dangdut", emoji: "🪘", blurb: "Kendang, suling and mandolin", key: "5" },
-  { id: "koplo", name: "Koplo", emoji: "🔥", blurb: "Dangdut, but faster and wilder", key: "6" },
-  { id: "lofi", name: "Lo-fi", emoji: "🌙", blurb: "Dusty beats to study to", key: "7" },
-  { id: "hiphop", name: "Hip-hop", emoji: "🎧", blurb: "Trap: 808 slides, hat rolls, flute on top", key: "=" },
-  { id: "solo", name: "Solo", emoji: "🎹", blurb: "Just the tune, on your instrument", key: "8" },
-  { id: "pc81", name: "PC Speaker ’81", emoji: "📟", blurb: "Exactly how it beeped in 1981", key: "9" },
-  { id: "remix", name: "AI Remix", emoji: "🧪", blurb: "A different genre for every tune", key: "0" },
-  { id: "original", name: "Original Score", emoji: "🏛️", blurb: "The orchestration written for the tune", key: "-" },
+  { id: "orchestra", name: "Orchestra", blurb: "Strings, winds, brass and timpani", key: "1" },
+  { id: "pop", name: "Pop", blurb: "Piano, synths and a punchy kit", key: "2" },
+  { id: "jazz", name: "Jazz", blurb: "Swing, walking bass, sax on top", key: "3" },
+  { id: "house", name: "House", blurb: "124 BPM, four on the floor", key: "4" },
+  { id: "dangdut", name: "Dangdut", blurb: "Kendang, suling and mandolin", key: "5" },
+  { id: "koplo", name: "Koplo", blurb: "Dangdut, but faster and wilder", key: "6" },
+  { id: "lofi", name: "Lo-fi", blurb: "Dusty beats to study to", key: "7" },
+  { id: "hiphop", name: "Hip-hop", blurb: "Trap: 808 slides, hat rolls, flute on top", key: "=" },
+  { id: "solo", name: "Solo", blurb: "Just the tune, on your instrument", key: "8" },
+  { id: "pc81", name: "PC Speaker ’81", blurb: "How it beeped in 1981, square wave and all", key: "9" },
+  { id: "remix", name: "AI Remix", blurb: "A different genre for every tune", key: "0" },
+  { id: "original", name: "Original Score", blurb: "The orchestration written for the tune", key: "-" },
 ];
 
 export function remixInfo(songId: string) {

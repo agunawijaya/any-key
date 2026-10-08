@@ -1,10 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePlayScreen, useShell } from "@/components/kit/shell-context";
 import { Game, type Dir } from "@/lib/outta/engine";
 import { LEVELS, type LevelId } from "@/lib/outta/levels";
+import { prefersReducedMotion } from "@/lib/kit/appearance";
 import { DARK, LIGHT, paint, type Boom } from "./render";
 import { CAUSES, fmt, keyOf, playSound } from "./shared";
+import { Hearts } from "./Hearts";
 import styles from "./Versus.module.css";
 
 /*
@@ -27,6 +30,9 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
   const [count, setCount] = useState(3);
   const [sides, setSides] = useState<Side[]>([]);
   const [winner, setWinner] = useState<number | null | "draw">(null);
+  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
+  const shell = useShell();
 
   const canvasesRef = useRef<(HTMLCanvasElement | null)[]>([null, null]);
   const wrapsRef = useRef<(HTMLDivElement | null)[]>([null, null]);
@@ -37,6 +43,7 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
 
   useEffect(() => {
     soundRef.current = sound;
+    pausedRef.current = paused;
   });
 
   useEffect(() => {
@@ -46,8 +53,11 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
     heldRef.current = [null, null];
     const causes = ["", ""];
     const booms: Boom[][] = [[], []];
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = prefersReducedMotion();
     const started = performance.now();
+    // Time spent paused doesn't count, not even in the countdown.
+    let pausedTotal = 0;
+    let pausedSince: number | null = null;
     let decided = false;
     let last = started;
     let lastHud = 0;
@@ -56,9 +66,14 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
       frame = requestAnimationFrame(loop);
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      const left = 3 - Math.floor((now - started) / 800);
+      if (pausedRef.current) pausedSince ??= now;
+      else if (pausedSince !== null) {
+        pausedTotal += now - pausedSince;
+        pausedSince = null;
+      }
+      const left = 3 - Math.floor(((pausedSince ?? now) - started - pausedTotal) / 800);
       if (!goRef.current && left <= 0) goRef.current = true;
-      if (goRef.current && !decided) {
+      if (goRef.current && !decided && pausedSince === null) {
         games.forEach((g, i) => {
           const held = heldRef.current[i];
           if (held && now - held.since > 180) g.move(held.dir);
@@ -95,24 +110,46 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
 
   const rematch = useCallback(() => {
     setWinner(null);
+    setPaused(false);
     setRound((r) => r + 1);
   }, []);
   const newScreen = useCallback(() => {
     setWinner(null);
+    setPaused(false);
     setSeed(1 + Math.floor(Math.random() * 99999));
   }, []);
+
+  usePlayScreen({
+    screen: winner !== null ? "results" : "play",
+    paused,
+    onPause: () => setPaused(true),
+    onResume: () => setPaused(false),
+    items: [
+      { label: "Start again", shortcut: "R", onSelect: rematch },
+      { label: "New screen", shortcut: "N", onSelect: newScreen },
+    ],
+    losesProgress: winner === null,
+    roundName: "this race",
+    onMenu: onExit,
+  });
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const key = keyOf(e);
+      if (pausedRef.current) {
+        if (key === "r") rematch();
+        else if (key === "n") newScreen();
+        return;
+      }
       if (winner !== null) {
         if (key === "r") rematch();
         else if (key === "n") newScreen();
-        else if (key === "Escape") onExit();
+        else if (key === "h") shell.toHall();
+        else return;
+        e.preventDefault();
         return;
       }
-      if (key === "Escape") return onExit();
       PLAYERS.forEach((p, i) => {
         const dir = p.dirs[key];
         const g = gamesRef.current[i];
@@ -139,13 +176,13 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [newScreen, onExit, rematch, winner]);
+  }, [newScreen, rematch, shell, winner]);
 
   return (
     <div className={styles.versus}>
       <div className={styles.bar}>
-        <button type="button" className={styles.tool} onClick={onExit}>
-          ← Lobby
+        <button type="button" className={styles.tool} onClick={shell.toMenu}>
+          Game menu
         </button>
         <div className={styles.titles}>
           <h2>Versus · {LEVELS[level].name}</h2>
@@ -166,7 +203,7 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
                 <span className={styles.keys}>{p.keys}</span>
                 <span>{fmt(side?.t ?? 0)} s</span>
                 <span aria-label={`Hearts: ${Number.isFinite(side?.hearts ?? 0) ? side?.hearts : "unlimited"}`}>
-                  {Number.isFinite(side?.hearts ?? LEVELS[level].hearts) ? "♥".repeat(Math.max(0, side?.hearts ?? LEVELS[level].hearts)) || "–" : "♥ ∞"}
+                  <Hearts count={side?.hearts ?? LEVELS[level].hearts} />
                 </span>
                 <span>Bomb {side?.bombs ?? 1}</span>
                 {(side?.chain ?? 0) > 0 && <span>Chain ×{side?.chain}</span>}
@@ -205,14 +242,19 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
                     : `${PLAYERS[winner === 0 ? 1 : 0].name} was caught. ${sides[winner === 0 ? 1 : 0]?.cause ?? ""}`}
               </p>
               <div className={styles.actions}>
-                <button type="button" className={styles.primary} onClick={rematch}>
-                  Rematch <kbd>R</kbd>
-                </button>
                 <button type="button" className={styles.tool} onClick={newScreen}>
                   New screen <kbd>N</kbd>
                 </button>
+              </div>
+              <div className={styles.actions} data-standard>
+                <button type="button" className={styles.primary} onClick={rematch}>
+                  Rematch <kbd>R</kbd>
+                </button>
                 <button type="button" className={styles.tool} onClick={onExit}>
-                  Lobby
+                  Game menu <kbd>Esc</kbd>
+                </button>
+                <button type="button" className={styles.tool} onClick={shell.toHall}>
+                  Back to the Hall <kbd>H</kbd>
                 </button>
               </div>
             </div>

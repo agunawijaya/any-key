@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
-import { PREFS_SCRIPT } from "@/lib/prefs";
+import { KeyringToasts } from "@/components/kit/KeyringToasts";
+import { PrefsSync } from "@/components/kit/PrefsSync";
+import { PREFS_SCRIPT } from "@/lib/kit/appearance";
 import "./globals.css";
 
 const display = Bricolage_Grotesque({
@@ -49,7 +51,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <head>
         <script dangerouslySetInnerHTML={{ __html: PREFS_SCRIPT }} />
       </head>
-      <body>{children}</body>
+      <body>
+        <PrefsSync />
+        {children}
+        <KeyringToasts />
+      </body>
     </html>
   );
 }

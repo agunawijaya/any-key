@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePlayScreen, useShell } from "@/components/kit/shell-context";
 import { Escape1980, VIDEO, type Key } from "@/lib/outta/original";
 import { updateProgress, withAchievement } from "@/lib/outta/progress";
+import { prefersReducedMotion } from "@/lib/kit/appearance";
 import styles from "./Terminal1980.module.css";
 
 /*
@@ -63,24 +65,27 @@ function drawCell(ctx: CanvasRenderingContext2D, code: number, x: number, y: num
   }
 }
 
-export function Terminal1980({ onExit, onUnlock }: { onExit: () => void; onUnlock: (ids: string[]) => void }) {
+export function Terminal1980({ onExit }: { onExit: () => void }) {
   const [run, setRun] = useState(0);
   const [hud, setHud] = useState<Hud>({ state: "ready", t: 0, keys: 0, blocks: 0, where: "screen", p: VIDEO });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const machineRef = useRef<Escape1980 | null>(null);
   const startedRef = useRef(false);
-  const unlockRef = useRef(onUnlock);
+  // The program runs in real time (blocks fall while no key is down), so pausing stops its clock.
+  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
+  const shell = useShell();
 
   useEffect(() => {
-    unlockRef.current = onUnlock;
+    pausedRef.current = paused;
   });
 
   useEffect(() => {
     const machine = new Escape1980(1 + Math.floor(Math.random() * 1e9));
     machineRef.current = machine;
     startedRef.current = false;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = prefersReducedMotion();
     let garbage: Uint8Array | null = null;
     let crashedAt = 0;
     let reported = false;
@@ -91,11 +96,11 @@ export function Terminal1980({ onExit, onUnlock }: { onExit: () => void; onUnloc
       frame = requestAnimationFrame(loop);
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      if (startedRef.current) machine.update(dt);
+      if (startedRef.current && !pausedRef.current) machine.update(dt);
       if (machine.state !== "running" && !reported) {
         reported = true;
         crashedAt = now;
-        unlockRef.current(updateProgress((p) => withAchievement(p, machine.state === "ended" ? "scape" : "crash-test")));
+        updateProgress((p) => withAchievement(p, machine.state === "ended" ? "scape" : "crash-test"));
       }
       // Our impression of the crash: the picture freezes, then memory spills onto the screen.
       if (machine.state === "crashed" && !garbage && now - crashedAt > 700) {
@@ -135,7 +140,10 @@ export function Terminal1980({ onExit, onUnlock }: { onExit: () => void; onUnloc
     return () => cancelAnimationFrame(frame);
   }, [run]);
 
-  const again = useCallback(() => setRun((r) => r + 1), []);
+  const again = useCallback(() => {
+    setPaused(false);
+    setRun((r) => r + 1);
+  }, []);
   const press = useCallback((key: Key | "enter") => {
     const machine = machineRef.current;
     if (!machine) return;
@@ -149,11 +157,18 @@ export function Terminal1980({ onExit, onUnlock }: { onExit: () => void; onUnloc
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
-      if (/^(Shift|Control|Alt|Meta|CapsLock|Tab)$/.test(e.key)) return;
+      if (pausedRef.current) {
+        if (e.key === "r" || e.key === "R") again();
+        return;
+      }
+      // Esc belongs to the shell (pause); the modifier keys aren't keys to the 1980 program.
+      if (/^(Escape|Shift|Control|Alt|Meta|CapsLock|Tab)$/.test(e.key)) return;
       const machine = machineRef.current;
-      if (e.key === "Escape") return onExit();
       if (machine && machine.state !== "running") {
         if (e.key === "r" || e.key === "R" || e.key === "Enter") again();
+        else if (e.key === "h" || e.key === "H") shell.toHall();
+        else return;
+        e.preventDefault();
         return;
       }
       e.preventDefault();
@@ -162,7 +177,18 @@ export function Terminal1980({ onExit, onUnlock }: { onExit: () => void; onUnloc
     };
     window.addEventListener("keydown", down);
     return () => window.removeEventListener("keydown", down);
-  }, [again, onExit, press]);
+  }, [again, press, shell]);
+
+  usePlayScreen({
+    screen: hud.state === "ended" || hud.state === "crashed" ? "results" : "play",
+    paused,
+    onPause: () => setPaused(true),
+    onResume: () => setPaused(false),
+    items: [{ label: "Run it again", shortcut: "R", onSelect: again }],
+    losesProgress: hud.state === "running",
+    roundName: "this run",
+    onMenu: onExit,
+  });
 
   const row = Math.floor((hud.p - VIDEO) / 64);
   const col = (((hud.p - VIDEO) % 64) + 64) % 64;
@@ -178,8 +204,8 @@ export function Terminal1980({ onExit, onUnlock }: { onExit: () => void; onUnloc
   return (
     <div className={styles.wrap}>
       <div className={styles.head}>
-        <button type="button" className={styles.back} onClick={onExit}>
-          ← Lobby
+        <button type="button" className={styles.back} onClick={shell.toMenu}>
+          Game menu
         </button>
         <span className={styles.pill}>1980 mode</span>
         <p className={styles.note}>The original program: no score, no messages, and every bug still in it. Only the letters are ours.</p>
@@ -205,14 +231,27 @@ export function Terminal1980({ onExit, onUnlock }: { onExit: () => void; onUnloc
         {hud.state === "ended" && (
           <p>
             That&rsquo;s it: the program just stops. You got out in <b>{hud.t.toFixed(1)} s</b> with {hud.keys} key presses, while {hud.blocks} blocks
-            fell. <button type="button" className={styles.again} onClick={again}>Run it again <kbd>R</kbd></button>
+            fell.
           </p>
         )}
         {hud.state === "crashed" && (
           <p>
             You walked off the end of the screen to address {hud.p}, and the star was written over the start of the computer&rsquo;s working
-            memory. The real machine would almost certainly have crashed; this is our impression of it. <button type="button" className={styles.again} onClick={again}>Switch it off and on <kbd>R</kbd></button>
+            memory. The real machine would almost certainly have crashed; this is our impression of it.
           </p>
+        )}
+        {(hud.state === "ended" || hud.state === "crashed") && (
+          <div className={styles.actions}>
+            <button type="button" className={styles.again} onClick={again}>
+              {hud.state === "crashed" ? "Switch it off and on" : "Play again"} <kbd>R</kbd>
+            </button>
+            <button type="button" className={styles.again} onClick={onExit}>
+              Game menu <kbd>Esc</kbd>
+            </button>
+            <button type="button" className={styles.again} onClick={shell.toHall}>
+              Back to the Hall <kbd>H</kbd>
+            </button>
+          </div>
         )}
       </div>
 

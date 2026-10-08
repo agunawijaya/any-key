@@ -1,18 +1,36 @@
-# 23 Matches (23MTCH): About the Original Program
+# Stickler: about the game
 
-This document covers the 1970s BASIC game *23 Matches* (`23mtch.bas`), which Any Key is rebuilding as **Stickler**. It explains who wrote and converted the game, where it was published, how our copy probably reached the PC, the mathematics behind it, and some trivia. For playing the original, see [HOW-TO.md](HOW-TO.md). For its internals and file format, see [ORIGINAL-ARCHITECTURE.md](ORIGINAL-ARCHITECTURE.md).
+Stickler is a staring contest with a pile of sticks. You and Sparky, a smug little match head who is very strict about the rules, take turns picking up 1, 2 or 3 sticks, and whoever has to take the last one gets burnt. There is a secret that wins every single time. Sparky knows it. Can you work it out before he does?
 
-The listing comes from a copyrighted book, so this project does not reproduce it. Only short phrases are quoted.
+## The game
 
-## What the program is
+A round takes a minute or two. The sticks lie on a wooden table; you pick a few, strike, and watch them flare and fly to your side. Sparky thinks, mutters, takes his share, and somehow the pile keeps landing on numbers that feel wrong for you. Then it clicks: he always leaves you the same counts. Once you see the pattern you can turn it on him, and the best moment in the game is when Sparky realises it too, starts to sweat, and has to pick up the last stick himself while it goes up in a burst of embers.
 
-*23 Matches* is a take-away game played by one human against the computer. The game starts with 23 matches. On each turn a player takes 1, 2 or 3, and **whoever has to take the last match loses**. The human always moves first.
+If the trick doesn't click, the Coach will walk you to it one hint at a time, and after every game a short note shows the exact move where it slipped away.
+
+## What's new
+
+- **Sparky**, an opponent with eight moods and three levels, from a Rookie who guesses to a Master who never misses.
+- **Handfuls**: every take has to be a real handful, and the game ends with someone sweeping up the whole pile at once.
+- **A ten-table Ladder** with bigger takes, several rows and the famous 1-3-5-7 table from a 1961 film, plus a **Daily** puzzle to share and **Versus** for two players.
+- **Three stick styles**: matches, glow sticks or candy sticks, each with its own table, sounds and ending, in light and dark.
+- **1981 mode**, the original as it played on an IBM PC, on a green screen.
+
+The full list of what we kept, changed and added is in [CHANGES-FROM-ORIGINAL.md](CHANGES-FROM-ORIGINAL.md).
+
+## The original
+
+*23 Matches* (`23mtch.bas`) is a 1970s BASIC take-away game played by one human against the computer. The game starts with 23 matches. On each turn a player takes 1, 2 or 3, and **whoever has to take the last match loses**. The human always moves first.
 
 The program is 46 lines of BASIC, one statement per line, with four numeric variables. When it can win, the computer plays perfectly. When it cannot, it takes a "random" 1 to 3. After every game a new one starts. There is no score and no way to quit.
 
-The game was meant to teach. The write-up in DEC's *101 BASIC Computer Games* shows how to find the strategy by reasoning backwards, and notes that because the computer gives you the first move, "if you play wisely, you can win". Ahl's teacher's guide turned the game into a classroom exercise: play it with a partner using buttons or coins, then play `23MTCH` on the computer. The guide adds: "You should always be able to win."
+The game was meant to teach. The write-up in DEC's *101 BASIC Computer Games* (1973) shows how to find the strategy by reasoning backwards, and notes that because the computer gives you the first move, "if you play wisely, you can win". Ahl's teacher's guide turned the game into a classroom exercise: play it with a partner using buttons or coins, then play `23MTCH` on the computer. The guide adds: "You should always be able to win."
 
-## Who wrote it: Bob Albrecht and People's Computer Company
+The listing comes from a copyrighted book, so this project does not reproduce it. Only short phrases are quoted. To play the original yourself, see [Playing the original](ORIGINAL-ARCHITECTURE.md#playing-the-original). For its internals and file format, see [ORIGINAL-ARCHITECTURE.md](ORIGINAL-ARCHITECTURE.md).
+
+## Who made it
+
+### Bob Albrecht and People's Computer Company
 
 The DEC write-up mentions that one version was submitted from Plainedge High School in North Massapequa, New York, but it credits the published version to **Bob Albrecht, People's Computer Co., Menlo Park, California**. Ahl's 1973 teacher's guide also credits Albrecht with *Trap*, *Stars* and *Hurkle*. The 1978 *BASIC Computer Games* calls him the original author.
 
@@ -25,7 +43,7 @@ Albrecht is a key figure in early personal computing:
 
 His dates of birth and death are **unverified**.
 
-## Who converted it: David Ahl at Digital Equipment Corporation
+### David Ahl at Digital Equipment Corporation
 
 Line 10 of our file says Ahl converted the program to **RSTS/E**. RSTS was DEC's time-sharing operating system for the PDP-11. It first shipped as RSTS-11 in 1970, and the extended version, RSTS/E, followed in 1973. Its native language was **BASIC-PLUS**.
 
@@ -33,7 +51,9 @@ David H. Ahl was born in 1939. DEC hired him in 1969 to develop its educational 
 
 What the conversion actually changed in 23MTCH is **unverified**. The program uses only statements common to most BASICs, and the book's sample run was made on a DEC EduSystem 30, not on RSTS/E.
 
-## Where it was published
+## Where it went
+
+### Where it was published
 
 | Date | Publication | Publisher | 23 Matches content |
 |---|---|---|---|
@@ -46,7 +66,7 @@ The 1973 book sold about 10,000 copies. After leaving DEC, Ahl bought the rights
 
 Any Key's file is the **DEC (1973) version**, not the 1978 rewrite.
 
-## How it reached the PC
+### How it reached the PC
 
 Our file is a **tokenized GW-BASIC program**, not plain text. When decoded, it matches the 23MTCH on a DECtape image of Ahl's RSTS games, published in the `agn453/RSTS-E` GitHub repository. The tape's catalog says that all but two of its games run on RSTS-11 and RSTS/E. The match extends to the "ALBRECHR" misspelling and to the padding that lines up the statements after line numbers 5, 10 and 100. There are only two differences:
 
@@ -57,7 +77,7 @@ The printed book has no lines 5 and 10. Our file therefore almost certainly desc
 
 The file's internal line links put the first line at offset &H126E. PC-BASIC, which copies GW-BASIC's memory layout, gives the same base for saved files under its default settings. So the file was saved by GW-BASIC, or by something that imitates it, without the `,A` (ASCII) option. The file carries no date. **Who** converted it, **when**, and **by what route** (bulletin board, shareware disk or archive CD) are unknown.
 
-The program needed no edits to run on a PC, because GW-BASIC understands every statement it uses. One function does behave differently: `RND(0)` makes the computer's "random" move fully predictable on a PC (see ORIGINAL-ARCHITECTURE.md).
+The program needed no edits to run on a PC, because GW-BASIC understands every statement it uses. One function does behave differently: `RND(0)` makes the computer's "random" move fully predictable on a PC (see [ORIGINAL-ARCHITECTURE.md](ORIGINAL-ARCHITECTURE.md#what-rnd0-really-does)).
 
 ## The mathematics
 
@@ -72,7 +92,7 @@ Reasoning backwards:
 
 The general rule for one pile, takes of 1 to *k*, and last-object-loses play is that the second player wins exactly when *n* ≡ 1 (mod *k* + 1). Here 23 = 4 × 5 + 3, so **the first player wins by taking 2**, which leaves 21. After that, the first player answers each take with 4 minus it, leaving 17, 13, 9, 5 and then 1. The human always moves first, so the intro's jokey hope that the best computer wins is empty against anyone who knows the rule, and the book says so openly.
 
-The DEC book builds on this idea step by step. After 23MTCH comes BATNUM, where you set the minimum and maximum take, the winning rule and who starts. Its write-up states the general rule: leave 1 more than a multiple of (maximum take + 1). Then comes NIM, with several piles.
+The DEC book builds on this idea step by step. After 23MTCH comes BATNUM, where you set the minimum and maximum take, the winning rule and who starts. Its write-up states the general rule: leave 1 more than a multiple of (maximum take + 1). Then comes NIM, with several piles. Stickler's Handfuls and its rows of sticks follow the same path (see [ARCHITECTURE.md](ARCHITECTURE.md#the-mathematics-inside)).
 
 ## Facts and trivia
 

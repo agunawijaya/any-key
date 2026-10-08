@@ -1,6 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { StarIcon } from "@/components/kit/icons";
+import { Results } from "@/components/kit/Results";
+import { ShareButton } from "@/components/kit/ShareButton";
+import { usePlayScreen, useShell } from "@/components/kit/shell-context";
 import {
   describeRules,
   isLegal,
@@ -17,12 +21,17 @@ import {
   type Rules,
 } from "@/lib/stickler/rules";
 import { isWinning, magicNumbers, magicZones, quality, winningMoves, zoneOf, type MoveQuality } from "@/lib/stickler/solver";
-import { line, mulberry, sparkyMove, type Level, type LineKind, type Mood } from "@/lib/stickler/sparky";
-import { ACHIEVEMENTS, updateProgress, withAchievement, type Skin } from "@/lib/stickler/progress";
+import { mulberry32 } from "@/lib/kit/rng";
+import { line, sparkyMove, type Level, type LineKind, type Mood } from "@/lib/stickler/sparky";
+import { sticklerManifest } from "@/lib/stickler/manifest";
+import { updateProgress, withAchievement, type Skin } from "@/lib/stickler/progress";
+import { dailyShareText } from "@/lib/stickler/share";
 import { HANDFULS_PRESETS, type HandfulsSetup, type ModeId } from "@/lib/stickler/modes";
 import * as sfx from "@/lib/stickler/sfx";
+import { hasModifier, isTypingTarget } from "@/lib/kit/keys";
 import { Sparky } from "./Sparky";
 import { Stick, type StickState } from "./Stick";
+import { BulbIcon } from "@/components/kit/icons";
 import styles from "./Board.module.css";
 
 export type Session = {
@@ -52,7 +61,7 @@ type Result = {
 };
 
 const PLAYER_NAMES = ["Player 1", "Player 2"];
-const QUALITY_EMOJI: Record<MoveQuality, string> = { best: "🟩", blunder: "🟥", lost: "⬜" };
+const QUALITY_LABEL: Record<MoveQuality, string> = { best: "perfect", blunder: "gave it away", lost: "no winning move" };
 
 /** How far apart the sticks of a sweep go up: matches flare together, glow sticks snap in a chain, candy pops in a row. */
 const SWEEP_STEP_MS: Record<Skin, number> = { matches: 0, glow: 90, candy: 110 };
@@ -86,7 +95,7 @@ function fitSticks(n: number, width: number, height: number, narrow: boolean, vi
 }
 
 function buildItems(rules: Rules, seed: number): Item[] {
-  const rng = mulberry(seed);
+  const rng = mulberry32(seed);
   const items: Item[] = [];
   let id = 0;
   rules.rows.forEach((count, row) => {
@@ -107,11 +116,10 @@ type Props = {
   onRematch: () => void;
   onExit: () => void;
   onNext?: () => void;
-  onUnlock: (ids: string[]) => void;
 };
 
 /** One game. A rematch remounts the board with a new seed, so all state starts fresh. */
-export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, onNext, onUnlock }: Props) {
+export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, onNext }: Props) {
   const { rules, level } = session;
   const versus = level === null;
   const single = rules.rows.length === 1;
@@ -126,7 +134,7 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
   const [anim, setAnim] = useState<Record<number, StickState>>({});
   const [fly, setFly] = useState<Record<number, React.CSSProperties>>({});
   const [bubble, setBubble] = useState<Bubble | null>(() =>
-    versus || sparkyOpens ? null : { ...line(rematch ? "rematch" : handfuls ? "helloHandfuls" : "hello", mulberry(seed), undefined, range), key: 0 },
+    versus || sparkyOpens ? null : { ...line(rematch ? "rematch" : handfuls ? "helloHandfuls" : "hello", mulberry32(seed), undefined, range), key: 0 },
   );
   const [busy, setBusy] = useState(sparkyOpens);
   const [hint, setHint] = useState<{ level: number; text: string; ids: number[] }>({ level: 0, text: "", ids: [] });
@@ -142,9 +150,14 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
   const [notice, setNotice] = useState("");
   /** Stick size for a one-row pile, measured against the table (see fitSticks). */
   const [fit, setFit] = useState<(Fit & { tableMin?: number }) | null>(null);
+  /** The pause menu is open: Sparky's next steps wait in `held` until it closes. */
+  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(false);
+  const held = useRef<(() => void)[]>([]);
+  const shell = useShell();
 
   const timers = useRef<number[]>([]);
-  const rng = useRef(mulberry(seed));
+  const rng = useRef(mulberry32(seed));
   const arenaRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const sticksRef = useRef<HTMLDivElement>(null);
@@ -168,7 +181,18 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
   });
 
   const later = useCallback((ms: number, fn: () => void) => {
-    timers.current.push(window.setTimeout(fn, ms));
+    timers.current.push(window.setTimeout(() => (pausedRef.current ? held.current.push(fn) : fn()), ms));
+  }, []);
+
+  const pause = useCallback(() => {
+    pausedRef.current = true;
+    setPaused(true);
+  }, []);
+
+  const resume = useCallback(() => {
+    pausedRef.current = false;
+    setPaused(false);
+    held.current.splice(0).forEach((fn) => fn());
   }, []);
 
   const say = useCallback(
@@ -246,13 +270,7 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
       const hints = hintLevelRef.current;
       const stars = youWon && session.mode === "ladder" ? (hints === 0 ? 3 : hints < 3 ? 2 : 1) : 0;
       let share: string | undefined;
-      if (session.daily && !versus) {
-        share = [
-          `Stickler Daily #${session.daily.number}`,
-          describeRules(rules),
-          `${moves.map((q) => QUALITY_EMOJI[q]).join("")} ${youWon ? "won" : "burnt"}${hints ? ` · ${hints} hint${hints > 1 ? "s" : ""}` : " · no hints"}`,
-        ].join("\n");
-      }
+      if (session.daily && !versus) share = dailyShareText({ number: session.daily.number, rules, moves, won: youWon, hints });
 
       const unlocked = updateProgress((p) => {
         let next = { ...p };
@@ -285,14 +303,13 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
         if (youWon && sweep && sweep.count >= 3) next = withAchievement(next, "clean-sweep");
         return next;
       });
-      onUnlock(unlocked);
       setResult({ youWon, loser, moves, keyMoment, stars, share, unlocked, sweep });
       if (soundRef.current) (youWon ? sfx.win : () => {})();
       const bigSweep = sweep && sweep.count >= 2;
       if (!versus) say(youWon ? (bigSweep ? "iLoseSweep" : "iLose") : bigSweep ? "iWinSweep" : "iWin", sweep?.count);
       if (youWon) setFx("confetti");
     },
-    [handfuls, level, min, onUnlock, rules, say, session.daily, session.handfuls, session.mode, session.tableId, single, versus],
+    [handfuls, level, min, rules, say, session.daily, session.handfuls, session.mode, session.tableId, single, versus],
   );
 
   const perform = useCallback(
@@ -412,10 +429,10 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
       }
       if (!protested.current) {
         protested.current = true;
-        onUnlock(updateProgress((p) => withAchievement(p, "stickler")));
+        updateProgress((p) => withAchievement(p, "stickler"));
       }
     },
-    [later, onUnlock, say, versus],
+    [later, say, versus],
   );
 
   /** Handfuls: why a take of `count` from a row breaks the rules (Sparky's words, plain words), or null when it's legal. */
@@ -576,17 +593,14 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
 
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      if (hasModifier(event) || isTypingTarget(event.target)) return;
       const target = event.target as HTMLElement;
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
-      if (event.key === "Escape") return onExit();
-      if (result) {
-        if (event.key.toLowerCase() === "r") onRematch();
-        return;
-      }
+      // Esc, and R and H on the results, belong to the shell.
+      if (result || paused) return;
       if (/^[1-9]$/.test(event.key)) {
         selectCount(single ? 0 : focusRow, Number(event.key));
-      } else if (event.key === "Enter" || (event.key === " " && !/^(BUTTON|A)$/.test(target.tagName))) {
+      } else if ((event.key === "Enter" || event.key === " ") && !/^(BUTTON|A)$/.test(target.tagName)) {
+        // A focused button (Take 2, Hint, the top bar's) keeps Enter and Space for itself.
         event.preventDefault();
         strike();
       } else if (event.key.toLowerCase() === "h") {
@@ -605,6 +619,17 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
 
   // ---------- Render ----------
 
+  usePlayScreen({
+    screen: result ? "results" : "play",
+    paused,
+    onPause: pause,
+    onResume: resume,
+    items: [{ label: "Start this game again", onSelect: onRematch }],
+    losesProgress: !result && game.history.length > 0,
+    roundName: "this game",
+    onMenu: onExit,
+  });
+
   const left = total(game.rows);
   const turnName = versus ? PLAYER_NAMES[game.turn] : game.turn === 0 ? "Your turn" : "Sparky's turn";
   const rowsOfItems = useMemo(() => rules.rows.map((_, row) => items.filter((it) => it.row === row)), [items, rules.rows]);
@@ -618,8 +643,8 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
   return (
     <div className={styles.board} data-board data-over={result ? "" : undefined}>
       <div className={styles.topbar}>
-        <button type="button" className={styles.back} onClick={onExit}>
-          ← Lobby
+        <button type="button" className={styles.back} onClick={shell.toMenu}>
+          Game menu
         </button>
         <div className={styles.titleBlock}>
           <h1 className={styles.title}>{session.title}</h1>
@@ -722,7 +747,7 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
 
       {hint.text && !result && (
         <p className={styles.coach} role="status">
-          <span aria-hidden>💡</span> <strong>Coach:</strong> {hint.text}
+          <BulbIcon size={16} /> <strong>Coach:</strong> {hint.text}
         </p>
       )}
 
@@ -798,94 +823,56 @@ export function Board({ session, skin, sound, seed, rematch, onRematch, onExit, 
           </button>
           {!versus && (
             <button type="button" className={styles.hint} onClick={nextHint} disabled={!myTurn}>
-              💡 Hint <kbd>H</kbd>
+              <BulbIcon size={16} /> Hint <kbd>H</kbd>
             </button>
           )}
         </div>
       )}
 
       {result && (
-        <div className={styles.result} role="dialog" aria-label="Game over">
-          <div className={styles.resultCard} data-won={result.youWon || undefined}>
-            {!versus && <Sparky mood={result.youWon ? "sad" : "happy"} skin={skin} size={96} />}
-            <h2 className={styles.resultTitle}>
-              {versus ? `${PLAYER_NAMES[1 - result.loser]} wins!` : result.youWon ? "You win!" : "Burnt!"}
-            </h2>
-            <p className={styles.resultSub}>
-              {result.sweep && result.sweep.count > 1 ? (
-                <SweepLine who={versus ? PLAYER_NAMES[result.loser] : result.youWon ? "Sparky" : "You"} sweep={result.sweep} />
-              ) : versus ? (
-                `${PLAYER_NAMES[result.loser]} took the last stick.`
-              ) : result.youWon ? (
-                "Sparky had to take the last stick."
-              ) : (
-                "You took the last stick."
-              )}
+        <Results
+          kicker={session.title}
+          title={versus ? `${PLAYER_NAMES[1 - result.loser]} wins!` : result.youWon ? "You win!" : "Burnt!"}
+          tone={versus || result.youWon ? "win" : "loss"}
+          art={!versus && <Sparky mood={result.youWon ? "sad" : "happy"} skin={skin} size={92} />}
+          playAgainLabel={session.daily ? "Play again (practice)" : "Rematch"}
+          onPlayAgain={onRematch}
+          onMenu={onExit}
+          unlocked={{ gameId: sticklerManifest.id, ids: result.unlocked }}
+          extras={[
+            ...(onNext && result.youWon ? [{ label: "Next table", onSelect: onNext, primary: true }] : []),
+            ...(result.share ? [{ label: "Share", node: <ShareButton text={`${result.share}\n${window.location.origin}/stickler`} label="Share result" className={styles.share} /> }] : []),
+          ]}
+        >
+          <p className={styles.resultSub}>
+            {result.sweep && result.sweep.count > 1 ? (
+              <SweepLine who={versus ? PLAYER_NAMES[result.loser] : result.youWon ? "Sparky" : "You"} sweep={result.sweep} />
+            ) : versus ? (
+              `${PLAYER_NAMES[result.loser]} took the last stick.`
+            ) : result.youWon ? (
+              "Sparky had to take the last stick."
+            ) : (
+              "You took the last stick."
+            )}
+          </p>
+          {result.stars > 0 && (
+            <p className={styles.stars} aria-label={`${result.stars} of 3 stars`}>
+              {[0, 1, 2].map((i) => (
+                <StarIcon key={i} size={30} filled={i < result.stars} className={i < result.stars ? styles.starOn : styles.starOff} />
+              ))}
             </p>
-            {result.stars > 0 && (
-              <p className={styles.stars} aria-label={`${result.stars} of 3 stars`}>
-                {"★".repeat(result.stars)}
-                <span>{"★".repeat(3 - result.stars)}</span>
-              </p>
-            )}
-            {result.moves.length > 0 && (
-              <p className={styles.moveRow} aria-label="Your moves: green is perfect, red gave the win away, grey had no winning option">
-                {result.moves.map((q) => QUALITY_EMOJI[q]).join("")}
-              </p>
-            )}
-            {result.keyMoment && <p className={styles.keyMoment}>{result.keyMoment}</p>}
-            {result.unlocked.length > 0 && (
-              <ul className={styles.unlocked}>
-                {result.unlocked.map((id) => {
-                  const a = ACHIEVEMENTS.find((x) => x.id === id);
-                  return a ? (
-                    <li key={id}>
-                      <span aria-hidden>{a.icon}</span> Unlocked: <strong>{a.name}</strong>
-                    </li>
-                  ) : null;
-                })}
-              </ul>
-            )}
-            <div className={styles.resultActions}>
-              <button type="button" className={styles.primary} onClick={onRematch}>
-                {session.daily ? "Play again (practice)" : "Rematch"} <kbd>R</kbd>
-              </button>
-              {onNext && result.youWon && (
-                <button type="button" className={styles.primary} onClick={onNext}>
-                  Next table →
-                </button>
-              )}
-              {result.share && <ShareButton text={result.share} />}
-              <button type="button" className={styles.secondary} onClick={onExit}>
-                Lobby
-              </button>
-            </div>
-          </div>
-        </div>
+          )}
+          {result.moves.length > 0 && (
+            <p className={styles.moveRow} aria-label="Your moves: green is perfect, red gave the win away, grey had no winning option">
+              {result.moves.map((q, i) => (
+                <span key={i} className={styles.moveSquare} data-quality={q} title={QUALITY_LABEL[q]} />
+              ))}
+            </p>
+          )}
+          {result.keyMoment && <p className={styles.keyMoment}>{result.keyMoment}</p>}
+        </Results>
       )}
     </div>
-  );
-}
-
-function ShareButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      className={styles.secondary}
-      onClick={async () => {
-        const full = `${text}\n${window.location.origin}/stickler`;
-        try {
-          if (navigator.share) await navigator.share({ text: full });
-          else await navigator.clipboard.writeText(full);
-          setCopied(true);
-        } catch {
-          // The share sheet was dismissed; nothing to do.
-        }
-      }}
-    >
-      {copied ? "Copied!" : "Share result"}
-    </button>
   );
 }
 
@@ -893,9 +880,9 @@ function ShareButton({ text }: { text: string }) {
 function SweepLine({ who, sweep }: { who: string; sweep: { count: number; forced: boolean } }) {
   return (
     <>
-      <span className={styles.sweepTag} aria-hidden>
-        🧹
-      </span>{" "}
+      <svg className={styles.sweepTag} viewBox="0 0 24 24" aria-hidden>
+        <path d="M14.6 2.4l1.8.9-4 8.1 2.3 1.1c1.5.7 2.2 2.5 1.5 4l-2.3 4.6c-.2.4-.7.6-1.1.4L3.9 17.3c-.4-.2-.6-.7-.4-1.1l2.3-4.6c.7-1.5 2.5-2.2 4-1.5l2.3 1.1zM6.4 15.2l1 .5 1.5-2.8 1 .5-1.5 2.8 1.6.8 1.5-2.8 1 .5-1.5 2.8 1 .5 1.2-2.4c.3-.5 0-1.1-.5-1.4l-5.4-2.7c-.5-.2-1.1 0-1.4.5z" />
+      </svg>{" "}
       {sweep.forced ? `${who} had to sweep ` : `${who} swept the last `}
       <strong>{sweep.count}</strong>.
     </>

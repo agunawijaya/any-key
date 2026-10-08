@@ -80,3 +80,4 @@ for (const song of tunes) {
 
 if (missing.size) console.log("missing presets:\n" + [...missing].join("\n"));
 console.log(failures ? `${failures} renders need attention` : "all renders OK");
+process.exitCode = failures ? 1 : 0;

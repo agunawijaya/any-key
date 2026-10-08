@@ -1,3 +1,6 @@
+import { dailyDate } from "@/lib/kit/daily";
+import { mulberry32 } from "@/lib/kit/rng";
+import { landerManifest } from "./manifest";
 import { makeSetup, startState, type Setup } from "./physics";
 import { idealPlan } from "./solver";
 import { worldById, WORLDS, type WorldId } from "./worlds";
@@ -38,17 +41,6 @@ export function missionSetup(m: Mission): Setup {
 
 /* ---------- Daily Drop: the same descent for everyone on a given date ---------- */
 
-function mulberry(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 export type DailyDrop = { number: number; key: string; world: WorldId; speed: number; fuelFactor: number; cargo: number };
 
 /** A perfect hoverslam must still land with at least this share of the tank left. */
@@ -65,14 +57,13 @@ export function fuelMargin(setup: Setup) {
  * checks every day of the year).
  */
 export function dailyDrop(date = new Date()): DailyDrop {
-  const day = Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - Date.UTC(2026, 0, 1)) / 86_400_000);
-  const rng = mulberry(51_979 + day * 7);
-  const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  let drop: DailyDrop = { number: day + 1, key, world: "moon", speed: 5000, fuelFactor: 1, cargo: 0 };
+  const { day, key, number } = dailyDate(date, landerManifest.daily?.epoch);
+  const rng = mulberry32(51_979 + day * 7);
+  let drop: DailyDrop = { number, key, world: "moon", speed: 5000, fuelFactor: 1, cargo: 0 };
   for (let attempt = 0; attempt < 40; attempt++) {
     const world = WORLDS[Math.floor(rng() * WORLDS.length)].id;
     drop = {
-      number: day + 1,
+      number,
       key,
       world,
       speed: 4200 + Math.round(rng() * 18) * 100,

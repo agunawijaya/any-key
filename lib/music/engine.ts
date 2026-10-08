@@ -1,5 +1,6 @@
 "use client";
 
+import { followMasterVolume } from "@/lib/kit/sound";
 import { audioBufferToWav, Sequencer, WorkletSynthesizer } from "spessasynth_lib";
 import { BasicMIDI } from "spessasynth_core";
 import type { Arrangement } from "./arrange/types";
@@ -19,6 +20,7 @@ export type EngineStatus = "idle" | "loading" | "ready" | "error";
 export class BopEngine {
   readonly ctx: AudioContext;
   private master: GainNode;
+  private volume: { gain: GainNode; stop: () => void };
   private synth?: WorkletSynthesizer;
   private seq?: Sequencer;
   private bank?: ArrayBuffer;
@@ -42,9 +44,17 @@ export class BopEngine {
     limiter.ratio.value = 12;
     this.master = this.ctx.createGain();
     this.master.gain.value = 1.4;
-    this.master.connect(limiter).connect(this.ctx.destination);
+    // The collection's mute and volume sit at the very end, after the limiter.
+    this.volume = followMasterVolume(this.ctx);
+    this.master.connect(limiter).connect(this.volume.gain);
     this.speaker.connect(this.ctx, this.master);
     this.speaker.onEnded = () => this.onEnded?.();
+  }
+
+  /** Stops listening to the volume setting and releases the audio device. */
+  close() {
+    this.volume.stop();
+    return this.ctx.close();
   }
 
   /** Downloads the sound bank (reporting 0..1) and starts the synth. Safe to call more than once. */

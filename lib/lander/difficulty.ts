@@ -12,10 +12,11 @@ import { idealPlan } from "./solver";
 
 export type Difficulty = "generous" | "standard" | "tight";
 
-export const DIFFICULTIES: { id: Difficulty; name: string; how: string; mark: string }[] = [
-  { id: "generous", name: "Generous", how: "30% more fuel: room to learn and to change your mind.", mark: "🟢" },
-  { id: "standard", name: "Standard", how: "The tank every mode was balanced on.", mark: "" },
-  { id: "tight", name: "Tight", how: "Only just enough. A perfect run keeps about 7%.", mark: "🔥" },
+/** `shareGlyph` is for share texts only; the page draws its own mark. */
+export const DIFFICULTIES: { id: Difficulty; name: string; how: string; shareGlyph: string }[] = [
+  { id: "generous", name: "Generous", how: "30% more fuel: room to learn and to change your mind.", shareGlyph: "🟢" },
+  { id: "standard", name: "Standard", how: "The tank every mode was balanced on.", shareGlyph: "" },
+  { id: "tight", name: "Tight", how: "Only just enough. A perfect run keeps about 7%.", shareGlyph: "🔥" },
 ];
 
 export const difficultyOf = (id: Difficulty) => DIFFICULTIES.find((d) => d.id === id)!;
@@ -48,8 +49,11 @@ export function withDifficulty(setup: Setup, d: Difficulty): Setup {
   return { ...setup, fuel: Math.round(setup.fuel * hi) };
 }
 
-/** " · 🔥 Tight fuel" for share texts and titles, nothing for Standard. */
+/** "🔥 Tight fuel" for share texts, nothing for Standard. */
 export function difficultyTag(d: Difficulty) {
   const x = difficultyOf(d);
-  return d === "standard" ? "" : `${x.mark} ${x.name} fuel`;
+  return d === "standard" ? "" : `${x.shareGlyph} ${x.name} fuel`;
 }
+
+/** "Tight fuel" for the page, nothing for Standard. */
+export const difficultyLabel = (d: Difficulty) => (d === "standard" ? "" : `${difficultyOf(d).name} fuel`);

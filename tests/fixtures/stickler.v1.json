@@ -1,0 +1,18 @@
+{
+  "wins": 12,
+  "losses": 5,
+  "streak": 2,
+  "bestStreak": 4,
+  "ladder": { "1": 3, "2": 3, "3": 2, "4": 1, "5": 3, "6": 2, "7": 1 },
+  "daily": {
+    "2026-10-05": { "won": true, "share": "Stickler Daily #278\n29 sticks · take 1–4\n🟩🟩🟩🟩 won · no hints" },
+    "2026-10-06": { "won": false, "share": "Stickler Daily #279\n33 sticks · take 1–5\n🟩🟥⬜⬜ burnt · 1 hint" }
+  },
+  "achievements": ["first-light", "climber", "hot-streak", "daily-3", "collector", "clean-sweep", "stickler"],
+  "skinsUsed": ["matches", "glow", "candy"],
+  "skin": "glow",
+  "level": "master",
+  "hintsSeen": 7,
+  "handfuls": { "2-3": { "wins": 2, "masterWins": 1 }, "3-5": { "wins": 1, "masterWins": 0 } },
+  "handfulsSetup": { "preset": "3-5", "surprise": false, "sparkyStarts": true }
+}

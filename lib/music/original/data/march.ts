@@ -1,4 +1,4 @@
-// Generated from a reading of the printed score (see docs/music/PORT-ARCHITECTURE.md). Do not edit by hand.
+// Generated from a reading of the printed score (see docs/music/ARCHITECTURE.md). Do not edit by hand.
 // Gounod, Funeral March of a Marionette, orchestral version (Paris: Lemoine, 1879). Full score engraved by Oscar Lopez (IMSLP), dedicated to the public domain.
 import type { ScoreData } from "../types";
 

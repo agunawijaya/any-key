@@ -2,7 +2,7 @@ import { AnyKeyToy } from "@/components/hall/AnyKeyToy";
 import { DeviceView } from "@/components/hall/DeviceView";
 import { Footer } from "@/components/hall/Footer";
 import { OrbitView } from "@/components/hall/OrbitView";
-import { PrefsSync } from "@/components/hall/PrefsSync";
+import { TodayStrip } from "@/components/kit/TodayStrip";
 import { TopBar } from "@/components/hall/TopBar";
 import { WallView } from "@/components/hall/WallView";
 
@@ -13,10 +13,10 @@ import { WallView } from "@/components/hall/WallView";
 export default function HallPage() {
   return (
     <>
-      <PrefsSync />
       <TopBar />
       <main>
         <h1 className="sr-only">Any Key: the BASIC classics hall</h1>
+        <TodayStrip className="hall-today" />
         <WallView />
         <OrbitView />
         <DeviceView />

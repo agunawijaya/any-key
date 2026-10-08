@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { prefersReducedMotion } from "@/lib/kit/appearance";
 import styles from "./MusicPreview.module.css";
 
 /*
@@ -95,7 +96,7 @@ export function MusicPreview() {
     }
 
     draw();
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (prefersReducedMotion()) return;
 
     const observer = new IntersectionObserver(([entry]) => {
       cancelAnimationFrame(frame);

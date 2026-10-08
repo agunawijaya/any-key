@@ -15,12 +15,18 @@ import {
   type HandfulsSetup,
   type ModeId,
 } from "@/lib/stickler/modes";
-import { ACHIEVEMENTS, resetProgress, SKINS, updateProgress, useProgress, type Skin } from "@/lib/stickler/progress";
+import { BadgeCap, badgeText } from "@/components/kit/BadgeCap";
+import { Stars } from "@/components/kit/Stars";
+import { sticklerManifest } from "@/lib/stickler/manifest";
+import { resetProgress, SKINS, updateProgress, useProgress, type Skin } from "@/lib/stickler/progress";
 import { describeRules } from "@/lib/stickler/rules";
 import { LEVELS, type Level } from "@/lib/stickler/sparky";
 import type { Session } from "./Board";
 import { Sparky } from "./Sparky";
 import { Stick } from "./Stick";
+import { CrownIcon } from "@/components/kit/icons";
+import { ForgetButton } from "@/components/kit/ForgetButton";
+import { ModeIcon } from "./ModeIcon";
 import styles from "./Lobby.module.css";
 
 type Props = { onPlay: (session: Session) => void; onTerminal: () => void };
@@ -123,12 +129,12 @@ export function Lobby({ onPlay, onTerminal }: Props) {
         {MODES.map((m) => (
           <button key={m.id} type="button" className={styles.mode} data-mode={m.id} aria-expanded={m.id === "ladder" || m.id === "versus" || m.id === "handfuls" ? panel === m.id : undefined} onClick={() => choose(m.id)}>
             <span className={styles.modeEmoji} aria-hidden>
-              {m.emoji}
+              <ModeIcon mode={m.id} />
             </span>
             <span className={styles.modeName}>{m.name}</span>
             <span className={styles.modeBlurb}>{m.blurb}</span>
             <span className={styles.modeMeta}>
-              {m.id === "ladder" && `${cleared}/10 cleared · ${starCount}★`}
+              {m.id === "ladder" && `${cleared}/10 cleared · ${starCount} of 30 stars`}
               {m.id === "daily" && (todays ? (todays.won ? "Solved today ✓" : "Burnt today · practice on") : `#${daily.number} · ${describeRules(daily.rules)}`)}
               {m.id === "classic" && `vs ${levelName} Sparky`}
               {m.id === "handfuls" && `${rangeLabel(preset)} · ${setup.surprise ? "surprise" : handfulsPile(setup)} · vs ${levelName}`}
@@ -154,7 +160,15 @@ export function Lobby({ onPlay, onTerminal }: Props) {
                   <span className={styles.handfulRange}>{rangeLabel(p)}</span>
                   <span className={styles.handfulPile}>{setup.sparkyStarts ? p.sparkyPile : p.pile} sticks</span>
                   <span className={styles.handfulRecord}>
-                    {record?.masterWins ? "👑 Master beaten" : record?.wins ? `${record.wins} win${record.wins > 1 ? "s" : ""}` : "not won yet"}
+                    {record?.masterWins ? (
+                      <>
+                        <CrownIcon size={13} /> Master beaten
+                      </>
+                    ) : record?.wins ? (
+                      `${record.wins} win${record.wins > 1 ? "s" : ""}`
+                    ) : (
+                      "not won yet"
+                    )}
                   </span>
                 </button>
               );
@@ -206,10 +220,7 @@ export function Lobby({ onPlay, onTerminal }: Props) {
                     <span className={styles.tableName}>{t.name}</span>
                     <span className={styles.tableRules}>{describeRules(t.rules)}</span>
                     <span className={styles.tableBlurb}>{locked ? "Clear the table before to unlock" : t.blurb}</span>
-                    <span className={styles.tableStars} aria-label={`${stars} stars`}>
-                      {"★".repeat(stars)}
-                      <span>{"★".repeat(3 - stars)}</span>
-                    </span>
+                    <Stars value={stars} className={styles.tableStars} />
                   </button>
                 </li>
               );
@@ -237,19 +248,20 @@ export function Lobby({ onPlay, onTerminal }: Props) {
           <h2 className={styles.h2}>
             Achievements{" "}
             <span className={styles.count}>
-              {progress.achievements.filter((id) => ACHIEVEMENTS.some((a) => a.id === id)).length}/{ACHIEVEMENTS.length}
+              {progress.achievements.filter((id) => sticklerManifest.achievements.some((a) => a.id === id)).length}/{sticklerManifest.achievements.length}
             </span>
           </h2>
           <ul className={styles.badges}>
-            {ACHIEVEMENTS.map((a) => {
+            {sticklerManifest.achievements.map((a) => {
               const got = progress.achievements.includes(a.id);
+              const { title, hint } = badgeText(a, got);
               return (
-                <li key={a.id} className={styles.badge} data-got={got || undefined} title={a.how}>
+                <li key={a.id} className={styles.badge} data-got={got || undefined} title={hint}>
                   <span className={styles.badgeIcon} aria-hidden>
-                    {got ? a.icon : "🔒"}
+                    <BadgeCap game={sticklerManifest} achievement={a} earned={got} />
                   </span>
-                  <span className={styles.badgeName}>{a.name}</span>
-                  <span className={styles.badgeHow}>{a.how}</span>
+                  <span className={styles.badgeName}>{title}</span>
+                  <span className={styles.badgeHow}>{hint}</span>
                 </li>
               );
             })}
@@ -280,22 +292,19 @@ export function Lobby({ onPlay, onTerminal }: Props) {
                   <span>{rangeLabel(p)}</span>
                   <strong>
                     {record?.wins ?? 0}
-                    {record?.masterWins ? " 👑" : ""}
+                    {record?.masterWins ? (
+                      <>
+                        {" "}
+                        <CrownIcon size={13} />
+                      </>
+                    ) : null}
                   </strong>
                 </li>
               );
             })}
           </ul>
           <p className={styles.privacy}>Saved in this browser only.</p>
-          <button
-            type="button"
-            className={styles.reset}
-            onClick={() => {
-              if (window.confirm("Forget all Stickler progress on this device?")) resetProgress();
-            }}
-          >
-            Reset progress
-          </button>
+          <ForgetButton gameTitle="Stickler" onForget={resetProgress} className={styles.reset} />
         </div>
       </section>
     </div>

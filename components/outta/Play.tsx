@@ -1,13 +1,21 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { ShareButton } from "@/components/kit/ShareButton";
+import { ShareText } from "@/components/kit/ShareText";
+import { usePlayScreen, useShell } from "@/components/kit/shell-context";
+import { StarIcon } from "@/components/kit/icons";
 import type { ComputerId } from "@/lib/outta/campaign";
 import type { Daily } from "@/lib/outta/daily";
 import { Game, LETTERS, type Dir } from "@/lib/outta/engine";
 import type { Settings } from "@/lib/outta/levels";
 import { useProgress } from "@/lib/outta/progress";
+import { hasModifier, isTypingTarget } from "@/lib/kit/keys";
+import { prefersReducedMotion } from "@/lib/kit/appearance";
 import { DARK, drawRoute, LIGHT, paint, WORLDS, type Boom, type Palette } from "./render";
 import { CAUSES, fmt, KEY_DIRS, keyOf, playSound } from "./shared";
+import { ArrowIcon } from "@/components/kit/icons";
+import { Hearts } from "./Hearts";
 import styles from "./Play.module.css";
 
 export type Session = {
@@ -27,9 +35,10 @@ export type Finish = { chainBest: number; popped: boolean };
 type Props = {
   session: Session;
   sound: boolean;
-  /** Where the back button goes ("Lobby", "Screens"). */
-  exitLabel: string;
+  /** Back to the game menu. */
   onExit: () => void;
+  /** Campaign screens only: back to the map of screens. */
+  onScreens?: () => void;
   onNewScreen?: () => void;
   onNext?: () => void;
   onFinish: (g: Game, finish: Finish) => void;
@@ -65,13 +74,13 @@ const hudOf = (g: Game, waiting: boolean, cause: string): Hud => ({
 
 const paletteFor = (world?: ComputerId): Palette | null => (world ? WORLDS[world] : null);
 
-export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, onFinish }: Props) {
+export function Play({ session, sound, onExit, onScreens, onNewScreen, onNext, onFinish }: Props) {
   const progress = useProgress();
   const [run, setRun] = useState(0);
   const [paused, setPaused] = useState(false);
   const [hud, setHud] = useState<Hud | null>(null);
   const [over, setOver] = useState<Game | null>(null);
-  const [copied, setCopied] = useState(false);
+  const shell = useShell();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -98,7 +107,7 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
     let reported = false;
     const finish: Finish = { chainBest: 0, popped: false };
     const booms: Boom[] = [];
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = prefersReducedMotion();
     let last = performance.now();
     let lastHud = 0;
     let frame = 0;
@@ -144,7 +153,6 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
   const restart = useCallback(() => {
     setPaused(false);
     setOver(null);
-    setCopied(false);
     setRun((r) => r + 1);
   }, []);
   const bomb = useCallback(() => {
@@ -162,10 +170,16 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
-      const target = e.target as HTMLElement;
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (hasModifier(e) || isTypingTarget(e.target)) return;
       const key = keyOf(e);
+      // While the pause menu is open its own keys apply; P still resumes.
+      // While the pause menu is open only its shortcuts work: P resumes, R and N start over.
+      if (pausedRef.current) {
+        if (key === "p") setPaused(false);
+        else if (key === "r") restart();
+        else if (key === "n" && onNewScreen) onNewScreen();
+        return;
+      }
       const dir = KEY_DIRS[key];
       if (dir) {
         e.preventDefault();
@@ -175,10 +189,17 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
       if (key === " " || key === "b") {
         e.preventDefault();
         if (!e.repeat) bomb();
-      } else if (key === "r") restart();
-      else if (key === "n" && onNewScreen) onNewScreen();
-      else if (key === "Enter" && over && onNext && over.state === "won") onNext();
-      else if (key === "p" || key === "Escape") setPaused((p) => !p);
+      } else if (key === "r") {
+        e.preventDefault();
+        restart();
+      } else if (key === "n" && onNewScreen) {
+        e.preventDefault();
+        onNewScreen();
+      } else if (key === "Enter" && over && onNext && over.state === "won") onNext();
+      else if (key === "h" && over) {
+        e.preventDefault();
+        shell.toHall();
+      } else if (key === "p") setPaused(true);
     };
     const up = (e: KeyboardEvent) => {
       const dir = KEY_DIRS[keyOf(e)];
@@ -190,7 +211,22 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [bomb, onNewScreen, onNext, over, press, release, restart]);
+  }, [bomb, onNewScreen, onNext, over, press, release, restart, shell]);
+
+  usePlayScreen({
+    screen: over ? "results" : "play",
+    paused,
+    onPause: () => setPaused(true),
+    onResume: () => setPaused(false),
+    items: [
+      { label: "Try again", shortcut: "R", onSelect: restart },
+      ...(onNewScreen ? [{ label: "New screen", shortcut: "N", onSelect: onNewScreen }] : []),
+      ...(onScreens ? [{ label: "Screens map", onSelect: onScreens }] : []),
+    ],
+    losesProgress: !!hud && !hud.waiting && !over,
+    roundName: "this escape",
+    onMenu: onExit,
+  });
 
   const s = session.settings;
   const crash = s.exitMode === "crash";
@@ -200,8 +236,8 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
   return (
     <div className={styles.play} data-world={session.world}>
       <div className={styles.bar}>
-        <button type="button" className={styles.tool} onClick={onExit}>
-          ← {exitLabel}
+        <button type="button" className={styles.tool} onClick={shell.toMenu}>
+          Game menu
         </button>
         <div className={styles.titles}>
           <h2 className={styles.title}>{session.title}</h2>
@@ -224,7 +260,7 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
           <b>{fmt(hud?.t ?? 0)}</b> s <small>/ par {s.par}</small>
         </span>
         <span className={styles.stat} aria-label={`Hearts: ${Number.isFinite(hud?.hearts ?? s.hearts) ? (hud?.hearts ?? s.hearts) : "unlimited"}`}>
-          {Number.isFinite(hud?.hearts ?? s.hearts) ? "♥".repeat(Math.max(0, hud?.hearts ?? s.hearts)) || "–" : "♥ ∞"}
+          <Hearts count={hud?.hearts ?? s.hearts} />
         </span>
         <span className={styles.stat}>
           Bomb <b>{hud?.bombs ?? s.bombsOnScreen}</b>
@@ -255,16 +291,6 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
 
       <div className={styles.stage} ref={wrapRef}>
         <canvas ref={canvasRef} className={styles.canvas} data-playing={!!hud && !hud.waiting && !over} aria-label={`The screen. ${crash ? "Get to the cracked corner, bottom left." : "Get to the + on the bottom row."}`} />
-        {paused && !over && (
-          <div className={styles.overlay}>
-            <div className={styles.card}>
-              <h2>Paused</h2>
-              <button type="button" className={styles.primary} onClick={() => setPaused(false)}>
-                Carry on <kbd>P</kbd>
-              </button>
-            </div>
-          </div>
-        )}
         {hud?.stuck && !over && <p className={styles.hint}>Boxed in? Press R to try again.</p>}
         {hud?.waiting && (
           <p className={styles.hint}>
@@ -288,9 +314,7 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
               <div className={styles.stars}>
                 {["Got out", `Under ${s.par} s`, "E-S-C-A-P-E"].map((label, i) => (
                   <span key={label} data-got={stars[i]} style={{ "--i": i } as React.CSSProperties}>
-                    <span className={styles.starIcon} aria-hidden>
-                      {stars[i] ? "★" : "☆"}
-                    </span>{" "}
+                    <StarIcon size={22} filled={stars[i]} className={styles.starIcon} />{" "}
                     {label}
                   </span>
                 ))}
@@ -302,43 +326,38 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
               {session.daily && today && (
                 <div className={styles.share}>
                   <p className={styles.shareNote}>{session.practice || run > 0 ? "Practice run: only your first try today counts. Today's result:" : "Today's result:"}</p>
-                  <pre className={styles.shareText}>{today.share}</pre>
-                  <button
-                    type="button"
-                    className={styles.tool}
-                    onClick={() => {
-                      navigator.clipboard?.writeText(today.share).then(
-                        () => setCopied(true),
-                        () => setCopied(false),
-                      );
-                    }}
-                  >
-                    {copied ? "Copied ✓" : "Copy to share"}
-                  </button>
+                  <ShareText className={styles.shareText} text={today.share} />
+                  <ShareButton text={today.share} label="Copy to share" className={styles.tool} />
                 </div>
               )}
-              <div className={styles.actions}>
-                {onNext && over.state === "won" ? (
-                  <button type="button" className={styles.primary} onClick={onNext}>
-                    Next screen <kbd>Enter</kbd>
-                  </button>
-                ) : (
-                  <button type="button" className={styles.primary} onClick={restart}>
-                    Again <kbd>R</kbd>
-                  </button>
-                )}
-                {onNext && over.state === "won" && (
-                  <button type="button" className={styles.tool} onClick={restart}>
-                    Again <kbd>R</kbd>
-                  </button>
-                )}
-                {onNewScreen && (
-                  <button type="button" className={styles.tool} onClick={onNewScreen}>
-                    New screen <kbd>N</kbd>
-                  </button>
-                )}
+              {(onNext || onNewScreen || onScreens) && (
+                <div className={styles.actions}>
+                  {onNext && over.state === "won" && (
+                    <button type="button" className={styles.primary} onClick={onNext}>
+                      Next screen <kbd>Enter</kbd>
+                    </button>
+                  )}
+                  {onNewScreen && (
+                    <button type="button" className={styles.tool} onClick={onNewScreen}>
+                      New screen <kbd>N</kbd>
+                    </button>
+                  )}
+                  {onScreens && (
+                    <button type="button" className={styles.tool} onClick={onScreens}>
+                      Screens map
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className={styles.actions} data-standard>
+                <button type="button" className={onNext && over.state === "won" ? styles.tool : styles.primary} onClick={restart}>
+                  Play again <kbd>R</kbd>
+                </button>
                 <button type="button" className={styles.tool} onClick={onExit}>
-                  {exitLabel}
+                  Game menu <kbd>Esc</kbd>
+                </button>
+                <button type="button" className={styles.tool} onClick={shell.toHall}>
+                  Back to the Hall <kbd>H</kbd>
                 </button>
               </div>
             </div>
@@ -360,7 +379,7 @@ export function Play({ session, sound, exitLabel, onExit, onNewScreen, onNext, o
               onPointerLeave={() => release(dir)}
               onPointerCancel={() => release(dir)}
             >
-              {dir === "up" ? "▲" : dir === "down" ? "▼" : dir === "left" ? "◀" : "▶"}
+              <ArrowIcon dir={dir} size={22} />
             </button>
           ))}
         </div>

@@ -37,3 +37,10 @@
 .legend > span {
   white-space: nowrap;
 }
+
+.targetMark {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  color: var(--ink-3);
+}

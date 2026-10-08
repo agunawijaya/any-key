@@ -5,8 +5,8 @@
 .stage {
   --planet: clamp(190px, 21vw, 320px);
   position: relative;
-  height: calc(100dvh - var(--header-h));
-  min-height: 640px;
+  height: calc(100dvh - var(--header-h) - var(--today-h));
+  min-height: 560px;
   overflow: hidden;
   touch-action: pan-y;
   outline-offset: -6px;

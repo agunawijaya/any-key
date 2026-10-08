@@ -2,9 +2,33 @@ import type { Meter } from "../score";
 
 export type Role = "melody" | "counter" | "chords" | "bass" | "drums" | "pad" | "arp" | "perc";
 
+/** Which picture an instrument gets in the mixer and on the stage. */
+export type InstrumentFamily =
+  | "keys"
+  | "musicbox"
+  | "mallets"
+  | "bells"
+  | "organ"
+  | "accordion"
+  | "guitar"
+  | "plucked"
+  | "bowed"
+  | "harp"
+  | "voice"
+  | "brass"
+  | "horn"
+  | "sax"
+  | "woodwind"
+  | "synth"
+  | "pad"
+  | "drums"
+  | "hand-drum"
+  | "cowbell"
+  | "speaker";
+
 export type Patch = {
   name: string;
-  icon: string;
+  family: InstrumentFamily;
   program: number;
   bank?: number;
   drums?: boolean;

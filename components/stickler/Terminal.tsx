@@ -2,6 +2,7 @@
 
 import { VT323 } from "next/font/google";
 import { useEffect, useRef, useState } from "react";
+import { usePlayScreen, useShell } from "@/components/kit/shell-context";
 import { move1981 } from "@/lib/stickler/sparky";
 import { updateProgress, withAchievement } from "@/lib/stickler/progress";
 import styles from "./Terminal.module.css";
@@ -26,14 +27,30 @@ const INTRO = [
   "",
 ];
 
-type Props = { onExit: () => void; onUnlock: (ids: string[]) => void };
+type Props = { onExit: () => void };
 
-export function Terminal({ onExit, onUnlock }: Props) {
+export function Terminal({ onExit }: Props) {
   const [lines, setLines] = useState<string[]>([...INTRO, "STICKS LEFT: 23", ""]);
   const [sticks, setSticks] = useState(23);
   const [input, setInput] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const screenRef = useRef<HTMLDivElement>(null);
+  // Turn-based: pausing only shows the menu; the game simply waits for the next answer.
+  const [paused, setPaused] = useState(false);
+  const shell = useShell();
+
+  usePlayScreen({
+    screen: "play",
+    paused,
+    onPause: () => setPaused(true),
+    onResume: () => {
+      setPaused(false);
+      inputRef.current?.focus();
+    },
+    losesProgress: sticks < 23,
+    roundName: "this 1981 game",
+    onMenu: onExit,
+  });
 
   useEffect(() => {
     screenRef.current?.scrollTo({ top: screenRef.current.scrollHeight });
@@ -67,7 +84,7 @@ export function Terminal({ onExit, onUnlock }: Props) {
     const c = move1981(m);
     if (c === "concede") {
       setLines([...out, "", "ONLY ONE LEFT FOR ME. FINE, YOU WIN. AGAIN?", "", "STICKS LEFT: 23", ""]);
-      onUnlock(updateProgress((p) => withAchievement(p, "time-traveller")));
+      updateProgress((p) => withAchievement(p, "time-traveller"));
       setSticks(23);
       setInput("");
       return;
@@ -81,8 +98,8 @@ export function Terminal({ onExit, onUnlock }: Props) {
   return (
     <div className={styles.wrap}>
       <div className={styles.head}>
-        <button type="button" className={styles.back} onClick={onExit}>
-          ← Lobby
+        <button type="button" className={styles.back} onClick={shell.toMenu}>
+          Game menu
         </button>
         <p className={styles.note}>
           Plays exactly like the original on a PC: you always start, the computer&rsquo;s &ldquo;random&rdquo; move is always 1, and it
@@ -107,7 +124,11 @@ export function Terminal({ onExit, onUnlock }: Props) {
                     onChange={(e) => setInput(e.target.value.toUpperCase())}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") submit(input);
-                      if (e.key === "Escape") onExit();
+                      if (e.key === "Escape") {
+                        // Esc in the typing line still pauses, like everywhere else.
+                        e.preventDefault();
+                        setPaused(true);
+                      }
                     }}
                   />
                   <span className={styles.cursor} aria-hidden>

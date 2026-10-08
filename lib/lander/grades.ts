@@ -14,22 +14,23 @@ export type Grade = {
   stars: 0 | 1 | 2 | 3;
   /** A landing gentle enough to climb out and plant your flag. */
   flag: boolean;
-  emoji: string;
+  /** For share texts only (pasted into chats); the page draws its own icon. */
+  shareGlyph: string;
 };
 
 export const GRADES: Record<GradeId, Grade> = {
-  butter: { id: "butter", title: "Butter.", line: () => "So soft the dust barely noticed.", landed: true, stars: 3, flag: true, emoji: "🧈" },
-  smooth: { id: "smooth", title: "Smooth.", line: () => "Textbook touchdown. Out you get: plant that flag.", landed: true, stars: 2, flag: true, emoji: "🟩" },
-  bumpy: { id: "bumpy", title: "Bumpy.", line: () => "Down in one piece. Mostly.", landed: true, stars: 1, flag: false, emoji: "🟨" },
+  butter: { id: "butter", title: "Butter.", line: () => "So soft the dust barely noticed.", landed: true, stars: 3, flag: true, shareGlyph: "🧈" },
+  smooth: { id: "smooth", title: "Smooth.", line: () => "Textbook touchdown. Out you get: plant that flag.", landed: true, stars: 2, flag: true, shareGlyph: "🟩" },
+  bumpy: { id: "bumpy", title: "Bumpy.", line: () => "Down in one piece. Mostly.", landed: true, stars: 1, flag: false, shareGlyph: "🟨" },
   // Free Flight only: down gently, but on a slope, leaning, sliding, or in the sea.
-  tipped: { id: "tipped", title: "Tipped.", line: () => "Down gently, then over it went. The astronaut climbs out and shrugs.", landed: false, stars: 0, flag: false, emoji: "🙃" },
-  splash: { id: "splash", title: "Splash.", line: () => "It floats! Mostly. Someone is sending a boat.", landed: false, stars: 0, flag: false, emoji: "💦" },
-  dented: { id: "dented", title: "Dented.", line: () => "You walked away. The lander won't be flying again.", landed: false, stars: 0, flag: false, emoji: "🟧" },
-  scrap: { id: "scrap", title: "Scrap.", line: () => "The pilot ejected just in time. The lander is modern art now.", landed: false, stars: 0, flag: false, emoji: "💥" },
-  confetti: { id: "confetti", title: "Confetti.", line: () => "The lander is now spread evenly across the landscape.", landed: false, stars: 0, flag: false, emoji: "🎊" },
-  crater: { id: "crater", title: "New crater.", line: () => "Relax, the pilot bailed out long ago. The hole will be named after you.", landed: false, stars: 0, flag: false, emoji: "🕳️" },
-  oil: { id: "oil", title: "You struck oil.", line: (world) => `…on ${world === "Earth" ? "the sea floor" : world === "Moon" ? "the Moon" : world}. Geologists have questions.`, landed: false, stars: 0, flag: false, emoji: "🛢️" },
-  lost: { id: "lost", title: "Lost in space.", line: () => "Up is also a direction. Just not the useful one.", landed: false, stars: 0, flag: false, emoji: "🛸" },
+  tipped: { id: "tipped", title: "Tipped.", line: () => "Down gently, then over it went. The astronaut climbs out and shrugs.", landed: false, stars: 0, flag: false, shareGlyph: "🙃" },
+  splash: { id: "splash", title: "Splash.", line: () => "It floats! Mostly. Someone is sending a boat.", landed: false, stars: 0, flag: false, shareGlyph: "💦" },
+  dented: { id: "dented", title: "Dented.", line: () => "You walked away. The lander won't be flying again.", landed: false, stars: 0, flag: false, shareGlyph: "🟧" },
+  scrap: { id: "scrap", title: "Scrap.", line: () => "The pilot ejected just in time. The lander is modern art now.", landed: false, stars: 0, flag: false, shareGlyph: "💥" },
+  confetti: { id: "confetti", title: "Confetti.", line: () => "The lander is now spread evenly across the landscape.", landed: false, stars: 0, flag: false, shareGlyph: "🎊" },
+  crater: { id: "crater", title: "New crater.", line: () => "Relax, the pilot bailed out long ago. The hole will be named after you.", landed: false, stars: 0, flag: false, shareGlyph: "🕳️" },
+  oil: { id: "oil", title: "You struck oil.", line: (world) => `…on ${world === "Earth" ? "the sea floor" : world === "Moon" ? "the Moon" : world}. Geologists have questions.`, landed: false, stars: 0, flag: false, shareGlyph: "🛢️" },
+  lost: { id: "lost", title: "Lost in space.", line: () => "Up is also a direction. Just not the useful one.", landed: false, stars: 0, flag: false, shareGlyph: "🛸" },
 };
 
 export function gradeFor(speed: number): GradeId {

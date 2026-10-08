@@ -19,6 +19,7 @@ type Props = {
   onSeek: (beat: number) => void;
   onRate: (rate: number) => void;
   onLoop: (loop: boolean) => void;
+  onMidiSaved?: () => void;
 };
 
 const RATES = [0.5, 0.75, 1, 1.25, 1.5];
@@ -37,7 +38,7 @@ function download(blob: Blob, name: string) {
   setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
-export function Transport({ playing, loadState, position, arrangement, rate, loop, engine, fileName, onToggle, onSeek, onRate, onLoop }: Props) {
+export function Transport({ playing, loadState, position, arrangement, rate, loop, engine, fileName, onToggle, onSeek, onRate, onLoop, onMidiSaved }: Props) {
   const [rendering, setRendering] = useState(false);
   const total = arrangement.length;
   const seconds = (beat: number) => secondsAt(arrangement.tempos, beat);
@@ -152,7 +153,9 @@ export function Transport({ playing, loadState, position, arrangement, rate, loo
           className={styles.save}
           onClick={() => {
             const e = engine.current;
-            if (e) download(e.midiFile(arrangement), `${fileName}.mid`);
+            if (!e) return;
+            download(e.midiFile(arrangement), `${fileName}.mid`);
+            onMidiSaved?.();
           }}
         >
           MIDI

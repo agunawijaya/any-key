@@ -39,7 +39,8 @@ export type Palette = {
 export type World = {
   id: WorldId;
   name: string;
-  emoji: string;
+  /** For share texts only (pasted into chats); the page draws its own icon. */
+  shareGlyph: string;
   /** Surface gravity in cm/s², as the 1979 program wrote it. */
   g1: number;
   /** Radius in km. */
@@ -75,7 +76,7 @@ export const WORLDS: World[] = [
   {
     id: "moon",
     name: "Moon",
-    emoji: "🌕",
+    shareGlyph: "🌕",
     ...derive(162),
     radius: 1738,
     air: 0,
@@ -114,7 +115,7 @@ export const WORLDS: World[] = [
   {
     id: "mars",
     name: "Mars",
-    emoji: "🔴",
+    shareGlyph: "🔴",
     ...derive(374),
     radius: 3380,
     air: 60,
@@ -152,7 +153,7 @@ export const WORLDS: World[] = [
   {
     id: "psyche",
     name: "Psyche",
-    emoji: "🪨",
+    shareGlyph: "🪨",
     ...derive(14.4),
     radius: 111,
     air: 0,
@@ -191,7 +192,7 @@ export const WORLDS: World[] = [
   {
     id: "earth",
     name: "Earth",
-    emoji: "🌍",
+    shareGlyph: "🌍",
     ...derive(980.7),
     radius: 6371,
     air: 100,

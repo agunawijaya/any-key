@@ -4,6 +4,9 @@
  * both the page (inline SVG) and the canvas (drawn as an image and waved).
  */
 
+import { readableOn } from "@/lib/kit/color";
+import { EMBLEMS, emblemById, type EmblemId } from "./emblems";
+
 export type FlagShape = "rect" | "swallow" | "pennant";
 export type FlagPattern = "solid" | "stripes" | "bars" | "diagonal" | "cross" | "chevron" | "dots" | "canton";
 
@@ -11,7 +14,8 @@ export type FlagDesign = {
   shape: FlagShape;
   pattern: FlagPattern;
   colors: [string, string, string];
-  emblem: string;
+  /** An emblem id (see emblems.ts); "" for none. */
+  emblem: EmblemId;
 };
 
 export const FLAG_SHAPES: { id: FlagShape; name: string }[] = [
@@ -33,37 +37,13 @@ export const FLAG_PATTERNS: { id: FlagPattern; name: string }[] = [
 
 export const FLAG_COLORS = ["#ff4f9a", "#ff6b1a", "#ffd23d", "#c9f73a", "#1fbf6f", "#13c2e3", "#3a5bff", "#6a48ff", "#16131f", "#ffffff", "#d7263d", "#8a5a3c"];
 
-/** Emblems. A few are earned: the achievement id unlocks them. */
-export const EMBLEMS: { emoji: string; unlock?: string }[] = [
-  { emoji: "" },
-  { emoji: "⭐" },
-  { emoji: "🚀" },
-  { emoji: "🪐" },
-  { emoji: "🌙" },
-  { emoji: "☄️" },
-  { emoji: "👽" },
-  { emoji: "🐱" },
-  { emoji: "🦖" },
-  { emoji: "🍕" },
-  { emoji: "⚡" },
-  { emoji: "🌈" },
-  { emoji: "👾" },
-  { emoji: "💎" },
-  { emoji: "🧈", unlock: "butter" },
-  { emoji: "🛢️", unlock: "wildcatter" },
-  { emoji: "🕳️", unlock: "crater-maker" },
-  { emoji: "📟", unlock: "time-traveller" },
-  { emoji: "🐈‍⬛", unlock: "schrodinger" },
-  { emoji: "🏆", unlock: "mission-control" },
-];
-
-export const DEFAULT_FLAG: FlagDesign = { shape: "rect", pattern: "canton", colors: ["#6a48ff", "#ffffff", "#ffd23d"], emblem: "⭐" };
+export const DEFAULT_FLAG: FlagDesign = { shape: "rect", pattern: "canton", colors: ["#6a48ff", "#ffffff", "#ffd23d"], emblem: "star" };
 
 export function randomFlag(unlocked: string[], rng = Math.random): FlagDesign {
   const pick = <T,>(xs: T[]) => xs[Math.floor(rng() * xs.length)];
   const colors = [...FLAG_COLORS].sort(() => rng() - 0.5).slice(0, 3) as [string, string, string];
   const emblems = EMBLEMS.filter((e) => !e.unlock || unlocked.includes(e.unlock));
-  return { shape: pick(FLAG_SHAPES).id, pattern: pick(FLAG_PATTERNS).id, colors, emblem: pick(emblems).emoji };
+  return { shape: pick(FLAG_SHAPES).id, pattern: pick(FLAG_PATTERNS).id, colors, emblem: pick(emblems).id };
 }
 
 const W = 90;
@@ -104,8 +84,11 @@ export function flagSvg(design: FlagDesign, id = "f") {
   const clip = `clip-${id}`;
   const emblemX = design.shape === "pennant" ? W * 0.3 : design.pattern === "canton" ? W * 0.225 : W / 2;
   const size = design.shape === "pennant" ? 22 : 30;
-  const emblem = design.emblem
-    ? `<text x="${emblemX}" y="${H / 2}" font-size="${size}" text-anchor="middle" dominant-baseline="central" font-family="'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif">${design.emblem}</text>`
+  const glyph = emblemById(design.emblem);
+  // The emblem sits on the canton when there is one, otherwise on the main colour: pick an ink that reads on it.
+  const under = design.pattern === "canton" ? design.colors[2] : design.colors[0];
+  const emblem = glyph.path
+    ? `<path transform="translate(${emblemX - size / 2} ${H / 2 - size / 2}) scale(${size / 24})" d="${glyph.path}" fill="${readableOn(under, "#ffffff", "#16131f")}" fill-rule="evenodd" stroke="rgba(0,0,0,0.22)" stroke-width="0.6" stroke-linejoin="round"/>`
     : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W * 2}" height="${H * 2}"><defs><clipPath id="${clip}"><path d="${outline(design.shape)}"/></clipPath></defs><g clip-path="url(#${clip})">${pattern(design.pattern, design.colors)}${emblem}</g><path d="${outline(design.shape)}" fill="none" stroke="rgba(0,0,0,0.25)" stroke-width="1.5"/></svg>`;
 }

@@ -1,3 +1,5 @@
+import { gameById } from "@/lib/catalog";
+import { ComingSoonPreview } from "./ComingSoonPreview";
 import { DontCraterPreview } from "./DontCraterPreview";
 import { MusicPreview } from "./MusicPreview";
 import { OuttaPreview } from "./OuttaPreview";
@@ -14,7 +16,9 @@ export function ProgramPreview({ id }: { id: string }) {
       return <OuttaPreview />;
     case "lander":
       return <DontCraterPreview />;
-    default:
-      return null;
+    default: {
+      const game = gameById(id);
+      return game ? <ComingSoonPreview game={game} /> : null;
+    }
   }
 }

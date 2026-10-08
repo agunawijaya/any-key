@@ -1,0 +1,2 @@
+# Each session edits only its own row in PROGRESS.md; a formatter run would rewrite the whole table.
+docs/PROGRESS.md

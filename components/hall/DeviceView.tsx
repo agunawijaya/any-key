@@ -1,8 +1,10 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { programs, yearLabel } from "@/lib/catalog";
+import { games } from "@/lib/catalog";
+import { isPlayable, yearLabel } from "@/lib/kit/manifest";
 import { ProgramPreview } from "@/components/previews/ProgramPreview";
+import { ArrowIcon } from "@/components/kit/icons";
 import styles from "./DeviceView.module.css";
 
 const KNOB_SWEEP = 270;
@@ -14,8 +16,9 @@ export function DeviceView() {
   const [bump, setBump] = useState(0);
   const knobDrag = useRef<{ angle: number; id: number } | null>(null);
 
-  const program = programs[index];
-  const n = programs.length;
+  const program = games[index];
+  const n = games.length;
+  const playable = isPlayable(program);
   const knobAngle = n > 1 ? -KNOB_SWEEP / 2 + (KNOB_SWEEP * index) / (n - 1) : 0;
   const [c1, c2, c3] = program.palette;
 
@@ -103,7 +106,7 @@ export function DeviceView() {
                     {String(index + 1).padStart(2, "0")}/{String(n).padStart(2, "0")}
                   </span>
                   <span className={styles.ready}>
-                    <i aria-hidden /> {program.status === "playable" ? "READY" : "SOON"}
+                    <i aria-hidden /> {playable ? "READY" : "SOON"}
                   </span>
                 </div>
 
@@ -122,7 +125,7 @@ export function DeviceView() {
 
                 <h2 className={styles.screenTitle}>{program.title}</h2>
                 <p className={styles.screenMeta}>
-                  {program.stats.map((s) => `${s.value} ${s.label}`).join(" · ")}
+                  {playable ? program.stats.map((s) => `${s.value} ${s.label}`).join(" · ") : "on the drawing board"}
                 </p>
               </div>
             </div>
@@ -186,16 +189,16 @@ export function DeviceView() {
 
             <div className={styles.keys}>
               <KeyButton label="prev" onClick={() => go(index - 1)}>
-                ◀
+                <ArrowIcon dir="left" size={20} />
               </KeyButton>
               <KeyButton label="next" onClick={() => go(index + 1)}>
-                ▶
+                <ArrowIcon dir="right" size={20} />
               </KeyButton>
-              <KeyButton label="info" onClick={showNextFact} pressed={factIndex !== null}>
+              <KeyButton label="info" onClick={showNextFact} pressed={factIndex !== null} disabled={!program.trivia.length}>
                 i
               </KeyButton>
-              {program.status === "playable" && program.href && (
-                <a className={styles.key} href={`${program.href}#story`} aria-label={`Read the story of ${program.title}`}>
+              {playable && (
+                <a className={styles.key} href={`${program.route}#story`} aria-label={`Read the story of ${program.title}`}>
                   <span className={styles.keyFace} aria-hidden>
                     <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round">
                       <path d="M3 5.5C5.5 4.2 8.7 4.2 12 6c3.3-1.8 6.5-1.8 9-.5V19c-2.5-1.3-5.7-1.3-9 .5-3.3-1.8-6.5-1.8-9-.5z" />
@@ -205,8 +208,8 @@ export function DeviceView() {
                   <span className={styles.label}>story</span>
                 </a>
               )}
-              {program.status === "playable" && program.href ? (
-                <a className={`${styles.key} ${styles.play}`} href={program.href}>
+              {playable ? (
+                <a className={`${styles.key} ${styles.play}`} href={program.route}>
                   <span className={styles.keyFace}>PLAY</span>
                   <span className={styles.label}>play</span>
                 </a>
@@ -223,7 +226,7 @@ export function DeviceView() {
         <div className={styles.shelf}>
           <p className={styles.shelfTitle}>Cartridges</p>
           <div className={styles.shelfRow}>
-            {programs.map((p, i) => (
+            {games.map((p, i) => (
               <button
                 key={p.id}
                 type="button"
@@ -233,7 +236,7 @@ export function DeviceView() {
                 style={{ "--c1": p.palette[0], "--c2": p.palette[1], "--c3": p.palette[2] } as React.CSSProperties}
               >
                 <span className={styles.shelfCartTitle}>{p.title}</span>
-                <span className={styles.shelfCartState}>{i === index ? "in the slot" : "insert"}</span>
+                <span className={styles.shelfCartState}>{i === index ? "in the slot" : isPlayable(p) ? "insert" : "coming soon"}</span>
               </button>
             ))}
             <div className={styles.shelfEmpty} aria-hidden>
@@ -255,14 +258,16 @@ function KeyButton({
   children,
   onClick,
   pressed,
+  disabled,
 }: {
   label: string;
   children: React.ReactNode;
   onClick: () => void;
   pressed?: boolean;
+  disabled?: boolean;
 }) {
   return (
-    <button type="button" className={styles.key} onClick={onClick} aria-label={label} aria-pressed={pressed}>
+    <button type="button" className={styles.key} onClick={onClick} aria-label={label} aria-pressed={pressed} disabled={disabled}>
       <span className={styles.keyFace} aria-hidden>
         {children}
       </span>

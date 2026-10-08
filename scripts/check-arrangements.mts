@@ -66,3 +66,4 @@ for (const song of [...songs, ...fullSongs.values()]) {
   console.log(`${song.id.padEnd(7)}${song.version === "full" ? "+" : " "}`, row.join("  "));
 }
 console.log(problems ? `${problems} problems` : "all arrangements OK");
+process.exitCode = problems ? 1 : 0;

@@ -1,22 +1,25 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { arrange, remixInfo, STYLES, type StyleId } from "@/lib/music/arrange";
 import { SOLO_INSTRUMENTS, type SoloInstrumentId } from "@/lib/music/arrange/patches";
 import type { Arrangement } from "@/lib/music/arrange/types";
 import { BopEngine } from "@/lib/music/engine";
 import { loadOriginal, originalFor, originalReady, subscribeOriginal } from "@/lib/music/original";
-import { setBopPrefs, useBopPrefs } from "@/lib/music/prefs";
+import { heardToTheEnd, listened } from "@/lib/music/badges";
+import { musicManifest } from "@/lib/music/manifest";
+import { bopStore, setBopPrefs, useBopPrefs, type BopPrefs } from "@/lib/music/prefs";
 import { measureAt, type SongVersion } from "@/lib/music/score";
 import { hasFull, mapVersionBeat, songById, songs } from "@/lib/music/songs";
 import { barIndexAt, bpmAt, secondsAt } from "@/lib/music/tempo";
 import { keyboardRange } from "@/lib/music/timeline";
-import { PrefsSync } from "@/components/hall/PrefsSync";
-import { ThemeButton } from "@/components/ui/ThemeButton";
+import { GameShell } from "@/components/kit/GameShell";
 import { Keyboard } from "./Keyboard";
-import { useHashTab } from "@/components/kit/useHashTab";
-import { Story, type DocTab } from "@/components/kit/Story";
+import type { DocTab } from "@/components/kit/Story";
+import { unlock } from "@/lib/kit/achievements";
+import { hasModifier, isTypingTarget } from "@/lib/kit/keys";
+import { recordPlay } from "@/lib/kit/stats";
+import { InstrumentIcon, StyleIcon } from "./icons";
 import { Transport } from "./Transport";
 import { AngkaView } from "./views/AngkaView";
 import { FallingView } from "./views/FallingView";
@@ -42,19 +45,41 @@ export type Clock = {
   scoreBeat: () => number;
 };
 
-const TABS = ["studio", "story"] as const;
+const SHORTCUTS = [
+  { keys: "Space", does: "Play and pause" },
+  { keys: "A–K", does: "Pick a tune" },
+  { keys: "1–0  =  -", does: "Pick a style" },
+  { keys: "L", does: "1981 excerpt or the full piece" },
+  { keys: "V", does: "Switch the view" },
+  { keys: "← →", does: "One bar back or forward" },
+];
+
+/** Records a listen (or a piece heard to the end) and unlocks what it earned. */
+function earn(change: (record: BopPrefs) => { record: BopPrefs; badges: string[] }) {
+  const { record, badges } = change(bopStore.get());
+  bopStore.set(record);
+  unlock(musicManifest.id, badges);
+}
 
 const clockText = (seconds: number) => {
   const s = Math.round(seconds);
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 };
 
+/** Bop Box is all game menu: the studio. Its style colours the whole page, top bar included. */
 export function BopBox({ docs }: { docs: DocTab[] }) {
-  const [songId, setSongId] = useState("blue");
   const [styleId, setStyleId] = useState<StyleId>("orchestra");
+  return (
+    <GameShell game={musicManifest} docs={docs} className={styles.app} dataset={{ style: styleId }} shortcuts={SHORTCUTS} rounds={false}>
+      <Studio styleId={styleId} setStyleId={setStyleId} />
+    </GameShell>
+  );
+}
+
+function Studio({ styleId, setStyleId }: { styleId: StyleId; setStyleId: (id: StyleId) => void }) {
+  const [songId, setSongId] = useState("blue");
   const [instrument, setInstrument] = useState<SoloInstrumentId>("piano");
   const [view, setView] = useState<ViewId>("sheet");
-  const [tab, setTab] = useHashTab(TABS);
   const [loadState, setLoadState] = useState<{ state: "loading" | "ready" | "error"; progress: number }>({ state: "loading", progress: 0 });
   const [playing, setPlaying] = useState(false);
   const [rate, setRate] = useState(1);
@@ -90,6 +115,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
   const loadedRef = useRef<Arrangement | null>(null);
   const playingRef = useRef(false);
   const arrangementRef = useRef(arrangement);
+  const loopRef = useRef(false);
 
   useEffect(() => {
     arrangementRef.current = arrangement;
@@ -122,7 +148,12 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
     const engine = new BopEngine();
     let disposed = false;
     engineRef.current = engine;
-    engine.onEnded = () => setPlaying(false);
+    engine.onEnded = () => {
+      setPlaying(false);
+      const a = arrangementRef.current;
+      recordPlay(musicManifest.id, {});
+      if (a.version === "full" && !loopRef.current) earn((record) => heardToTheEnd(record, a.songId));
+    };
     engine
       .init((progress) => !disposed && setLoadState({ state: "loading", progress }))
       .then(() => !disposed && setLoadState({ state: "ready", progress: 1 }))
@@ -130,7 +161,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
     return () => {
       disposed = true;
       engine.pause();
-      void engine.ctx.close();
+      void engine.close();
     };
   }, []);
 
@@ -159,7 +190,13 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
 
   useEffect(() => {
     engineRef.current?.setLoop(loop);
+    loopRef.current = loop;
   }, [loop]);
+
+  // Whatever plays counts: a new tune or a new style while the music runs is another listen.
+  useEffect(() => {
+    if (playing) earn((record) => listened(record, arrangement.songId, arrangement.styleId as StyleId));
+  }, [playing, arrangement.songId, arrangement.styleId]);
 
   // A slow clock for text and the scrubber; the visuals run their own animation frames.
   useEffect(() => {
@@ -187,8 +224,11 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
   const toggleMute = useCallback((trackId: string) => {
     setMuted((current) => {
       const next = new Set(current);
-      if (next.has(trackId)) next.delete(trackId);
-      else next.add(trackId);
+      if (next.has(trackId)) {
+        next.delete(trackId);
+        // Muted, then brought back: the band leader's move.
+        unlock(musicManifest.id, "band-leader");
+      } else next.add(trackId);
       engineRef.current?.setMuted(trackId, next.has(trackId));
       return next;
     });
@@ -205,19 +245,30 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
   // Keyboard: letters pick tunes (like the 1981 menu), digits pick styles, space plays.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.ctrlKey || event.metaKey || event.altKey || tab !== "studio") return;
+      if (hasModifier(event)) return;
       const target = event.target as HTMLElement;
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName)) return;
+      if (isTypingTarget(target)) return;
       const key = event.key.toUpperCase();
+      // Every key the studio uses is claimed, so the shell's own letters (K for the Keyring) leave it alone.
       const songMatch = songs.find((s) => s.letter === key);
-      if (songMatch) return pickSong(songMatch.id);
+      if (songMatch) {
+        event.preventDefault();
+        return pickSong(songMatch.id);
+      }
       const styleMatch = STYLES.find((s) => s.key === event.key);
-      if (styleMatch && !(styleMatch.id === "original" && !originalFor(arrangementRef.current.songId))) return setStyleId(styleMatch.id);
-      if (key === "L") return setBopPrefs({ version: prefs.version === "full" ? "short" : "full" });
+      if (styleMatch && !(styleMatch.id === "original" && !originalFor(arrangementRef.current.songId))) {
+        event.preventDefault();
+        return setStyleId(styleMatch.id);
+      }
+      if (key === "L") {
+        event.preventDefault();
+        return setBopPrefs({ version: prefs.version === "full" ? "short" : "full" });
+      }
       if (event.key === " " && !/^(BUTTON|A)$/.test(target.tagName)) {
         event.preventDefault();
         void togglePlay();
       } else if (key === "V") {
+        event.preventDefault();
         setView((v) => VIEWS[(VIEWS.findIndex((x) => x.id === v) + 1) % VIEWS.length].id);
       } else if ((event.key === "ArrowRight" || event.key === "ArrowLeft") && target.getAttribute("role") !== "slider") {
         const engine = engineRef.current;
@@ -230,7 +281,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [pickSong, prefs.version, seek, tab, togglePlay]);
+  }, [pickSong, prefs.version, seek, setStyleId, togglePlay]);
 
   const style = STYLES.find((s) => s.id === styleId)!;
   const remix = remixInfo(songId);
@@ -249,32 +300,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
   const sectionName = version === "full" ? [...song.sections].reverse().find((s) => s.at <= hereBeat + 1e-6)?.name : undefined;
 
   return (
-    <div className={styles.app} data-style={styleId}>
-      <PrefsSync />
-      <header className={styles.header}>
-        <Link href="/" className={styles.back} aria-label="Back to the Any Key hall">
-          <span aria-hidden>←</span>
-          <span className={styles.backLabel}>any key</span>
-        </Link>
-        <div className={styles.brand}>
-          <span className={styles.logo}>Bop Box</span>
-          <span className={styles.origin}>based on MUSIC.BAS · 1981</span>
-        </div>
-        <div className={styles.tabs} role="tablist" aria-label="Sections">
-          <button type="button" role="tab" aria-selected={tab === "studio"} onClick={() => setTab("studio")}>
-            Studio
-          </button>
-          <button type="button" role="tab" aria-selected={tab === "story"} onClick={() => setTab("story")}>
-            Story
-          </button>
-        </div>
-        <ThemeButton />
-      </header>
-
-      {tab === "story" ? (
-        <Story docs={docs} />
-      ) : (
-        <>
+    <div className={styles.workspace}>
           <div className={styles.studio}>
             <aside className={styles.tracks} aria-label="Tunes">
               <h2 className={styles.panelTitle}>
@@ -306,7 +332,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
                 <div>
                   <p className={styles.kicker}>
                     <span className={styles.styleChip}>
-                      <span aria-hidden>{styleId === "remix" ? "🧪" : standIn ? "🎻" : style.emoji}</span> {styleName}
+                      <StyleIcon style={standIn ? "orchestra" : styleId} size={16} /> {styleName}
                     </span>
                     <span className={styles.meta}>
                       {sectionName && `${sectionName} · `}
@@ -375,9 +401,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
                     title={s.id === "original" && !score ? "No score for this tune yet" : undefined}
                     onClick={() => setStyleId(s.id)}
                   >
-                    <span className={styles.styleEmoji} aria-hidden>
-                      {s.emoji}
-                    </span>
+                    <StyleIcon style={s.id} size={24} className={styles.styleIcon} />
                     <span className={styles.styleName}>{s.id === "remix" ? `AI Remix` : s.name}</span>
                     <span className={styles.styleBlurb}>
                       {s.id === "remix" ? `${remix.genre}, arranged by Claude` : s.id === "original" ? (score?.label ?? "No score for this tune yet") : s.blurb}
@@ -393,7 +417,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
                   <select value={instrument} onChange={(e) => setInstrument(e.target.value as SoloInstrumentId)}>
                     {SOLO_INSTRUMENTS.map((i) => (
                       <option key={i.id} value={i.id}>
-                        {i.patch.icon} {i.patch.name}
+                        {i.patch.name}
                       </option>
                     ))}
                   </select>
@@ -412,7 +436,7 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
                       onClick={() => toggleMute(track.id)}
                       title={muted.has(track.id) ? `Unmute ${track.name}` : `Mute ${track.name}`}
                     >
-                      <span aria-hidden>{track.patch.icon}</span>
+                      <InstrumentIcon family={track.patch.family} size={16} />
                       <span className={styles.mixerName}>{track.name}</span>
                       <span className={styles.mixerState}>{muted.has(track.id) ? "muted" : "on"}</span>
                     </button>
@@ -435,9 +459,8 @@ export function BopBox({ docs }: { docs: DocTab[] }) {
             onSeek={seek}
             onRate={setRate}
             onLoop={setLoop}
+            onMidiSaved={() => unlock(musicManifest.id, "take-it-home")}
           />
-        </>
-      )}
     </div>
   );
 }

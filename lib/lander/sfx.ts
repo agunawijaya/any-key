@@ -1,5 +1,7 @@
 "use client";
 
+import { effectsBus } from "@/lib/kit/sound";
+
 /*
  * Every Don't Crater sound is synthesised on the spot: no audio files.
  * The engine is a bed of filtered noise over a low hum whose brightness and
@@ -13,12 +15,8 @@ let noise: AudioBuffer | null = null;
 
 function audio() {
   if (!ctx) {
-    ctx = new AudioContext();
-    out = ctx.createGain();
-    out.gain.value = 0.8;
-    const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -12;
-    out.connect(limiter).connect(ctx.destination);
+    // The collection's master bus holds the limiter and follows mute and volume.
+    ({ ctx, out } = effectsBus(0.8));
     noise = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
     const data = noise.getChannelData(0);
     // Brown-ish noise: a warmer rumble than white noise.

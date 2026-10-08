@@ -1,0 +1,32 @@
+.question {
+  margin: 0 0 18px;
+  color: var(--ink-2);
+  font: 500 15px/1.5 var(--font-sans);
+}
+
+.answers {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.keep,
+.forget {
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font: 700 14.5px/1 var(--font-sans);
+}
+
+.keep {
+  border: 0;
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.forget {
+  border: 0;
+  background: #c92a3a;
+  color: #ffffff;
+  box-shadow: 0 3px 0 #7d1420;
+}

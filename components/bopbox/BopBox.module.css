@@ -23,92 +23,16 @@
 .app[data-style="pc81"] { --accent: #55ff55; --accent-2: #5555ff; }
 .app[data-style="remix"] { --accent: #c9f73a; --accent-2: #7a5cff; }
 
-/* ---------- Header ---------- */
+/* ---------- The studio and its transport fill the page under the shell's bar ---------- */
 
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: center;
-  gap: 16px;
-  height: 72px;
-  padding: 0 clamp(16px, 3vw, 32px);
-  background: color-mix(in srgb, var(--bg) 80%, transparent);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  border-bottom: 1px solid var(--line);
-}
-
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  font: 700 14px/1 var(--font-display);
-  text-decoration: none;
-  box-shadow: var(--lift);
-}
-
-.back:hover {
-  transform: translateX(-2px);
-}
-
-.brand {
+.workspace {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
-  min-width: 0;
+  flex-direction: column;
+  min-height: 0;
 }
 
-.logo {
-  font: 800 26px/1 var(--font-display);
-  letter-spacing: -0.03em;
-  font-variation-settings: "wdth" 84;
-  background: linear-gradient(100deg, var(--accent), var(--accent-2));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter: saturate(1.2);
-}
-
-:global(:root:not([data-theme="dark"])) .logo {
-  filter: saturate(1.3) brightness(0.8);
-}
-
-.origin {
-  font: 500 12px var(--font-mono);
-  color: var(--ink-3);
-  white-space: nowrap;
-}
-
-.tabs {
-  display: flex;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-}
-
-.tabs button {
-  height: 36px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  color: var(--ink-2);
-  font: 600 14px var(--font-sans);
-}
-
-.tabs button[aria-selected="true"] {
-  background: var(--ink);
-  color: var(--bg);
+.workspace > .studio {
+  flex: 1;
 }
 
 /* ---------- Studio grid ---------- */
@@ -502,9 +426,9 @@
   color: #141118;
 }
 
-.styleEmoji {
-  font-size: 24px;
-  line-height: 1;
+.styleIcon {
+  width: 24px;
+  height: 24px;
 }
 
 .styleName {
@@ -619,9 +543,14 @@
 
 /* ---------- Desktop: the studio fits one screen, side panels scroll ---------- */
 
-@media (min-width: 1281px) and (min-height: 700px) {
-  .app {
+@media (min-width: 1100px) and (min-height: 600px) {
+  /* Only the studio is fitted; the Story scrolls as one page under the sticky bar. */
+  .app[data-tab="play"] {
     height: 100dvh;
+  }
+
+  .workspace {
+    overflow: hidden;
   }
 
   .studio {
@@ -651,7 +580,51 @@
 
 /* ---------- Responsive ---------- */
 
-@media (max-width: 1280px) {
+/* A laptop: narrower side panels, and room for the keyboard above the transport. */
+@media (min-width: 1100px) and (max-width: 1440px) {
+  .studio {
+    grid-template-columns: 210px minmax(0, 1fr) 252px;
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .styleCard {
+    min-height: 0;
+    padding: 9px 10px;
+  }
+
+  .styleBlurb {
+    display: none;
+  }
+}
+
+@media (min-width: 1100px) and (max-height: 860px) {
+  .stage {
+    gap: 10px;
+    padding: 14px 18px;
+  }
+
+  .songTitle {
+    margin-top: 6px;
+    font-size: clamp(28px, 2.8vw, 40px);
+  }
+
+  .songAbout {
+    display: -webkit-box;
+    margin-top: 6px;
+    font-size: 13.5px;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .viewport {
+    min-height: 150px;
+  }
+}
+
+@media (max-width: 1099px) {
   .studio {
     grid-template-columns: 220px minmax(0, 1fr);
   }
@@ -667,28 +640,6 @@
 }
 
 @media (max-width: 900px) {
-  .header {
-    grid-template-columns: auto 1fr auto;
-    height: auto;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    row-gap: 10px;
-  }
-
-  .tabs {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    justify-self: stretch;
-  }
-
-  .tabs button {
-    flex: 1;
-  }
-
-  .origin {
-    display: none;
-  }
-
   .studio {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -732,8 +683,3 @@
   }
 }
 
-@media (max-width: 480px) {
-  .backLabel {
-    display: none;
-  }
-}

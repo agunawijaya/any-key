@@ -1,0 +1,119 @@
+.settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 22px;
+}
+
+.block {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 24px;
+  border-radius: 26px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.heading {
+  margin: 0;
+  font: 800 22px/1.1 var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.note {
+  margin: 0;
+  color: var(--ink-2);
+  font: 500 14px/1.5 var(--font-sans);
+}
+
+.forgetList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.forgetList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 8px 8px 12px;
+  border-radius: 14px;
+  background: var(--bg-2);
+}
+
+.gameName {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: 700 14.5px/1 var(--font-sans);
+}
+
+.gameName svg {
+  width: 26px;
+  height: 26px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--accent);
+  fill: #fff8ec;
+}
+
+.forget,
+.forgetAll,
+.keep,
+.yes {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  font: 700 13.5px/1 var(--font-sans);
+}
+
+.forget {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.forgetAll,
+.yes {
+  border: 0;
+  background: #c92a3a;
+  color: #ffffff;
+  box-shadow: 0 3px 0 #7d1420;
+}
+
+.forgetAll {
+  justify-self: start;
+}
+
+.done {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--ink-2);
+  font: 600 14px/1.4 var(--font-sans);
+}
+
+.question {
+  margin: 0 0 18px;
+  color: var(--ink-2);
+  font: 500 15px/1.5 var(--font-sans);
+}
+
+.answers {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
+.keep {
+  height: 48px;
+  border: 0;
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.yes {
+  height: 48px;
+}

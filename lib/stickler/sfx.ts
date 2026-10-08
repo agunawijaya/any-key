@@ -1,5 +1,7 @@
 "use client";
 
+import { effectsBus } from "@/lib/kit/sound";
+
 /*
  * Every Stickler sound is synthesised on the spot: no audio files.
  * A match strike is a burst of filtered noise; the big "fwoosh" is a noise
@@ -12,12 +14,8 @@ let noise: AudioBuffer | null = null;
 
 function audio() {
   if (!ctx) {
-    ctx = new AudioContext();
-    out = ctx.createGain();
-    out.gain.value = 0.8;
-    const limiter = ctx.createDynamicsCompressor();
-    limiter.threshold.value = -10;
-    out.connect(limiter).connect(ctx.destination);
+    // The collection's master bus holds the limiter and follows mute and volume.
+    ({ ctx, out } = effectsBus(0.8));
     noise = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
     const data = noise.getChannelData(0);
     for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;

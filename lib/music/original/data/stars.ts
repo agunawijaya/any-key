@@ -1,4 +1,4 @@
-// Generated from a reading of the printed score (see docs/music/PORT-ARCHITECTURE.md). Do not edit by hand.
+// Generated from a reading of the printed score (see docs/music/ARCHITECTURE.md). Do not edit by hand.
 // Sousa, The Stars and Stripes Forever, full score from The Complete Marches of John Philip Sousa (United States Marine Band, 2016), public domain.
 import type { ScoreData } from "../types";
 

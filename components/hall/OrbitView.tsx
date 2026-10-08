@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { programs, yearLabel, type Program } from "@/lib/catalog";
+import { games } from "@/lib/catalog";
+import { isPlayable, yearLabel, type GameManifest } from "@/lib/kit/manifest";
 import { Sticker } from "@/components/ui/Sticker";
+import { ChevronIcon } from "@/components/kit/icons";
 import styles from "./OrbitView.module.css";
 
 const TURN = Math.PI * 2;
-const STEP = TURN / programs.length;
+const STEP = TURN / games.length;
 const MOON_COLORS = ["var(--lime)", "var(--cyan)", "var(--orange)", "#ffffff", "var(--pink)", "var(--blue)"];
 
 export function OrbitView() {
@@ -32,7 +34,7 @@ export function OrbitView() {
   }
 
   function select(index: number) {
-    const n = programs.length;
+    const n = games.length;
     const next = ((index % n) + n) % n;
     setSelected(next);
     // Of all equivalent angles, glide to the one closest to where we are now.
@@ -72,8 +74,8 @@ export function OrbitView() {
     event.preventDefault();
   }
 
-  const program = programs[selected];
-  const single = programs.length === 1;
+  const program = games[selected];
+  const single = games.length === 1;
 
   return (
     <section data-view="orbit" aria-label="Orbit" className={styles.orbit}>
@@ -102,7 +104,7 @@ export function OrbitView() {
         </svg>
 
         <div className={styles.field}>
-          {programs.map((p, i) => {
+          {games.map((p, i) => {
             const theta = rotation + i * STEP;
             const depth = Math.cos(theta);
             const nearness = (depth + 1) / 2;
@@ -136,9 +138,11 @@ export function OrbitView() {
           <h2 className={styles.title}>{program.title}</h2>
           <p className={styles.tagline}>{program.tagline}</p>
 
-          <p className={styles.moonsLabel}>
-            {program.moons.length} {program.moonsName} in orbit
-          </p>
+          {program.moons.length > 0 && (
+            <p className={styles.moonsLabel}>
+              {program.moons.length} {program.moonsName} in orbit
+            </p>
+          )}
           <ul className={styles.moons}>
             {program.moons.map((moon, k) => (
               <li key={moon} style={{ "--mc": MOON_COLORS[k % MOON_COLORS.length] } as React.CSSProperties}>
@@ -148,12 +152,12 @@ export function OrbitView() {
           </ul>
 
           <div className={styles.panelFoot}>
-            {program.status === "playable" && program.href ? (
+            {isPlayable(program) ? (
               <span className={styles.ctas}>
-                <a className={styles.cta} href={program.href}>
+                <a className={styles.cta} href={program.route}>
                   Land here
                 </a>
-                <a className={styles.ctaStory} href={`${program.href}#story`} aria-label={`Read the story of ${program.title}`}>
+                <a className={styles.ctaStory} href={`${program.route}#story`} aria-label={`Read the story of ${program.title}`}>
                   Story
                 </a>
               </span>
@@ -170,13 +174,13 @@ export function OrbitView() {
 
         <div className={styles.nav}>
           <button type="button" onClick={() => select(selected - 1)} disabled={single} aria-label="Previous program">
-            ←
+            <ChevronIcon dir="left" size={22} />
           </button>
           <span className={styles.count}>
-            {String(selected + 1).padStart(2, "0")} / {String(programs.length).padStart(2, "0")}
+            {String(selected + 1).padStart(2, "0")} / {String(games.length).padStart(2, "0")}
           </span>
           <button type="button" onClick={() => select(selected + 1)} disabled={single} aria-label="Next program">
-            →
+            <ChevronIcon dir="right" size={22} />
           </button>
         </div>
         <p className={styles.hint} aria-hidden>
@@ -187,7 +191,7 @@ export function OrbitView() {
   );
 }
 
-function Planet({ program }: { program: Program }) {
+function Planet({ program }: { program: GameManifest }) {
   const [c1, c2, c3] = program.palette;
   return (
     <div className={styles.scene} style={{ "--c1": c1, "--c2": c2, "--c3": c3 } as React.CSSProperties}>

@@ -7,7 +7,8 @@
 import { CLASSIC, dailyPuzzle, HANDFULS_PRESETS, handfulsRules, LADDER, surprisePile, VERSUS_PRESETS } from "../lib/stickler/modes";
 import { describeRules, isLegal, legalMoves, newGame, play, total, type Game, type Rules } from "../lib/stickler/rules";
 import { isWinning, magicZones, quality, winningMoves, zoneOf } from "../lib/stickler/solver";
-import { move1981, mulberry, sparkyMove, type Level } from "../lib/stickler/sparky";
+import { mulberry32 } from "../lib/kit/rng";
+import { move1981, sparkyMove, type Level } from "../lib/stickler/sparky";
 
 let failures = 0;
 const fail = (msg: string) => {
@@ -17,7 +18,7 @@ const fail = (msg: string) => {
 
 /** You play perfectly; Sparky plays at a level. Returns true if you won. */
 function perfectVsSparky(rules: Rules, level: Level, seed: number) {
-  const rng = mulberry(seed);
+  const rng = mulberry32(seed);
   let game: Game = newGame(rules);
   while (game.loser === null) {
     if (game.turn === 0) {
@@ -66,7 +67,7 @@ for (const level of ["rookie", "clever", "master"] as Level[]) {
 
 // Master never gives away a won position.
 for (let seed = 0; seed < 500; seed++) {
-  const rng = mulberry(seed);
+  const rng = mulberry32(seed);
   let game = newGame({ rows: [10 + (seed % 30)], maxTake: 3 + (seed % 3), first: 1 });
   while (game.loser === null) {
     const move = game.turn === 1 ? sparkyMove(game, "master", rng) : { row: 0, take: 1 + Math.floor(rng() * Math.min(game.rules.maxTake, game.rows[0])) };
@@ -167,7 +168,7 @@ for (const p of HANDFULS_PRESETS) {
     const sweeps: number[] = [];
     let won = 0;
     for (let seed = 0; seed < 200; seed++) {
-      const rng = mulberry(seed);
+      const rng = mulberry32(seed);
       let game = newGame(rules);
       while (game.loser === null) game = play(game, game.turn === 0 ? winningMoves(game.rows, rules)[0] : sparkyMove(game, "master", rng));
       if (game.loser === 1) won++;
@@ -214,7 +215,7 @@ console.log(`every table you can meet against Sparky is winnable for you (${tabl
 // Master never throws away a won position in Handfuls, and when he can end it he leaves exactly min (the biggest sweep).
 let masterTurns = 0;
 for (let seed = 0; seed < 1000; seed++) {
-  const rng = mulberry(seed);
+  const rng = mulberry32(seed);
   const p = HANDFULS_PRESETS[seed % HANDFULS_PRESETS.length];
   let game = newGame({ rows: [p.min + (seed % 50)], minTake: p.min, maxTake: p.max, first: seed % 2 ? 1 : 0 });
   while (game.loser === null) {
@@ -243,3 +244,4 @@ for (const r of [CLASSIC, ...LADDER.map((t) => t.rules), ...VERSUS_PRESETS.slice
 }
 
 console.log(failures ? `${failures} failures` : "all Stickler checks passed");
+process.exitCode = failures ? 1 : 0;

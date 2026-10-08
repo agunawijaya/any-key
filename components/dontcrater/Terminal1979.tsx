@@ -2,9 +2,12 @@
 
 import { VT323 } from "next/font/google";
 import { useEffect, useRef, useState } from "react";
+import { usePlayScreen, useShell } from "@/components/kit/shell-context";
 import { newOriginalGame, ORIGINAL_WORLDS, playTurn, verdict, type OriginalGame } from "@/lib/lander/original";
 import { updateProgress, withAchievement } from "@/lib/lander/progress";
+import { mulberry32 } from "@/lib/kit/rng";
 import { basicNumber, COLS, Trs80 } from "./trs80";
+import { BackspaceIcon } from "@/components/kit/icons";
 import styles from "./Terminal1979.module.css";
 
 const vt = VT323({ weight: "400", subsets: ["latin"] });
@@ -37,20 +40,9 @@ const LANDER_X = 40;
 
 class Stop extends Error {}
 
-function mulberry(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 /** Ground heights (pixels above the bottom line) for the six zoom levels, made once per run like the original's. */
 function makeTerrain(seed: number) {
-  const rng = mulberry(seed);
+  const rng = mulberry32(seed);
   const zones: number[][] = [];
   const specs = [
     { amp: 26, base: 6, cliff: true },
@@ -82,20 +74,31 @@ function makeTerrain(seed: number) {
 
 type Pending = { pos: number; prompt: string; max: number; resolve: (s: string) => void };
 
-type Props = { onExit: () => void; onUnlock: (ids: string[]) => void };
+type Props = { onExit: () => void };
 
-export function Terminal1979({ onExit, onUnlock }: Props) {
+export function Terminal1979({ onExit }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const pendingRef = useRef<Pending | null>(null);
   const typedRef = useRef("");
   const [typed, setTyped] = useState("");
   const [waiting, setWaiting] = useState(false);
-  const unlockRef = useRef(onUnlock);
+  // Turn-based: pausing only shows the menu; the program simply waits for its next answer.
+  const [paused, setPaused] = useState(false);
+  const shell = useShell();
 
-  useEffect(() => {
-    unlockRef.current = onUnlock;
-  }, [onUnlock]);
+  usePlayScreen({
+    screen: "play",
+    paused,
+    onPause: () => setPaused(true),
+    onResume: () => {
+      setPaused(false);
+      inputRef.current?.focus({ preventScroll: true });
+    },
+    losesProgress: true,
+    roundName: "this 1979 flight",
+    onMenu: onExit,
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current!;
@@ -367,12 +370,11 @@ export function Terminal1979({ onExit, onUnlock }: Props) {
         clock = end.clock;
         lastSpeed = game.lastSpeed;
         if (v.headline.startsWith("YOU'RE DOWN")) {
-          const ids = updateProgress((p) => {
+          updateProgress((p) => {
             let n = withAchievement(p, "time-traveller");
             if (speed > 19 && speed < 20) n = withAchievement(n, "schrodinger");
             return n;
           });
-          unlockRef.current(ids);
         }
         for (let r = 0; r < 5; r++) screen.clear(r * COLS, 43);
         screen.print(`${v.headline}`.slice(0, 42), 0);
@@ -423,8 +425,8 @@ export function Terminal1979({ onExit, onUnlock }: Props) {
   return (
     <div className={styles.wrap}>
       <div className={styles.head}>
-        <button type="button" className={styles.back} onClick={onExit}>
-          ← Lobby
+        <button type="button" className={styles.back} onClick={shell.toMenu}>
+          Game menu
         </button>
         <p className={styles.note}>
           The original, turn for turn: the same numbers, the same ten-second steps and the same quirks (watch the clock after a second go).
@@ -448,14 +450,18 @@ export function Terminal1979({ onExit, onUnlock }: Props) {
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter") submit();
-            if (e.key === "Escape") onExit();
+            if (e.key === "Escape") {
+              // Esc in the typing line still pauses, like everywhere else.
+              e.preventDefault();
+              setPaused(true);
+            }
           }}
         />
       </div>
       <div className={styles.pad} role="group" aria-label="Keypad">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", ".", "⌫"].map((k) => (
-          <button key={k} type="button" onClick={() => type(k)} disabled={!waiting}>
-            {k}
+          <button key={k} type="button" onClick={() => type(k)} disabled={!waiting} aria-label={k === "⌫" ? "Delete" : undefined}>
+            {k === "⌫" ? <BackspaceIcon size={20} /> : k}
           </button>
         ))}
         <button type="button" className={styles.enter} onClick={submit} disabled={!waiting}>

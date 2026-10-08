@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { difficultyTag, type Difficulty } from "@/lib/lander/difficulty";
+import { ShareButton } from "@/components/kit/ShareButton";
+import { usePlayScreen, useShell } from "@/components/kit/shell-context";
+import { Stars } from "@/components/kit/Stars";
+import { AssistIcon, GradeIcon, GuideIcon, WarpIcon, WorldIcon } from "./icons";
+import { holdAnnouncements } from "@/lib/kit/achievements";
+import { difficultyLabel, type Difficulty } from "@/lib/lander/difficulty";
+import { fmtAlt, fmtSpeed } from "@/lib/lander/format";
+import { descentShare } from "@/lib/lander/share";
 import { flagSvg, type FlagDesign } from "@/lib/lander/flags";
 import { GRADES, gradeFor, type GradeId } from "@/lib/lander/grades";
 import type { DailyDrop, Mission } from "@/lib/lander/missions";
@@ -56,23 +63,9 @@ type Props = {
   onExit: () => void;
   onRetry: () => void;
   onNext?: () => void;
-  onUnlock: (ids: string[]) => void;
 };
 
 const clamp = (x: number, a: number, b: number) => Math.min(b, Math.max(a, x));
-
-export function fmtAlt(km: number) {
-  if (km >= 100) return `${Math.round(km)} km`;
-  if (km >= 10) return `${km.toFixed(1)} km`;
-  if (km >= 1) return `${km.toFixed(2)} km`;
-  if (km >= 0.01) return `${Math.round(km * 1000)} m`;
-  return `${(km * 1000).toFixed(1)} m`;
-}
-
-export function fmtSpeed(v: number) {
-  const a = Math.abs(v);
-  return a >= 100 ? `${Math.round(a).toLocaleString("en-US")} km/h` : `${a.toFixed(1)} km/h`;
-}
 
 function fmtTime(t: number) {
   const s = Math.max(0, Math.floor(t));
@@ -83,7 +76,7 @@ function worldSeed(id: WorldId, extra = 0) {
   return ["moon", "mars", "psyche", "earth"].indexOf(id) * 1009 + 7 + extra;
 }
 
-export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock }: Props) {
+export function Flight({ session, flag, sound, onExit, onRetry, onNext }: Props) {
   const { setup } = session;
   const world = setup.world;
   const ten = session.mode === "ten";
@@ -96,7 +89,11 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
   const endingRef = useRef<Ending | null>(null);
   const flagImgRef = useRef<HTMLImageElement | null>(null);
   const phaseRef = useRef<Phase>("ready");
-  const liveRef = useRef({ sound, night, reduced, onUnlock });
+  const liveRef = useRef({ sound, night, reduced });
+  /** Lets the held unlock toasts out; called when the card appears or the flight is left. */
+  const releaseRef = useRef<(() => void) | null>(null);
+  /** Where Resume goes back to: a flight can be paused before it starts. */
+  const pausedFrom = useRef<Phase>("flying");
   const ghostRef = useRef<{ alts: number[]; stop: number | null } | null>(null);
   const timersRef = useRef<number[]>([]);
   const altRef = useRef<HTMLElement>(null);
@@ -120,7 +117,8 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
   const [turnState, setTurnState] = useState<FlightState>(() => startState(setup));
   const [turning, setTurning] = useState(false);
   const [turns, setTurns] = useState(0);
-  const [copied, setCopied] = useState(false);
+  const [flown, setFlown] = useState(false);
+  const shell = useShell();
 
   const setPhase = useCallback((p: Phase) => {
     phaseRef.current = p;
@@ -130,9 +128,9 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
   const say = useCallback((text: string, tone: Banner["tone"] = "info") => setBanner({ text, tone, key: performance.now() }), []);
 
   useEffect(() => {
-    liveRef.current = { sound, night, reduced, onUnlock };
+    liveRef.current = { sound, night, reduced };
     if (!sound) sfx.engineStop();
-  }, [sound, night, reduced, onUnlock]);
+  }, [sound, night, reduced]);
 
   // The flag, drawn once as an image the canvas can wave.
   useEffect(() => {
@@ -167,8 +165,10 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
       const hoverslam = g.landed && sim.ideal.possible && fuel >= 0.9 * idealLeft;
       const fuelPct = fuel / setup.fuel;
       const insight = insightFor(sim, grade, fuel);
-      const share = shareText(session, grade, speed, fuelPct, sim.samples, sim.assistUsed);
-      const unlocked = updateProgress((p) => {
+      const share = descentShare({ title: session.title, dailyNumber: session.daily?.number, world: setup.world, grade, speed, fuelPct, samples: sim.samples, assisted: sim.assistUsed, difficulty: session.difficulty });
+      // New keycaps wait for the card, so the toast doesn't land on top of the landing.
+      releaseRef.current = holdAnnouncements();
+      updateProgress((p) => {
         let n = { ...p, flights: p.flights + 1 };
         if (g.landed) {
           n = { ...n, landings: n.landings + 1, landed: addOnce(n.landed, world.id), best: { ...n.best, [world.id]: Math.min(n.best[world.id] ?? Infinity, Math.abs(speed)) } };
@@ -201,7 +201,7 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
       timersRef.current.push(
         window.setTimeout(() => {
           setResult(r);
-          liveRef.current.onUnlock(unlocked);
+          releaseRef.current?.();
         }, delay),
       );
       if (liveRef.current.sound && g.flag) timersRef.current.push(window.setTimeout(() => sfx.flagFlap(), liveRef.current.reduced ? 0 : 3100));
@@ -410,7 +410,10 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
 
     raf = requestAnimationFrame(frame);
     const onHide = () => {
-      if (document.hidden && phaseRef.current === "flying") setPhase("paused");
+      if (document.hidden && phaseRef.current === "flying") {
+        pausedFrom.current = "flying";
+        setPhase("paused");
+      }
     };
     document.addEventListener("visibilitychange", onHide);
     return () => {
@@ -418,6 +421,7 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
       ro.disconnect();
       document.removeEventListener("visibilitychange", onHide);
       timers.forEach((t) => window.clearTimeout(t));
+      releaseRef.current?.();
       sfx.engineStop();
     };
     // The flight is created once per mount; a retry remounts the component.
@@ -427,6 +431,7 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
   const start = useCallback(() => {
     if (phaseRef.current !== "ready") return;
     setPhase("flying");
+    setFlown(true);
     if (liveRef.current.sound) sfx.engineStart();
   }, [setPhase]);
 
@@ -435,15 +440,34 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
     if (!sim || sim.done || sim.turn) return;
     if (phaseRef.current === "ready") setPhase("flying");
     if (phaseRef.current !== "flying") return;
+    setFlown(true);
     sim.startTurn(lever);
     setTurning(true);
     if (liveRef.current.sound) sfx.turnWhoosh();
   }, [lever, setPhase]);
 
-  const togglePause = useCallback(() => {
-    if (phaseRef.current === "flying") setPhase("paused");
-    else if (phaseRef.current === "paused") setPhase("flying");
+  const pause = useCallback(() => {
+    if (phaseRef.current !== "flying" && phaseRef.current !== "ready") return;
+    pausedFrom.current = phaseRef.current;
+    setPhase("paused");
   }, [setPhase]);
+
+  const resume = useCallback(() => {
+    if (phaseRef.current === "paused") setPhase(pausedFrom.current);
+  }, [setPhase]);
+
+  const togglePause = useCallback(() => (phaseRef.current === "paused" ? resume() : pause()), [pause, resume]);
+
+  usePlayScreen({
+    screen: result ? "results" : "play",
+    paused: phase === "paused",
+    onPause: pause,
+    onResume: resume,
+    items: [{ label: "Restart flight", shortcut: "R", onSelect: onRetry }],
+    losesProgress: flown && phase !== "ended",
+    roundName: "this flight",
+    onMenu: onExit,
+  });
 
   const nudge = useCallback((d: number) => setLever((v) => clamp(Math.round(v + d), 0, 100)), []);
 
@@ -451,15 +475,19 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       // The range slider handles its own arrows.
-      if (e.target instanceof HTMLInputElement && e.key !== "Enter" && e.key !== "Escape") return;
+      if (e.target instanceof HTMLInputElement && e.key !== "Enter") return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const k = e.key;
-      if (k === "Escape") {
+      // While the pause menu is open only its shortcuts work: R restarts, P resumes.
+      if (phaseRef.current === "paused" && !/^[rRpP]$/.test(k)) return;
+      if (k === "r" || k === "R") {
         e.preventDefault();
-        onExit();
+        onRetry();
         return;
       }
-      if (k === "r" || k === "R") {
-        onRetry();
+      if ((k === "h" || k === "H") && result) {
+        e.preventDefault();
+        shell.toHall();
         return;
       }
       if ((k === "n" || k === "N") && result && onNext) {
@@ -503,7 +531,7 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [onExit, onRetry, onNext, result, ten, commitTurn, start, togglePause, nudge, session.mission]);
+  }, [shell, onRetry, onNext, result, ten, commitTurn, start, togglePause, nudge, session.mission]);
 
   useEffect(() => {
     if (!banner) return;
@@ -531,31 +559,27 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
 
       <div className={styles.top}>
         <div className={styles.chip}>
-          <span aria-hidden>{world.emoji}</span> {session.title}
+          <WorldIcon world={world.id} size={18} /> {session.title}
         </div>
         <div className={styles.topTools}>
           {!ten && (
             <button type="button" className={styles.small} aria-pressed={autoWarp} onClick={() => setAutoWarp((v) => !v)} title="Time warp (T)" aria-label={`Time warp ${autoWarp ? "auto" : "off"}`}>
-              ⏩<span className={styles.lbl}> Warp {autoWarp ? "auto" : "off"}</span>
+              <WarpIcon size={16} />
+              <span className={styles.lbl}> Warp {autoWarp ? "auto" : "off"}</span>
             </button>
           )}
           {!noGuide && (
             <button type="button" className={styles.small} aria-pressed={assist} onClick={() => setAssist((v) => !v)} title="Landing assist (A)" aria-label={`Landing assist ${assist ? "on" : "off"}`}>
-              🛟<span className={styles.lbl}> Assist {assist ? "on" : "off"}</span>
+              <AssistIcon size={16} />
+              <span className={styles.lbl}> Assist {assist ? "on" : "off"}</span>
             </button>
           )}
           {!noGuide && (
             <button type="button" className={styles.small} aria-pressed={guide} onClick={() => setGuide((v) => !v)} title="Burn guide (G)" aria-label={`Burn guide ${guide ? "on" : "off"}`}>
-              ◎<span className={styles.lbl}> Guide {guide ? "on" : "off"}</span>
+              <GuideIcon size={16} />
+              <span className={styles.lbl}> Guide {guide ? "on" : "off"}</span>
             </button>
           )}
-          <button type="button" className={styles.small} onClick={togglePause} disabled={phase === "ready" || phase === "ended"} title="Pause (P)" aria-label={phase === "paused" ? "Resume" : "Pause"}>
-            {phase === "paused" ? "▶" : "❚❚"}
-            <span className={styles.lbl}>{phase === "paused" ? " Resume" : " Pause"}</span>
-          </button>
-          <button type="button" className={styles.small} onClick={onExit} title="Back to the lobby (Esc)" aria-label="Back to the lobby">
-            ✕
-          </button>
         </div>
       </div>
 
@@ -689,8 +713,8 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
         <div className={styles.overlay}>
           <div className={styles.card}>
             <p className={styles.kicker}>
-              {world.emoji} {world.name} · {fmtAlt(setup.alt)} up · {fmtSpeed(setup.speed)} down
-              {session.difficulty && session.difficulty !== "standard" && ` · ${difficultyTag(session.difficulty)}`}
+              <WorldIcon world={world.id} size={16} /> {world.name} · {fmtAlt(setup.alt)} up · {fmtSpeed(setup.speed)} down
+              {session.difficulty && session.difficulty !== "standard" && ` · ${difficultyLabel(session.difficulty)}`}
             </p>
             <h2 className={styles.cardTitle}>{session.title}</h2>
             <p className={styles.cardText}>{session.mission?.blurb ?? (ten ? "The 1979 way: choose a burn, watch ten seconds play out, choose again. The dotted path shows where each burn takes you." : "Fall freely to save fuel, then burn hard so you stop right at the ground. Touch down under 20 km/h to walk away; under 5 to plant your flag.")}</p>
@@ -730,22 +754,11 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
         </div>
       )}
 
-      {phase === "paused" && (
-        <div className={styles.overlay}>
-          <div className={styles.card}>
-            <h2 className={styles.cardTitle}>Paused</h2>
-            <button type="button" className={styles.go} onClick={togglePause}>
-              Resume <kbd>P</kbd>
-            </button>
-          </div>
-        </div>
-      )}
-
       {result && grade && (
         <section className={styles.result} data-grade={result.grade} aria-live="polite">
           <p className={styles.kicker}>{session.title}</p>
           <h2 className={styles.gradeTitle}>
-            <span aria-hidden>{grade.emoji}</span> {grade.title}
+            <GradeIcon grade={result.grade} size={32} className={styles.gradeIcon} /> {grade.title}
           </h2>
           <p className={styles.gradeLine}>{grade.line(world.name)}</p>
           <dl className={styles.stats}>
@@ -763,42 +776,30 @@ export function Flight({ session, flag, sound, onExit, onRetry, onNext, onUnlock
             </div>
           </dl>
           {session.mission && (
-            <p className={styles.stars} aria-label={`${result.stars} of 3 stars`}>
-              <span>{"★".repeat(result.stars)}</span>
-              <span className={styles.starsOff}>{"★".repeat(3 - result.stars)}</span>{" "}
+            <p className={styles.stars}>
+              <Stars value={result.stars} size={22} />{" "}
               {result.cleared ? "Mission cleared" : `Not yet: touch down under ${session.mission.clearBelow ?? 20} km/h`}
             </p>
           )}
           <Recorder samples={result.samples} ideal={result.ideal} startAlt={setup.alt} />
           <p className={styles.insight}>{result.insight}</p>
           <div className={styles.actions}>
-            <button type="button" className={styles.go} onClick={onRetry}>
-              Fly again <kbd>R</kbd>
-            </button>
             {onNext && result.cleared && (
-              <button type="button" className={styles.secondary} onClick={onNext}>
+              <button type="button" className={styles.go} onClick={onNext}>
                 Next mission <kbd>N</kbd>
               </button>
             )}
-            <button
-              type="button"
-              className={styles.secondary}
-              onClick={async () => {
-                try {
-                  if (navigator.share) await navigator.share({ text: result.share });
-                  else {
-                    await navigator.clipboard.writeText(result.share);
-                    setCopied(true);
-                  }
-                } catch {
-                  // The share sheet was dismissed.
-                }
-              }}
-            >
-              {copied ? "Copied!" : "Share"}
+            <ShareButton text={result.share} className={styles.secondary} />
+          </div>
+          <div className={styles.actions} data-standard>
+            <button type="button" className={onNext && result.cleared ? styles.secondary : styles.go} onClick={onRetry}>
+              Fly again <kbd>R</kbd>
             </button>
             <button type="button" className={styles.secondary} onClick={onExit}>
-              Lobby <kbd>Esc</kbd>
+              Game menu <kbd>Esc</kbd>
+            </button>
+            <button type="button" className={styles.secondary} onClick={shell.toHall}>
+              Back to the Hall <kbd>H</kbd>
             </button>
           </div>
         </section>
@@ -830,24 +831,6 @@ function insightFor(sim: FlightSim, grade: GradeId, fuel: number) {
   if (firstBurn.alt < idealAlt * 0.97) return `The last safe moment to start braking was ${fmtAlt(idealAlt)}. You started at ${fmtAlt(firstBurn.alt)}. Watch the stop point: burn before it reaches the ground.`;
   return `You still had ${Math.round((100 * fuel) / tank)}% of the fuel, but came in too fast at the end. In the last hundred metres, keep the speed under 20 km/h.`;
 }
-
-function shareText(session: Session, grade: GradeId, speed: number, fuelPct: number, samples: Sample[], assisted: boolean) {
-  const world = session.setup.world;
-  const g = GRADES[grade];
-  const head = session.daily ? `Don't Crater · Daily Drop #${session.daily.number}` : `Don't Crater · ${session.title}`;
-  const end = samples[samples.length - 1]?.t ?? 1;
-  let line = "";
-  for (let i = 0; i < 8; i++) {
-    const from = (end * i) / 8;
-    const to = (end * (i + 1)) / 8;
-    const part = samples.filter((s) => s.t >= from && s.t < to);
-    const avg = part.length ? part.reduce((a, s) => a + s.throttle, 0) / part.length : 0;
-    line += avg < 8 ? "⬛" : avg < 65 ? "🟧" : "🔥";
-  }
-  const fuel = session.difficulty && session.difficulty !== "standard" ? ` · ${difficultyTag(session.difficulty)}` : "";
-  return `${head}\n${world.emoji} ${world.name} · ${g.emoji} ${fmtSpeed(speed)} · ⛽ ${Math.round(fuelPct * 100)}%${fuel}${assisted ? " · 🛟" : ""}\n${line}${g.emoji}`;
-}
-
 
 /** Climbing: when the rise tops out, if gravity is winning; or still climbing under power. */
 function risingInfo(sim: FlightSim) {

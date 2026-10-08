@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { DARK, draw, LIGHT, type Boom } from "@/components/outta/render";
 import { HumanBot } from "@/lib/outta/bot";
 import { Game } from "@/lib/outta/engine";
+import { prefersReducedMotion } from "@/lib/kit/appearance";
 import styles from "./OuttaPreview.module.css";
 
 /**
@@ -17,7 +18,7 @@ export function OuttaPreview() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = prefersReducedMotion();
     let seed = 1003;
     let game = new Game("normal", seed);
     let bot = new HumanBot({ reaction: 0.35, stepEvery: 0.16, seed });

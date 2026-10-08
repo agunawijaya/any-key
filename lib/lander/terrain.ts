@@ -1,3 +1,4 @@
+import { mulberry32 } from "@/lib/kit/rng";
 import type { WorldId } from "./worlds";
 
 /*
@@ -57,17 +58,6 @@ const smooth = (a: number, b: number, x: number) => {
   const t = clamp((x - a) / (b - a), 0, 1);
   return t * t * (3 - 2 * t);
 };
-
-export function mulberry(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 /* ---------- Looking up the ground ---------- */
 
@@ -372,7 +362,7 @@ function placeFlats(p: Params, form: Landform, rng: () => number) {
 }
 
 function buildLand(seed: number, world: WorldId, kind: Exclude<SiteKind, "sea">): Site {
-  const rng = mulberry(seed * 7919 + 17);
+  const rng = mulberry32(seed * 7919 + 17);
   const p = PARAMS[kind];
   const form = landform(kind, rng);
   const flats = placeFlats(p, form, rng);
@@ -459,7 +449,7 @@ function buildLand(seed: number, world: WorldId, kind: Exclude<SiteKind, "sea">)
 }
 
 function buildSea(seed: number): Site {
-  const rng = mulberry(seed * 7919 + 17);
+  const rng = mulberry32(seed * 7919 + 17);
   const n = 2 + Math.floor(rng() * 3);
   const sizes = [16, 22, 30, 42, 60].sort(() => rng() - 0.5).slice(0, n);
   const barges: Barge[] = [];
@@ -476,7 +466,7 @@ function buildSea(seed: number): Site {
 }
 
 export function defaultKind(world: WorldId, seed: number): SiteKind {
-  const coin = mulberry(seed * 31 + 5)() < 0.5;
+  const coin = mulberry32(seed * 31 + 5)() < 0.5;
   if (world === "earth") return "sea";
   if (world === "psyche") return "crags";
   if (world === "mars") return coin ? "canyon" : "dunes";

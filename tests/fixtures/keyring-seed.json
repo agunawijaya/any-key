@@ -1,0 +1,68 @@
+{
+ "anykey.keyring.save": {
+  "version": 1,
+  "data": {
+   "unlocked": {
+    "music": {
+     "first-note": 1790000000000,
+     "beep-beep": 1790014400000,
+     "take-it-home": 1790028800000,
+     "whole-jukebox": 1790043200000,
+     "long-version": 1790057600000
+    },
+    "23mtch": {
+     "first-light": 1790003600000,
+     "flawless": 1790018000000,
+     "hot-streak": 1790032400000,
+     "climber": 1790046800000,
+     "marienbad": 1790061200000,
+     "secret-four": 1790068400000
+    },
+    "lander": {
+     "first-touch": 1790007200000,
+     "butter": 1790021600000,
+     "postcards": 1790036000000,
+     "ten-seconds": 1790050400000,
+     "hoverslam": 1790064800000
+    },
+    "escape": {
+     "under-keys": 1790010800000,
+     "wraparound": 1790025200000,
+     "pop": 1790039600000,
+     "spelled-it": 1790054000000
+    }
+   },
+   "dailies": {
+    "2026-10-01": [
+     "23mtch"
+    ],
+    "2026-10-03": [
+     "lander"
+    ],
+    "2026-10-04": [
+     "23mtch",
+     "escape"
+    ],
+    "2026-10-05": [
+     "23mtch"
+    ],
+    "2026-10-06": [
+     "lander",
+     "23mtch"
+    ],
+    "2026-10-07": [
+     "23mtch",
+     "lander"
+    ]
+   },
+   "levelSeen": 5,
+   "hintsDismissed": [
+    "music",
+    "23mtch",
+    "escape",
+    "lander"
+   ]
+  }
+ },
+ "anykey.hall": "wall"
+}

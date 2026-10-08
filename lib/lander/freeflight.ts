@@ -3,7 +3,8 @@ import { makeSetup, startState, type Setup } from "./physics";
 import { start2d, type State2D, type Verdict } from "./physics2d";
 import { idealPlan } from "./solver";
 import { bargeTarget, flatTarget, flyAutopilot, type TargetFn } from "./solver2d";
-import { bargeTilt, bargeX, buildSite, heightAt, landingSpots, mulberry, type Flat, type Site, type SiteKind } from "./terrain";
+import { mulberry32 } from "@/lib/kit/rng";
+import { bargeTilt, bargeX, buildSite, heightAt, landingSpots, type Flat, type Site, type SiteKind } from "./terrain";
 import { worldById, type World, type WorldId } from "./worlds";
 
 /*
@@ -95,12 +96,12 @@ export function tankFor(world: World, start: FreeStart, difficulty: Difficulty =
 
 /** The seed tried after `seed` when a site is unfair. */
 function nextSeed(seed: number, k: number) {
-  return k === 0 ? seed : 100_000 + Math.floor(mulberry(seed * 104_729 + k * 7_919)() * 900_000);
+  return k === 0 ? seed : 100_000 + Math.floor(mulberry32(seed * 104_729 + k * 7_919)() * 900_000);
 }
 
 /** The setup and first state for a start on a site. */
 export function startOn(world: World, site: Site, start: FreeStart, seed: number, difficulty: Difficulty = "standard") {
-  const rng = mulberry(seed * 9_973 + (start === "full" ? 1 : 2));
+  const rng = mulberry32(seed * 9_973 + (start === "full" ? 1 : 2));
   const [lo, hi] = DRIFT[start];
   const drift = (rng() < 0.5 ? -1 : 1) * (lo + rng() * (hi - lo));
   const fuel = tankFor(world, start, difficulty);

@@ -1,15 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useState } from "react";
-import { PrefsSync } from "@/components/hall/PrefsSync";
-import { useHashTab } from "@/components/kit/useHashTab";
-import { Story, type DocTab } from "@/components/kit/Story";
-import { ThemeButton } from "@/components/ui/ThemeButton";
+import { GameShell } from "@/components/kit/GameShell";
+import { usePrefs } from "@/components/kit/hooks";
+import type { DocTab } from "@/components/kit/Story";
 import { randomSeed } from "@/lib/lander/freeflight";
+import { landerManifest } from "@/lib/lander/manifest";
 import { MISSIONS } from "@/lib/lander/missions";
-import { ACHIEVEMENTS, useProgress } from "@/lib/lander/progress";
-import { setPrefs, usePrefs } from "@/lib/use-prefs";
+import { useProgress } from "@/lib/lander/progress";
 import { Flight, type Session } from "./Flight";
 import { FreeFlight, type FreeSpec } from "./FreeFlight";
 import { Lobby, missionSession } from "./Lobby";
@@ -18,20 +16,18 @@ import styles from "./DontCrater.module.css";
 
 type Screen = { kind: "lobby" } | { kind: "flight"; session: Session; key: number } | { kind: "free"; spec: FreeSpec; key: number } | { kind: "terminal" };
 
-const TABS = ["play", "story"] as const;
+const SHORTCUTS = [
+  { keys: "Space", does: "Start the descent; hold for full burn" },
+  { keys: "↑ ↓  0–9", does: "Throttle" },
+  { keys: "← →", does: "Lean (Free Flight)" },
+  { keys: "T  A  G", does: "Time warp, landing assist, burn guide" },
+  { keys: "P", does: "Pause" },
+];
 
 export function DontCrater({ docs }: { docs: DocTab[] }) {
   const progress = useProgress();
   const { sound } = usePrefs();
-  const [tab, setTab] = useHashTab(TABS);
   const [screen, setScreen] = useState<Screen>({ kind: "lobby" });
-  const [toasts, setToasts] = useState<string[]>([]);
-
-  const unlock = useCallback((ids: string[]) => {
-    if (!ids.length) return;
-    setToasts((t) => [...t, ...ids]);
-    window.setTimeout(() => setToasts((t) => t.slice(ids.length)), 4200);
-  }, []);
 
   const play = useCallback((session: Session) => setScreen({ kind: "flight", session, key: Date.now() }), []);
   const playFree = useCallback((spec: FreeSpec) => setScreen({ kind: "free", spec, key: Date.now() }), []);
@@ -43,44 +39,9 @@ export function DontCrater({ docs }: { docs: DocTab[] }) {
   };
 
   return (
-    <div className={styles.app}>
-      <PrefsSync />
-      <header className={styles.header}>
-        <Link href="/" className={styles.back} aria-label="Back to the Any Key hall">
-          <span aria-hidden>←</span>
-          <span className={styles.backLabel}>any key</span>
-        </Link>
-        <div className={styles.brand}>
-          <span className={styles.logo}>Don&rsquo;t Crater</span>
-          <span className={styles.origin}>based on LANDER · 1979</span>
-        </div>
-        <div className={styles.tabs} role="tablist" aria-label="Sections">
-          <button type="button" role="tab" aria-selected={tab === "play"} onClick={() => setTab("play")}>
-            Play
-          </button>
-          <button type="button" role="tab" aria-selected={tab === "story"} onClick={() => setTab("story")}>
-            Story
-          </button>
-        </div>
-        <div className={styles.tools}>
-          <button
-            type="button"
-            className={styles.tool}
-            aria-pressed={sound}
-            aria-label={sound ? "Sound on" : "Sound off"}
-            title={sound ? "Sound on" : "Sound off"}
-            onClick={() => setPrefs({ sound: !sound })}
-          >
-            {sound ? "🔊" : "🔇"}
-          </button>
-          <ThemeButton />
-        </div>
-      </header>
-
+    <GameShell game={landerManifest} docs={docs} className={styles.app} shortcuts={SHORTCUTS}>
       <main className={styles.main}>
-        {tab === "story" ? (
-          <Story docs={docs} />
-        ) : screen.kind === "flight" ? (
+        {screen.kind === "flight" ? (
           <Flight
             key={screen.key}
             session={screen.session}
@@ -89,7 +50,6 @@ export function DontCrater({ docs }: { docs: DocTab[] }) {
             onExit={toLobby}
             onRetry={() => setScreen({ ...screen, key: Date.now() })}
             onNext={nextMission(screen.session)}
-            onUnlock={unlock}
           />
         ) : screen.kind === "free" ? (
           <FreeFlight
@@ -103,25 +63,13 @@ export function DontCrater({ docs }: { docs: DocTab[] }) {
             onExit={toLobby}
             onRetry={() => setScreen({ ...screen, key: Date.now() })}
             onNewSite={() => playFree({ ...screen.spec, pick: { seed: randomSeed() } })}
-            onUnlock={unlock}
           />
         ) : screen.kind === "terminal" ? (
-          <Terminal1979 onExit={toLobby} onUnlock={unlock} />
+          <Terminal1979 onExit={toLobby} />
         ) : (
           <Lobby onPlay={play} onFree={playFree} onTerminal={() => setScreen({ kind: "terminal" })} />
         )}
       </main>
-
-      <div className={styles.toasts} aria-live="polite">
-        {toasts.map((id, i) => {
-          const a = ACHIEVEMENTS.find((x) => x.id === id);
-          return a ? (
-            <p key={`${id}-${i}`} className={styles.toast}>
-              <span aria-hidden>{a.icon}</span> <strong>{a.name}</strong> unlocked
-            </p>
-          ) : null;
-        })}
-      </div>
-    </div>
+    </GameShell>
   );
 }

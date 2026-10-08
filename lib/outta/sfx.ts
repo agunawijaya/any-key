@@ -1,3 +1,5 @@
+import { effectsBus } from "@/lib/kit/sound";
+
 /*
  * Outta Here sounds, all synthesised: a tick for placing a bomb, a thump and
  * a glass shatter for the blast, a rising run for a chain, chimes for pickups,
@@ -9,10 +11,8 @@ let out: GainNode | null = null;
 
 function audio() {
   if (!ctx) {
-    ctx = new AudioContext();
-    out = ctx.createGain();
-    out.gain.value = 0.5;
-    out.connect(ctx.destination);
+    // The collection's master bus follows mute and volume.
+    ({ ctx, out } = effectsBus(0.5));
   }
   if (ctx.state === "suspended") void ctx.resume();
   return { ctx, out: out! };

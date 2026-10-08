@@ -42,6 +42,7 @@
 
   --grain-opacity: 0.05;
   --header-h: 76px;
+  --today-h: 56px;
 }
 
 :root[data-theme="dark"] {
@@ -151,6 +152,13 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* The Hall's Today strip lines up with the Wall's grid. */
+/* Full width, so its edges line up with the top bar's in every Hall style. One row on desktop; Orbit's stage subtracts it. */
+.hall-today {
+  box-sizing: border-box;
+  min-height: var(--today-h);
+}
+
 /* ---------- Hall views: exactly one is visible, chosen before first paint ---------- */
 
 [data-view] {
@@ -172,13 +180,23 @@ button:disabled {
   }
 }
 
+/* Reduced motion follows the system unless the Keyring settings override it (data-motion on <html>). */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion="full"]) *,
+  :root:not([data-motion="full"]) *::before,
+  :root:not([data-motion="full"]) *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+:root[data-motion="reduce"] *,
+:root[data-motion="reduce"] *::before,
+:root[data-motion="reduce"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
 }

@@ -1,0 +1,88 @@
+.svg {
+  display: block;
+  overflow: visible;
+}
+
+.shadow {
+  fill: rgb(40 28 10 / 0.22);
+  filter: blur(0.4px);
+}
+
+:root[data-theme="dark"] .shadow {
+  fill: rgb(0 0 0 / 0.55);
+}
+
+/* Backlight only shows at night. */
+.backlight {
+  opacity: 0;
+  transition: opacity 400ms ease;
+}
+
+:root[data-theme="dark"] .backlight {
+  opacity: 1;
+}
+
+.rim {
+  fill: none;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+}
+
+.mark {
+  font: 800 40px/1 var(--font-display), system-ui, sans-serif;
+}
+
+.word {
+  font-family: var(--font-display), system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* The level-up light wave: a sheen across the face, timed per cap with --wave-delay. */
+.wave {
+  fill: #ffffff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+:global(.keyring-wave) .wave {
+  animation: wave 900ms cubic-bezier(0.3, 0.7, 0.3, 1) var(--wave-delay, 0ms) both;
+}
+
+/* Each cap's backlight blooms as the wave passes, by day as well as by night: a keyboard's RGB sweep. */
+:global(.keyring-wave) .backlight {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bloom 1100ms cubic-bezier(0.3, 0.7, 0.3, 1) var(--wave-delay, 0ms);
+}
+
+@keyframes wave {
+  0% {
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes bloom {
+  35% {
+    opacity: 1;
+    transform: scale(1.45);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) :global(.keyring-wave) .wave,
+  :root:not([data-motion="full"]) :global(.keyring-wave) .backlight {
+    animation: none;
+  }
+}
+
+:root[data-motion="reduce"] :global(.keyring-wave) .wave,
+:root[data-motion="reduce"] :global(.keyring-wave) .backlight {
+  animation: none;
+}

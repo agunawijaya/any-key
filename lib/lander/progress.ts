@@ -1,13 +1,19 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { forgetGame } from "@/lib/kit/forget";
+import { LEGACY_SAVES, LEGACY_VERSION } from "@/lib/kit/legacy";
+import { createProgress, withoutAchievements } from "@/lib/kit/progress";
+import { createStore } from "@/lib/kit/save";
 import type { Difficulty } from "./difficulty";
+import { EMBLEM_FROM_EMOJI, emblemById } from "./emblems";
 import { DEFAULT_FLAG, type FlagDesign } from "./flags";
 import type { FreeStart } from "./freeflight";
 import type { GradeId } from "./grades";
+import { landerManifest } from "./manifest";
 import type { WorldId } from "./worlds";
 
-/** Everything Don't Crater remembers lives in this browser only. */
+/** Everything Don't Crater remembers lives in this browser only, in the kit store `anykey.lander.save`. */
 
 export type Progress = {
   flights: number;
@@ -39,8 +45,6 @@ export type Progress = {
 /** A named site's best: stars from the landing grade, and the precision bonuses earned there. */
 export type SiteBest = { stars: number; speed: number; narrow: boolean; centre: boolean };
 
-const KEY = "anykey.dontcrater.v1";
-
 const EMPTY: Progress = {
   flights: 0,
   landings: 0,
@@ -63,77 +67,44 @@ const EMPTY: Progress = {
   sites: {},
 };
 
-export const ACHIEVEMENTS: { id: string; name: string; how: string; icon: string }[] = [
-  { id: "first-touch", name: "First Touch", how: "Land anywhere without breaking anything", icon: "🛬" },
-  { id: "butter", name: "Butter", how: "Touch down under 2 km/h", icon: "🧈" },
-  { id: "postcards", name: "Postcard Set", how: "Land on all four worlds", icon: "🖼️" },
-  { id: "flag-planter", name: "Flag Planter", how: "Plant your flag on all four worlds", icon: "🚩" },
-  { id: "hoverslam", name: "Hoverslam", how: "Land with 90% of a perfect hoverslam's fuel left", icon: "🔥" },
-  { id: "wildcatter", name: "Wildcatter", how: "Hit the ground so hard you strike oil", icon: "🛢️" },
-  { id: "crater-maker", name: "Crater Maker", how: "Leave a brand new crater", icon: "🕳️" },
-  { id: "ten-seconds", name: "Ten Seconds Flat", how: "Land in Ten-Second mode", icon: "⏱️" },
-  { id: "time-traveller", name: "Time Traveller", how: "Land in 1979 mode", icon: "📟" },
-  { id: "schrodinger", name: "Schrödinger's Lander", how: "In 1979 mode, land between 19 and 20 km/h", icon: "🐈‍⬛" },
-  { id: "mission-control", name: "Mission Control", how: "Clear all ten missions", icon: "🏆" },
-  { id: "daily-3", name: "Daily Driver", how: "Land three Daily Drops", icon: "📅" },
-  { id: "pinpoint", name: "Pinpoint", how: "In Free Flight, stand on a flat narrower than 15 m", icon: "📍" },
-  { id: "sidewinder", name: "Sidewinder", how: "Kill more than 500 km/h of drift and land standing", icon: "🐍" },
-  { id: "oops", name: "Oops", how: "Tip over for the first time", icon: "🙃" },
-];
+type Saved = Omit<Progress, "achievements">;
 
-let current: Progress = EMPTY;
-let loaded = false;
-const listeners = new Set<() => void>();
+export const landerStore = createStore<Saved>(landerManifest.id, {
+  version: 3,
+  defaults: withoutAchievements(EMPTY),
+  legacy: { key: LEGACY_SAVES[landerManifest.id], version: LEGACY_VERSION },
+  migrations: {
+    // Version 2 moved the achievements into the Keyring, which imports them from the old save itself.
+    2: (old) => withoutAchievements(old as Progress),
+    // Version 3 draws flag emblems instead of printing emoji: the saved emoji becomes the emblem's id.
+    3: (old) => {
+      const saved = old as Saved;
+      const emblem = saved.flag ? (EMBLEM_FROM_EMOJI[saved.flag.emblem] ?? (emblemById(saved.flag.emblem).id || "star")) : DEFAULT_FLAG.emblem;
+      return saved.flag ? { ...saved, flag: { ...saved.flag, emblem } } : saved;
+    },
+  },
+});
 
-function read(): Progress {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? { ...EMPTY, ...JSON.parse(raw) } : EMPTY;
-  } catch {
-    return EMPTY;
-  }
-}
+const progress = createProgress<Progress>(landerManifest.id, landerStore, {
+  dailies: (p) => p.daily,
+  play: (before, after) => (after.flights > before.flights ? { won: after.landings > before.landings } : null),
+  seed: (p) => ({ plays: p.flights, wins: p.landings }),
+});
 
-function snapshot() {
-  if (!loaded) {
-    current = read();
-    loaded = true;
-  }
-  return current;
-}
-
-export function getProgress() {
-  return snapshot();
-}
+export const getProgress = progress.get;
 
 /** Updates progress; returns the achievements this update unlocked. */
-export function updateProgress(change: (p: Progress) => Progress): string[] {
-  const before = snapshot();
-  const next = change(before);
-  const unlocked = next.achievements.filter((a) => !before.achievements.includes(a));
-  current = next;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {
-    // Private windows may refuse storage; progress then lasts for this visit only.
-  }
-  listeners.forEach((l) => l());
-  return unlocked;
-}
+export const updateProgress = progress.update;
 
+/** Forgets everything Don't Crater remembers, its keycaps included, but keeps the flag you designed. */
 export function resetProgress() {
-  updateProgress((p) => ({ ...EMPTY, flag: p.flag }));
+  const { flag } = progress.get();
+  forgetGame(landerManifest.id);
+  landerStore.set((p) => ({ ...p, flag }));
 }
 
 export function useProgress() {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-    snapshot,
-    () => EMPTY,
-  );
+  return useSyncExternalStore(progress.subscribe, progress.get, () => progress.empty);
 }
 
 export const withAchievement = (p: Progress, id: string): Progress =>

@@ -3,12 +3,18 @@ import { join } from "node:path";
 import { marked } from "marked";
 import type { DocTab } from "@/components/kit/Story";
 
-/** The four chapters every Any Key program ships with, in reading order. */
+/**
+ * The six chapters every Any Key game ships with (docs/templates/), in
+ * reading order: the game, then the original, then how the one became the other.
+ * The shell opens "howtoplay" as the pause menu's How to play.
+ */
 const CHAPTERS = [
-  { id: "about", label: "About the original", file: "ABOUT.md" },
-  { id: "howto", label: "How it was used", file: "HOW-TO.md" },
-  { id: "original", label: "How it worked", file: "ORIGINAL-ARCHITECTURE.md" },
-  { id: "port", label: "How we rebuilt it", file: "PORT-ARCHITECTURE.md" },
+  { id: "about", label: "About", file: "ABOUT.md" },
+  { id: "howtoplay", label: "How to play", file: "HOW-TO-PLAY.md" },
+  { id: "original", label: "How the original worked", file: "ORIGINAL-ARCHITECTURE.md" },
+  { id: "changes", label: "What we changed", file: "CHANGES-FROM-ORIGINAL.md" },
+  { id: "architecture", label: "How we rebuilt it", file: "ARCHITECTURE.md" },
+  { id: "notes", label: "Notes", file: "NOTES.md" },
 ];
 
 /** Reads docs/<program>/*.md at build time and renders them for the Story tab. */

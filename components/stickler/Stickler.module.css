@@ -51,11 +51,6 @@
     linear-gradient(90deg, rgb(57 255 136 / 0.06) 1px, transparent 1px) 0 0 / 34px 34px;
 }
 
-.app[data-skin="glow"] .logo {
-  color: var(--accent);
-  text-shadow: 0 0 18px color-mix(in srgb, var(--accent) 70%, transparent);
-}
-
 :global(:root[data-theme="dark"]) .app[data-skin="glow"] {
   --accent: #39ff88;
 }
@@ -88,99 +83,6 @@
     repeating-linear-gradient(90deg, rgb(255 126 176 / 0.08) 0 14px, transparent 14px 28px);
 }
 
-/* ---------- Header (same pattern as every Any Key program) ---------- */
-
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  display: grid;
-  grid-template-columns: auto 1fr auto auto;
-  align-items: center;
-  gap: 16px;
-  height: 72px;
-  padding: 0 clamp(16px, 3vw, 32px);
-  background: color-mix(in srgb, var(--bg) 82%, transparent);
-  backdrop-filter: blur(14px) saturate(1.4);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  border-bottom: 1px solid var(--line);
-}
-
-.back {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 14px;
-  border-radius: 999px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  color: var(--ink);
-  font: 700 14px/1 var(--font-display);
-  text-decoration: none;
-  box-shadow: var(--lift);
-}
-
-.brand {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  min-width: 0;
-}
-
-.logo {
-  font: 800 26px/1 var(--font-display);
-  letter-spacing: -0.03em;
-  font-variation-settings: "wdth" 80;
-  color: var(--accent);
-}
-
-.origin {
-  font: 500 12px var(--font-mono);
-  color: var(--ink-3);
-  white-space: nowrap;
-}
-
-.tabs {
-  display: flex;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-}
-
-.tabs button {
-  height: 36px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 999px;
-  background: none;
-  color: var(--ink-2);
-  font: 600 14px var(--font-sans);
-}
-
-.tabs button[aria-selected="true"] {
-  background: var(--ink);
-  color: var(--bg);
-}
-
-.tools {
-  display: flex;
-  gap: 8px;
-}
-
-.tool {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  border: 1px solid var(--line);
-  background: var(--surface);
-  font-size: 18px;
-  box-shadow: var(--lift);
-}
-
 .main {
   flex: 1;
   display: flex;
@@ -192,89 +94,9 @@
   flex: 1;
 }
 
-.toasts {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 60;
-  display: grid;
-  gap: 8px;
-  /* Toasts only announce; they must never sit on top of a button you want to press. */
-  pointer-events: none;
-}
-
-.toast {
-  padding: 12px 16px;
-  border-radius: 16px;
-  background: var(--ink);
-  color: var(--bg);
-  font-size: 14px;
-  box-shadow: 0 16px 30px -12px rgb(0 0 0 / 0.5);
-  animation: toast 4.2s ease-in-out forwards;
-}
-
-@keyframes toast {
-  0% {
-    opacity: 0;
-    transform: translateY(12px) scale(0.95);
-  }
-  8%,
-  88% {
-    opacity: 1;
-    transform: none;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-
 @media (min-width: 1000px) and (min-height: 700px) {
   /* The board fits one screen on desktop. */
   .main:has(> [data-board]) {
-    height: calc(100dvh - 72px);
-  }
-}
-
-@media (max-width: 900px) {
-  .header {
-    grid-template-columns: auto 1fr auto;
-    height: auto;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    row-gap: 10px;
-  }
-
-  .tabs {
-    grid-column: 1 / -1;
-    grid-row: 2;
-  }
-
-  .tabs button {
-    flex: 1;
-  }
-
-  .origin {
-    display: none;
-  }
-}
-
-@media (max-width: 480px) {
-  .backLabel {
-    display: none;
-  }
-
-  /* On a phone the result card's buttons live at the bottom, so badges announce themselves at the top. */
-  .toasts {
-    top: 132px;
-    right: 12px;
-    bottom: auto;
-    left: 12px;
-    justify-items: center;
-  }
-
-  .toast {
-    padding: 8px 14px;
-    font-size: 13px;
+    height: calc(100dvh - var(--shell-bar-h, 72px));
   }
 }

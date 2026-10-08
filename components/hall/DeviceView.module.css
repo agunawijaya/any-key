@@ -664,3 +664,20 @@
     width: 100%;
   }
 }
+
+/* A laptop screen: the whole player (knob, keys and screen) fits above the fold; the cartridge shelf follows below. */
+@media (min-width: 821px) and (max-height: 820px) {
+  .stage {
+    padding-top: 12px;
+  }
+
+  .rig {
+    zoom: 0.86;
+  }
+}
+
+@media (min-width: 821px) and (max-height: 680px) {
+  .rig {
+    zoom: 0.74;
+  }
+}

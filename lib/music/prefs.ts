@@ -1,49 +1,36 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { LEGACY_SAVES, LEGACY_VERSION } from "@/lib/kit/legacy";
+import { createStore } from "@/lib/kit/save";
+import { musicManifest } from "./manifest";
 import type { SongVersion } from "./score";
 
-/** What Bop Box remembers between visits, in this browser only. */
+/** What Bop Box remembers between visits, in this browser only, in the kit store `anykey.music.save`. */
 
-export type BopPrefs = { version: SongVersion };
+export type BopPrefs = {
+  /** The 1981 excerpt or the whole piece. */
+  version: SongVersion;
+  /** Tune ids played at least once, style ids tried, and full-length pieces heard to the end. */
+  tunesPlayed: string[];
+  stylesTried: string[];
+  fullHeard: string[];
+};
 
-const KEY = "anykey.bopbox.v1";
-const DEFAULTS: BopPrefs = { version: "short" };
+const DEFAULTS: BopPrefs = { version: "short", tunesPlayed: [], stylesTried: [], fullHeard: [] };
 
-let current = DEFAULTS;
-let loaded = false;
-const listeners = new Set<() => void>();
-
-function snapshot() {
-  if (!loaded) {
-    loaded = true;
-    try {
-      const raw = localStorage.getItem(KEY);
-      if (raw) current = { ...DEFAULTS, ...JSON.parse(raw) };
-    } catch {
-      // No storage (a private window): the defaults last for this visit.
-    }
-  }
-  return current;
-}
+export const bopStore = createStore<BopPrefs>(musicManifest.id, {
+  version: 2,
+  defaults: DEFAULTS,
+  // Version 1 (the old key) only knew the length switch; the lists start empty.
+  legacy: { key: LEGACY_SAVES[musicManifest.id], version: LEGACY_VERSION },
+  normalise: (saved) => ({ ...DEFAULTS, ...saved, version: saved.version === "full" ? "full" : "short" }),
+});
 
 export function setBopPrefs(change: Partial<BopPrefs>) {
-  current = { ...snapshot(), ...change };
-  try {
-    localStorage.setItem(KEY, JSON.stringify(current));
-  } catch {
-    // As above: remembered for this visit only.
-  }
-  listeners.forEach((l) => l());
+  bopStore.set((current) => ({ ...current, ...change }));
 }
 
 export function useBopPrefs() {
-  return useSyncExternalStore(
-    (l) => {
-      listeners.add(l);
-      return () => listeners.delete(l);
-    },
-    snapshot,
-    () => DEFAULTS,
-  );
+  return useSyncExternalStore(bopStore.subscribe, bopStore.get, () => DEFAULTS);
 }

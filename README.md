@@ -4,8 +4,8 @@
 for the web and for people who were born decades after them.
 
 Every program gets a new look, new controls and new ideas, while keeping what made the original
-fun. Each one also ships with four docs: what the original was, how it was used, how it worked
-inside, and how the rebuild works.
+fun. Each one also ships with six docs, readable in its Story tab: about the game, how to play, how
+the original worked, what we changed, how we rebuilt it, and the lab notes.
 
 ## The Hall
 
@@ -21,6 +21,32 @@ switch between them at any time (the choice is remembered):
 Every page supports light and dark themes, works with keyboard and touch, and calms its motion
 when the system asks for reduced motion. Press any letter key on the Hall and see what happens.
 
+The Today strip under the Hall's top bar shows each game's daily and whether you have played it
+today.
+
+## The Keyring
+
+Every achievement in every game is a keycap. Earn one and it drops onto a little key ring in the
+corner of the screen, wherever you are. The Keyring page (`/keyring`: the Keyring button in every
+top bar, or K in a game) hangs all of them
+on one ring you can spin, with your level (twelve of them, from Home Row to Escape Artist), XP
+(common keycaps 10, rare 30, legendary 80, a finished daily 5), this week's daily streak and every
+keycap still to earn. It also holds Settings and "Forget my data", per game or for everything.
+Nothing leaves your browser: there are no accounts and no servers.
+
+## Finding your way
+
+Every game works the same way (`docs/NAVIGATION.md`):
+
+- **← Back to the Hall** sits on every game menu; Esc there goes back to the Hall, and the browser's
+  Back button works everywhere.
+- During play there is a pause button with an Esc hint. The pause menu always reads Resume, the
+  game's own items, How to play, Settings, Game menu, Back to the Hall.
+- Results always end with Play again (R), Game menu and Back to the Hall (H).
+- Leaving a round in progress asks first.
+- In a game, `?` opens the shortcuts, K opens the Keyring, and the Story tab (`#story`) holds the
+  game's docs.
+
 ## Programs
 
 | Program | Based on | Status |
@@ -29,12 +55,13 @@ when the system asks for reduced motion. Press any letter key on the Hall and se
 | **Stickler** (`/stickler`) | `23MTCH.BAS`, Bob Albrecht / People's Computer Company, DEC 1973 | Playable |
 | **Outta Here** (`/outta-here`) | `ESCAPE.BAS`, author unknown (TRS-80), c. 1980 | Playable |
 | **Don't Crater** (`/dont-crater`) | `LANDER.BAS`, Simutek (TRS-80), 1979 | Playable |
+| **Desert (in design)** | `DESERT.BAS`, IPCO Personal Computer Owners Group, 1982 | In design |
 
 ### Bop Box
 
 Eleven tunes from the 1981 PC, as the 1981 program played them or complete, each playable in twelve
 styles: Orchestra, Pop, Jazz, House, Dangdut, Koplo, Lo-fi, Hip-hop, Solo (18 instruments), PC Speaker
-’81 (the original beeps, recreated exactly), an AI Remix composed by Claude in a different genre for
+’81 (the 1981 beeps, recreated), an AI Remix composed by Claude in a different genre for
 every tune, and the Original Score: Gounod, Sousa and Mozart played part by part from their own full
 scores. Watch it as sheet music, falling notes, Indonesian numbered notation (*not angka*) or a stage
 full of musicians, and download any arrangement as MIDI or WAV. The docs in `docs/music/` explain the
@@ -75,10 +102,14 @@ mode but 1979. The docs are in `docs/lander/`.
 ## Project layout
 
 ```
-app/                 Next.js App Router pages
+app/                 Next.js App Router pages (the Hall, /keyring, one route per game)
+lib/kit/             The kit's logic: storage and migrations, Keyring, stats, RNG, dailies, appearance, sound
+components/kit/      The kit's UI: GameShell, pause menu, results, Story tab, keycaps, toasts, icons
+components/keyring/  The Keyring page
 components/hall/     The Hall and its three styles
 components/previews/ Live mini previews shown on program cards
-lib/catalog.ts       The list of programs
+lib/catalog.ts       The list of game manifests, in Hall order
+lib/<game>/manifest.ts  Each game's contract: title, colours, emblem, achievements, daily
 lib/music/           Bop Box: tunes, arranger, styles, MIDI writer, audio engine
 components/bopbox/   Bop Box studio screen and its views
 lib/stickler/        Stickler: rules, solver, Sparky, modes, progress, sounds
@@ -87,9 +118,15 @@ lib/outta/           Outta Here: engine, levels, campaign, daily, bot, 1980 simu
 components/outta/    Outta Here lobby, canvas renderer, screens map, Versus, 1980 terminal
 lib/lander/          Don't Crater: worlds, flight model, hoverslam solver, missions, 1979 maths, Free Flight terrain
 components/dontcrater/ Don't Crater lobby, canvas scenes, flight screens, 1979 terminal
-components/kit/      Pieces every program shares (the Story tab)
-docs/<program>/      ABOUT, HOW-TO, ORIGINAL-ARCHITECTURE, PORT-ARCHITECTURE
-scripts/             Checks and the sound bank builder
+docs/ARCHITECTURE.md How the app is built, and the folder map of every game
+docs/NAVIGATION.md   The navigation standard
+docs/adr/            Architecture decisions
+docs/templates/      The six docs every game ships with
+docs/PROGRESS.md     One row per game: status, docs, achievements, daily, polish candidates
+docs/<id>/           ABOUT, HOW-TO-PLAY, ORIGINAL-ARCHITECTURE, CHANGES-FROM-ORIGINAL, ARCHITECTURE, NOTES
+scripts/             Checks, the guardrails and the sound bank builder
+tests/               Vitest (tests/unit), Playwright (tests/e2e, tests/shots), saved-data fixtures
+prompts/             Work orders for Claude Code sessions
 public/soundfont/    The trimmed sound bank and its licence
 ```
 
@@ -104,9 +141,14 @@ npm run dev
 
 Then open http://localhost:3000.
 
-Useful checks:
+Checks:
 
 ```bash
+npm run check            # type-check, lint, unit tests, guardrails and every check below
+npm run test             # Vitest: the kit's storage, migrations, Keyring, RNG and dailies
+npm run check:guardrails # no raster art, no emoji on the page, no network URLs in shipped code
+npm run e2e              # production build, then Playwright on port 3211 (navigation, Keyring, appearance, Story)
+npm run shots            # production build, then screenshots of every key screen into docs/media/shots/
 npm run check:music      # every tune parses; every arrangement builds; the 1981 versions are unchanged
 npm run check:audio      # renders every style offline and flags silence or clipping
 npm run check:stickler   # plays thousands of Stickler games to prove the maths

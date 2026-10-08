@@ -13,6 +13,8 @@
   flex: 1;
   width: 100%;
   height: clamp(92px, 11vw, 140px);
+  max-height: 13vh;
+  min-height: 72px;
   touch-action: none;
 }
 

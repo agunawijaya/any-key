@@ -1,0 +1,53 @@
+.sheet {
+  --paper: #f3ecdc;
+  --grid: rgb(120 100 70 / 0.16);
+  --pencil: #7d6b52;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  border-radius: 18px;
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 18px 18px,
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px) 0 0 / 18px 18px,
+    var(--paper);
+  overflow: hidden;
+}
+
+:root[data-theme="dark"] .sheet {
+  --paper: #1d2333;
+  --grid: rgb(170 190 230 / 0.12);
+  --pencil: #9fb0d6;
+}
+
+.emblem {
+  width: 34%;
+  max-width: 120px;
+  fill: none;
+  stroke: var(--pencil);
+  stroke-width: 0.45;
+  stroke-dasharray: 1.2 0.8;
+  stroke-linejoin: round;
+  animation: sketch 6s linear infinite;
+}
+
+.stamp {
+  position: absolute;
+  right: 14px;
+  bottom: 12px;
+  padding: 3px 9px;
+  border: 1.5px solid var(--pencil);
+  border-radius: 6px;
+  color: var(--pencil);
+  font: 600 11px/1.2 var(--font-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transform: rotate(-4deg);
+}
+
+@keyframes sketch {
+  to {
+    stroke-dashoffset: -20;
+  }
+}

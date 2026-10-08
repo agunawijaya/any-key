@@ -1,3 +1,4 @@
+import { mulberry32 } from "@/lib/kit/rng";
 import { LEVELS, type LevelId, type Settings } from "./levels";
 
 /*
@@ -66,17 +67,6 @@ const ITEM_LIFE = 8;
 const RUSH_TIME = 30;
 const DIRS: Record<Dir, Pos> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
 
-export function mulberry(seed: number) {
-  let s = seed >>> 0;
-  return () => {
-    s = (s + 0x6d2b79f5) >>> 0;
-    let t = s;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 export class Game {
   readonly s: Settings;
   readonly seed: number;
@@ -128,7 +118,7 @@ export class Game {
     this.seed = seed;
     this.cols = this.s.cols;
     this.rows = this.s.rows;
-    this.rng = mulberry(seed);
+    this.rng = mulberry32(seed);
     this.grid = new Uint8Array(this.cols * this.rows);
     this.hearts = this.s.hearts;
     this.wallRows = Array.from({ length: this.s.floors }, (_, k) => Math.round(((k + 1) * this.rows) / (this.s.floors + 1)));

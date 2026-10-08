@@ -1,0 +1,56 @@
+import type { GameManifest } from "@/lib/kit/manifest";
+
+export const musicManifest: GameManifest = {
+  id: "music",
+  title: "Bop Box",
+  status: "playable",
+  route: "/music",
+  kind: "Music studio",
+  category: "music",
+  players: "1",
+  sessionMinutes: [3, 30],
+  tagline: "Eleven tunes from 1981. Twelve ways to make them bop.",
+  blurb: "A tiny jukebox from the first days of the PC, rebuilt with live sheet music, a glowing keyboard and a whole band behind every note.",
+  inspiredBy: { originalTitle: "Music", file: "MUSIC.BAS", publisher: "IBM", year: 1981 },
+  palette: ["#ff4f9a", "#6a48ff", "#13c2e3"],
+  accent: "#ff4f9a",
+  // Two beamed eighth notes.
+  emblem:
+    "M8 4.6 20 2.2v3.3L8 7.9zM8 6.5h1.9V17H8zM18.1 4.5H20V15h-1.9zM2.9 17.4a3.3 2.5-20 1 0 6.6 0 3.3 2.5-20 1 0-6.6 0zM13 15.4a3.3 2.5-20 1 0 6.6 0 3.3 2.5-20 1 0-6.6 0z",
+  stats: [
+    { value: "11", label: "tunes" },
+    { value: "12", label: "styles" },
+    { value: "1981", label: "first played" },
+  ],
+  modes: ["Orchestra", "Pop", "Jazz", "House", "Dangdut", "Koplo", "Lo-fi", "Hip-hop", "Solo", "PC Speaker ’81", "AI Remix", "Original Score"],
+  moonsName: "tunes",
+  moons: [
+    "La Cucaracha",
+    "Blue Danube",
+    "Humoresque",
+    "Pop! Goes the Weasel",
+    "Symphony No. 40",
+    "Yankee Doodle",
+    "Funeral March of a Marionette",
+    "Stars and Stripes Forever",
+    "Mexican Hat Dance",
+    "Sakura",
+    "Scales",
+  ],
+  trivia: [
+    "Its pitch math started from a rounded-off number, so the note A came out at 441 Hz instead of 440.",
+    "To play silence, the program played a note at 32,767 Hz: far too high for anyone to hear.",
+    "La Cucaracha means “the cockroach”, so the song menu filed it under BUG.",
+    "The on-screen piano had only 26 keys. Some notes played right off the edge of it.",
+  ],
+  achievements: [
+    { id: "first-note", title: "First Note", hint: "Press play on any tune", tier: "common" },
+    { id: "beep-beep", title: "Beep Beep", hint: "Hear a tune the way the 1981 speaker played it", tier: "common" },
+    { id: "band-leader", title: "Band Leader", hint: "Mute a player in the band, then bring them back", tier: "common" },
+    { id: "take-it-home", title: "Take It Home", hint: "Download an arrangement as MIDI", tier: "common" },
+    { id: "whole-jukebox", title: "Whole Jukebox", hint: "Play every one of the eleven tunes", tier: "rare" },
+    { id: "style-hopper", title: "Style Hopper", hint: "Try every style at least once", tier: "rare" },
+    { id: "long-version", title: "The Long Version", hint: "Hear a full-length piece to its last note", tier: "rare" },
+    { id: "concert-hall", title: "Concert Hall", hint: "Hear every full-length piece to its last note", tier: "legendary" },
+  ],
+};

@@ -1,4 +1,4 @@
-import { mulberry } from "./engine";
+import { mulberry32 } from "@/lib/kit/rng";
 
 /*
  * 1980 mode: the original program's behaviour, step for step.
@@ -60,7 +60,7 @@ export class Escape1980 {
     seed: number,
     readonly speed = LOOPS_PER_SECOND,
   ) {
-    this.rng = mulberry(seed);
+    this.rng = mulberry32(seed);
     // Clear the screen and print the title, then put the exit on the bottom row.
     "ESCAPE".split("").forEach((c, i) => (this.screen[i] = c.charCodeAt(0)));
     this.poke(EXIT, PLUS);

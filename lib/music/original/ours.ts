@@ -14,10 +14,10 @@ import { nearestWithPc } from "../theory";
  * in songs.ts and full/*.ts; the parts around them are ours.
  */
 
-const SHAKUHACHI: Patch = { name: "Shakuhachi", icon: "🎋", program: 77 };
-const VIHUELA: Patch = { name: "Vihuela (guitar)", icon: "🎸", program: 24 };
-const GUITARRON: Patch = { name: "Guitarrón (bass)", icon: "🎻", program: 32 };
-const FIFE: Patch = { name: "Fifes", icon: "🎵", program: 72 };
+const SHAKUHACHI: Patch = { name: "Shakuhachi", family: "woodwind", program: 77 };
+const VIHUELA: Patch = { name: "Vihuela (guitar)", family: "guitar", program: 24 };
+const GUITARRON: Patch = { name: "Guitarrón (bass)", family: "guitar", program: 32 };
+const FIFE: Patch = { name: "Fifes", family: "woodwind", program: 72 };
 
 type Voice = { track: Track; octave?: number; vel?: number; articulation?: number };
 

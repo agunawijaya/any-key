@@ -1,8 +1,20 @@
-# Inside MUSIC.BAS (version 1.10)
+# Music (MUSIC.BAS): how the original works
 
-This document explains how IBM's 1982 *MUSIC* program is built. It covers the flow of control, how the screen and keyboard are drawn, the note-data format, the frequency table, and the loop that plays one tune. Line numbers refer to the version 1.10 listing, which is about 210 lines long. The program's code, remarks and tune data are IBM's property and are not reproduced here: this document describes them in its own words, and the pseudo-code is paraphrased. For history and usage see [ABOUT.md](ABOUT.md) and [HOW-TO.md](HOW-TO.md).
+*MUSIC* is a demonstration program of about 210 lines in IBM Personal Computer BASIC, version 1.10 (1982). It runs on the original IBM PC with the Color/Graphics adapter in 40-column text mode and plays eleven tunes, one note at a time, on the built-in speaker. This page explains how it is built: the flow of control, how the screen and keyboard are drawn, the note-data format, the frequency table and the loop that plays one tune. It ends with how to run the program today. Line numbers refer to the version 1.10 listing. The program's code, remarks and tune data are IBM's property and are not reproduced here: this page describes them in its own words, and the pseudo-code is paraphrased. For the program's history see [ABOUT.md](ABOUT.md); for the measurements behind the numbers below see [NOTES.md](NOTES.md).
 
-## Map of the listing
+## At a glance
+
+| | |
+|---|---|
+| Program | The IBM Personal Computer Music, version 1.10 (1981, 1982) |
+| Size | About 210 lines, numbered 940 to 4550; 8,704 bytes tokenised on the PC DOS 1.10 disk |
+| Dialect | IBM Personal Computer BASIC 1.10. Runs under Disk BASIC (`BASIC.COM`) and Advanced BASIC (`BASICA.COM`) |
+| Machine | IBM PC model 5150 with the Color/Graphics Monitor Adapter |
+| Input | Single key presses read with `INKEY$`; no Enter key anywhere |
+| Output | 40-column colour text, and the speaker through `SOUND` (one square-wave voice) |
+| Data | Eleven tunes as `DATA` lines: a title, then pairs of piano key and duration in timer ticks |
+
+## Line map
 
 | Lines | Role |
 |---|---|
@@ -52,19 +64,37 @@ flowchart TD
     EXIT -- "no" --> STOP(["1860: reset colours, CLS, END"])
 ```
 
+In paraphrased pseudo-code:
+
+```text
+remember whether the SAMPLES menu started us
+draw the title screen; throw away any waiting keys
+wait for Space (go on) or Esc (leave)
+ask for music in the foreground, ignoring the error if PLAY is missing
+draw the menu and the keyboard; build the pitch table and the column map
+loop:
+    wait for a key at the prompt
+    Esc       -> leave
+    A..K      -> show the tune's title, play it, erase the title
+    otherwise -> ask again
+leave: back to SAMPLES if it started us, otherwise reset the screen and end
+```
+
 ### Two entry points and the `SAMPLES$` flag
 
 - **Run directly.** Execution starts at the header, performs the keyboard housekeeping at line 975, sets `SAMPLES$` to `"NO"` at line 980, and jumps over line 1000.
 - **Started from IBM's `SAMPLES` menu.** That menu does `CHAIN "MUSIC",1000`, so execution starts at line 1000, which sets `SAMPLES$` to `"YES"`. Line 975 is skipped, so the `POKE` at line 1520 relies on the default segment still being BASIC's own data segment.
 - **On exit (line 1850).** The flag decides the destination. With `"YES"` the program chains back to `SAMPLES` at that program's line 1000, which jumps to its menu. Otherwise line 1860 resets the colours, clears the screen and ends. It does not restore `WIDTH 80` or `KEY ON`.
 
-## Screen construction
+## The interesting parts
 
-### Title screen (lines 1010–1090)
+### Screen construction
+
+#### Title screen (lines 1010–1090)
 
 `KEY OFF` hides BASIC's function-key line, `SCREEN 0,1` selects colour text, and `WIDTH 40` selects 40 columns. The first `LOCATE` passes 0 as its cursor argument, which hides the cursor. The name box uses code page 437 box characters, which have double horizontal lines and single vertical lines: ╒ (213), ═ (205), ╕ (184), │ (179), ╘ (212) and ╛ (190). The text uses bright white (15), light green (10) and yellow (14). The same layout appears in the other IBM sample programs.
 
-### Main screen layout
+#### Main screen layout
 
 | Rows | Content |
 |---|---|
@@ -75,7 +105,7 @@ flowchart TD
 
 Line 1150 sets `COLOR 15,1,1`, which gives a blue background and border.
 
-### Drawing the keyboard (lines 1200–1360)
+#### Drawing the keyboard (lines 1200–1360)
 
 - **White keys.** Sixteen keys are drawn, each two columns wide and nine rows tall (rows 5–13). Key *i* starts at column 5 + 2*i*, so the keys cover columns 5–36. Each key is a full block █ (219) followed by a left-half block ▌ (221), drawn in white on black. The black right half of the ▌ forms the thin seam between neighbouring keys.
 - **Black keys.** These are drawn over rows 5–9. The loop walks 13 candidate seams, from the one between C4 and D4 to the one between A5 and B5. At seam *i* it prints a space (a solid black cell) at column 8 + 2*i*, followed by a right-half block ▐ (222). The result is a black key 1.5 cells wide, centred on the seam. Gaps 2, 6 and 9 are skipped because they are the E–F and B–C positions, which have no black key. The test also names gap 13, but the loop stops at 12, so that check never fires.
@@ -94,7 +124,7 @@ When a note plays, the program has to know whether its key is white or black. It
 
 `O()` is dimensioned to 70 and filled up to key 70, but lines 1560 and 1600 only draw markers for keys 39–64. The extra entries could never have worked on this screen. Key 69's entry breaks the octave rhythm (it gives column 40 where the pattern predicts 41), and key 70's entry is column 42, beyond the 40-column screen. Why they exist is unknown. They may be left over from an earlier layout, but that is unverified.
 
-## The frequency table `M()`
+### The frequency table `M()`
 
 - **Integer arrays.** `DEFINT A-Z` runs at line 1150, before the `DIM` at line 1360, so both `M()` and `O()` are integer arrays. Version 1.00 got the same result from a narrower `DEFINT M,N,O,P` placed on line 1360 itself.
 - **The formula.** For keys 7 to 88, line 1370 stores **36.8 × 2^((n − 6)/12)**. The keys are numbered like the 88 keys of a piano: key 1 is A0, key 40 is middle C (C4), key 49 is A4, and key 88 is C8. Assigning a fractional value to an integer rounds it to the nearest whole number, as the IBM manual documents, so the table holds whole hertz.
@@ -123,7 +153,7 @@ All frequencies are in Hz. Across every key used by the tunes (keys 30–66), th
 
 A rest is `SOUND 32767, n`. That gives a divisor of 36 and a tone of about 33.1 kHz, which is far above hearing. IBM's BASIC manual itself tells programmers to use 32767 to create silence.
 
-## Note data format (lines 3000–4550)
+### Note data format (lines 3000–4550)
 
 Each tune is a run of `DATA` items:
 
@@ -149,7 +179,7 @@ The −2 marker is left over from version 1.00. There, line 1790 checked it: if 
 
 "As played" includes the gap after each note (explained below). The times are nominal: they ignore the interpreter's own overhead.
 
-## Menu dispatch with `RESTORE` (lines 1630–1830)
+### Menu dispatch with `RESTORE` (lines 1630–1830)
 
 ```text
 blank and redraw the prompt bar
@@ -180,7 +210,7 @@ blank row 23; back to the top
 
 Version 1.00 used separate lines for upper and lower case (22 in all) and had no `RESTORE` targets. Instead, line 1770 loaded a tune file named after the label with `CHAIN MERGE … ,1780,ALL` and continued at line 1780. Every tune file used line numbers starting at 3000. Because `MERGE` only replaces lines with matching numbers, a longer tune's tail would have stayed in memory under a shorter one. That was harmless, since the new −1, −1 terminator came first. (This is inferred from how `MERGE` is documented; it was not observed on a running machine.)
 
-## The play loop (lines 1490–1620)
+### The play loop (lines 1490–1620)
 
 ```text
 repeat:
@@ -223,15 +253,15 @@ sequenceDiagram
     participant P as BASIC program
     participant T as Timer and speaker
     participant S as Screen
-    P->>S: draw ♫ on key n
-    P->>T: SOUND note n (waits for the previous gap, then starts)
-    P->>T: SOUND 32767, 1 (waits while note n sounds)
+    P->>S: draw the marker on key n
+    P->>T: SOUND note n, which waits for the previous gap and then starts
+    P->>T: SOUND 32767 for 1 tick, which waits while note n sounds
     Note over T: note n plays for its full duration
     T-->>P: the silent gap tick starts and the statement returns
     P->>S: restore key n
     P->>P: read the next pair, poll the keyboard
-    P->>S: draw ♫ on key n+1
-    P->>T: SOUND note n+1 (waits until the gap ends)
+    P->>S: draw the marker on key n+1
+    P->>T: SOUND note n+1, which waits until the gap ends
 ```
 
 The marker for a note appears during the gap just before that note sounds, and it is removed at the start of the gap that follows it. The interpreter's work between notes normally fits inside the 55 ms gap, so the audio is not delayed. This was reasoned from the code and not measured on a real machine.
@@ -242,23 +272,23 @@ Every event is followed by `SOUND 32767,1`, one tick of silence, so every event 
 
 The gap changes the rhythm. In *Humoresque*, each beat is written as a 3-tick note, a 2-tick rest and a 1-tick note: 6 ticks, with a 5:1 swing. As played it becomes 4 + 3 + 2 = 9 ticks, a 7:2 swing (3.5:1). The dotted lilt is gentler, and each beat lasts 50 % longer. How much each tune stretches depends on how many short events it has: from ×1.12 for SAKURA to ×1.70 for SCALES.
 
-## `PLAY "mf"` and its error trap (lines 1141–1149)
+### `PLAY "mf"` and its error trap (lines 1141–1149)
 
 `PLAY` exists only in Advanced BASIC (`BASICA`). Under Disk BASIC (`BASIC`) it fails with error 73, "Advanced Feature". The program sets `ON ERROR` just before the `PLAY` and resumes past it if it fails, then switches trapping off with `ON ERROR GOTO 0`. The same program therefore runs under both interpreters.
 
 The `MF` command selects *music foreground*, where `SOUND` and `PLAY` notes play one after another while the program waits. The alternative, `MB` (*music background*), queues up to 32 notes and lets the program run ahead. In background mode the markers would race ahead of the music and Esc would respond late. Foreground is BASIC's default, and `CLEAR` also resets it. The explicit `PLAY "mf"` is a safeguard so that the display and the sound stay in step.
 
-## Keyboard housekeeping: `DEF SEG: POKE 106,0` (lines 975 and 1520)
+### Keyboard housekeeping: `DEF SEG: POKE 106,0` (lines 975 and 1520)
 
 `DEF SEG` with no address points `POKE` at BASIC's own data segment. IBM's `SAMPLES` program comments the same POKE as "CLEAR KYBD BUFFER". The precise meaning comes from the IBM ROM BASIC image hosted by PCjs; IBM never published source for it. In that image, the keyboard reader keeps a one-byte status counter at offset 106. While it is nonzero, `INKEY$` hands out characters from a function-key string (F1–F10) or from an Alt+letter keyword shortcut, instead of reading a new key from the BIOS. Setting it to 0 **cancels any half-finished expansion**. It does not empty the BIOS type-ahead buffer, which lives in low memory at segment 0040h.
 
 MUSIC does this once at start-up and again at line 1520, whenever a key other than Esc is pressed during a tune. Pressing F1 in the middle of a tune therefore cannot drip the rest of "LIST " into later `INKEY$` calls.
 
-## What happens beneath `SOUND`
+### What happens beneath `SOUND`
 
 In the ROM, `SOUND` rejects frequencies below 37 Hz and waits for any previous sound to finish. It then sets timer channel 2 to square-wave mode with the divisor described above, opens the speaker gate through port 61h, and stores the duration to be counted down. `BASICA.COM` 1.10 replaces this routine with one that adds the 32-note background queue. When it starts a sound, it also runs the system timer 32 times faster (about 583 Hz), so it can time notes in 1/32-tick steps. A 1985 PC Magazine memory map gives the same 1/583-second unit for BASICA 2.1. MUSIC only ever uses whole ticks.
 
-## Behaviour a faithful port should keep
+### What a faithful port must keep
 
 - The pitches: integer hertz from 36.8 × 2^((n − 6)/12), then truncation to a whole-number timer divisor. A4 comes out at about 441.10 Hz.
 - One tick of silence after every event, except a 1-tick rest.
@@ -268,16 +298,174 @@ In the ROM, `SOUND` rejects frequencies below 37 Hz and waits for any previous s
 - Upper and lower case letters both accepted.
 - Esc at the title or the menu leaves the program.
 
+How much of this Bop Box's PC Speaker ’81 style reproduces is set out in [CHANGES-FROM-ORIGINAL.md](CHANGES-FROM-ORIGINAL.md#faithful-modes).
+
+## Quirks and bugs
+
+- **Everything plays sharp.** A rounded anchor and two rounding steps put A4 at 441.10 Hz; every note is 0.2 to 7.9 cents high.
+- **Every note is detached.** The one-tick gap stretches each tune by 12 to 70 % and softens dotted rhythms.
+- **Notes off the drawn keyboard sound without a marker.** Six of the eleven tunes reach past B3–C6, and SCALES starts and ends one semitone beyond each edge.
+- **Dead code.** The black-key loop tests a gap it never reaches, the column map holds entries for keys that can never be marked (two of them wrong or off the screen), and line 1840's `END` can never run.
+- **Esc is slow.** It is noticed only when the current note ends, up to about 1.4 seconds later.
+- **It leaves a mess behind.** Run on its own, it exits in 40-column mode with the function-key line still hidden.
+
+The evidence for each, and whether Bop Box keeps it, is in [NOTES.md](NOTES.md).
+
+## Playing the original
+
+This section explains how the program behaves from the user's side: what each screen shows, which keys do what, and how the program exits. It then covers four ways to run the original today. All behaviour described here was checked against the version 1.10 listing.
+
+### Starting the program
+
+There are three ways to start it on an IBM PC with PC DOS 1.10 (or the PC DOS 2.00 supplemental diskette):
+
+- From the DOS prompt, type `BASICA MUSIC`. `BASIC MUSIC` (Disk BASIC) also works, as the program is written to run without Advanced BASIC.
+- From inside BASIC, type `RUN "MUSIC"`.
+- Through IBM's sample menu: start `BASICA SAMPLES`, press the space bar, then press **A**.
+
+The last route matters, because the program remembers how it was started. It uses that to decide where Esc takes you at the end (see *Leaving the program* below).
+
+### Screen 1: the title screen
+
+The program switches to 40-column colour text on a black background. It shows "IBM" and "Personal Computer" in bright white, a light-green box with the program name and "Version 1.10", a copyright line, and a yellow prompt at the bottom asking for the space bar.
+
+| Key | Effect |
+|---|---|
+| Space | Continue to the main screen |
+| Esc | Leave the program at once, without seeing the main screen |
+| Anything else | Ignored |
+
+Keys you pressed before the title appeared are thrown away first, so type-ahead cannot skip this screen.
+
+### Screen 2: the keyboard and the menu
+
+The screen turns blue. The top half shows a small piano keyboard in a red frame, with 16 white keys and 10 black keys running from B3 to C6. Below it is the list of selections, and below that is a light-grey prompt bar that asks for your choice.
+
+| Key | Label | Tune |
+|---|---|---|
+| A | MARCH | Funeral March of a Marionette (Gounod) |
+| B | STARS | The Stars and Stripes Forever (Sousa) |
+| C | FORTY | Symphony No. 40, opening (Mozart) |
+| D | HAT | Mexican Hat Dance (traditional) |
+| E | HUMOR | Humoresque (Dvořák) |
+| F | BUG | La Cucaracha (folk song) |
+| G | POP | Pop! Goes the Weasel |
+| H | DANDY | Yankee Doodle |
+| I | SAKURA | Sakura (Japanese folk melody) |
+| J | BLUE | The Blue Danube (Johann Strauss II) |
+| K | SCALES | A chromatic scale up and down |
+| Esc | – | Leave the program |
+
+- **Case does not matter.** Both `A` and `a` work. Your choice is echoed on the prompt bar exactly as you typed it, for example `b-STARS`.
+- **Other keys are ignored.** Pressing anything else simply shows the prompt again. There is no error message or beep.
+- **Keys typed during a tune are discarded** before the menu reads its next key, so you cannot queue up the next selection in advance.
+
+### While a tune plays
+
+- The **full title** of the tune appears centred near the bottom of the screen, in white on a red bar.
+- A **♫ marker** moves across the keyboard, sitting on the key that is sounding. On white keys it appears near the bottom of the key, in black. On black keys it appears in the middle, in white.
+- **Notes outside B3–C6 have no marker.** They still play, but no key lights up. The tunes affected are:
+
+  | Tune | Notes with no marker |
+  |---|---|
+  | MARCH | D3 and A3, including the tune's first two notes |
+  | BUG | D3, G3 and A3 |
+  | FORTY | C♯6 |
+  | HAT | D6 |
+  | BLUE | D6 |
+  | SCALES | A♯3 and C♯6, the first and last notes of the scale |
+
+  STARS, HUMOR, POP, DANDY and SAKURA stay entirely on the drawn keyboard.
+- **Rests** show no marker.
+- **Every note is detached.** A silence of about 1/18 of a second follows every note, apart from the very short rests in *La Cucaracha*. Tunes therefore sound slightly clipped and play more slowly than their written durations suggest.
+- **Esc stops the tune.** The program checks the keyboard once per note, so Esc takes effect when the current note ends. That can take up to about 1.4 seconds during the longest note, in HUMOR. The marker is removed, the title bar disappears, and you return to the menu prompt.
+- **Other keys are ignored** during a tune. If you press a function key, the program also cancels the text that BASIC would normally type for it (line 1520).
+- **Ctrl+Break** stops BASIC itself, not just the tune. You land at BASIC's `Ok` prompt with a "Break in …" message and the screen still blue and 40 columns wide.
+
+When a tune finishes normally, the title bar is erased and the prompt bar resets, ready for the next choice.
+
+### Leaving the program
+
+Press **Esc** on the title screen or at the menu. What happens next depends on how the program was started:
+
+- **Started on its own** (`BASICA MUSIC` or `RUN "MUSIC"`). The screen is reset to grey on black and cleared, and you are back at BASIC's `Ok` prompt. The program does **not** restore the 80-column screen or the function-key line at the bottom. Type `WIDTH 80` and `KEY ON` to get them back, or `SYSTEM` to return to DOS.
+- **Started from SAMPLES.** MUSIC chains back to `SAMPLES` at that program's line 1000, which jumps straight to its program menu and skips its title screen. `SAMPLES.BAS` must still be on the current drive.
+
+### Running the original today
+
+#### Option 1: PCjs (in the browser, with IBM's own disk)
+
+PCjs emulates the IBM PC 5150 with IBM's ROM BASIC and hosts the original PC DOS diskettes, so you can run the genuine program without copying any files.
+
+1. Open PCjs's "IBM PC (Model 5150) with Color Graphics" machine (its address is under *Sources*).
+2. In the diskette controls, select drive A:, choose **PC DOS 1.10** from the list and click **Load**.
+3. Restart the machine with its Reset button or Ctrl+Alt+Del, then press Enter at the date and time prompts.
+4. At `A>`, type `BASICA MUSIC`. To use the original menu instead, type `BASICA SAMPLES` and choose A.
+
+You can also use PC DOS 2.00. Its "Disk 2" (Supplemental Programs) holds a byte-identical `MUSIC.BAS`, but there it runs under BASICA 2.00 rather than 1.10.
+
+Caveats:
+
+- The PCjs page for PC DOS 1.10 embeds a machine with a **monochrome** display. MUSIC was designed for colour 40-column text, so use the CGA machine above. Exactly how it looks on a monochrome adapter was not tested.
+- Browsers only allow audio after you interact with a page, so **click inside the emulator** before choosing a tune. PCjs plays the speaker through a Web Audio square-wave oscillator. It treats tones above 20 kHz as silence, so MUSIC's 32767 Hz "rests" are silent there. Whether sound is switched on depends on the machine's configuration. If you hear nothing, check that the tab isn't muted.
+
+#### Option 2: PC-BASIC (free, cross-platform)
+
+PC-BASIC is an open-source reimplementation of GW-BASIC and IBM BASICA that emulates the display and speaker.
+
+1. Install it with a desktop installer from its GitHub releases (see *Sources*), or with `pip3 install pcbasic`.
+2. Run the text listing with `pcbasic MUSIC.BAS --preset=basica`. The `basica` preset emulates IBM BASICA. Plain `pcbasic MUSIC.BAS` also works and emulates GW-BASIC on a VGA machine, which displays 40-column colour text fine.
+
+Caveats:
+
+- PC-BASIC accepts text files with either Unix (LF) or DOS (CR LF) line endings.
+- It only emulates part of the PC's memory, and a `POKE` outside those areas does nothing. The program's `POKE 106,0` keyboard housekeeping (lines 975 and 1520) is therefore a no-op. That makes no visible difference.
+- `PLAY "MF"` is accepted, so the program's error trap never fires.
+
+#### Option 3: DOSBox with GW-BASIC
+
+- **IBM's `BASIC.COM` and `BASICA.COM` will not run in DOSBox or on clones.** They depend on the Cassette BASIC in the IBM PC's ROM, which DOSBox does not provide. Use Microsoft's stand-alone GW-BASIC instead.
+- Microsoft's open-source release of GW-BASIC on GitHub contains the 1983 **source code only, with no executable**. You need a GW-BASIC binary from a DOS distribution you are licensed to use.
+- GW-BASIC only accepts text programs with **CR LF** line endings. A listing with Unix line endings will not load correctly; PC-BASIC's documentation says to expect "Line buffer overflow". Convert it first, for example with `unix2dos`.
+- Start it with `GWBASIC MUSIC.BAS`. Setting `machine=cga` in `dosbox.conf` gives a more authentic look, although the default video card also handles 40-column text. DOSBox emulates the PC speaker.
+- `POKE 106,0` writes one byte into BASIC's own data area. Its meaning in IBM BASIC is explained under *Keyboard housekeeping* above. Nobody has checked that GW-BASIC keeps the same variable at the same address, so its effect there is unverified.
+
+#### Option 4: real hardware
+
+Use an IBM PC 5150, or another IBM model with Cassette BASIC in ROM, fitted with a Color/Graphics adapter and a colour or composite monitor. The file is on the PC DOS 1.10 diskette, and the PC DOS 2.00 Supplemental Programs diskette carries an identical copy. The 1.10 `SAMPLES` menu lists MUSIC as a 48 KB program. PC DOS 2.10 ships a slightly edited text copy: the spelling of "Weasel" is fixed and the Mozart ending is changed. On compatibles without IBM's ROM BASIC, use GW-BASIC as in Option 3.
+
+### Caveats at a glance
+
+| Topic | What to expect |
+|---|---|
+| Disk BASIC vs BASICA | Both work. In Disk BASIC the `PLAY "MF"` statement raises error 73 ("Advanced Feature"), and MUSIC silently traps and ignores it. |
+| GW-BASIC vs BASICA | GW-BASIC supports every statement MUSIC uses and does not need IBM's ROM. Only the effect of `POKE 106,0` is unverified. |
+| 40-column mode | The program assumes colour 40-column text and leaves the screen in that mode when it exits. |
+| Speaker emulation | Rests are really a 32767 Hz tone. The real PC produces about 33 kHz, far above hearing. Emulators may simply mute it, as PCjs does. |
+| Pitch | Notes are 0.2–7.9 cents sharp by design. A4 sounds at about 441.1 Hz, so don't retune your emulator to "fix" it. |
+| Timing | Durations are counted in 18.2 Hz timer ticks, plus one tick of silence after each note. If an emulated CPU is extremely slow, the screen updates between notes may no longer fit inside that gap. |
+| Esc latency | Esc is noticed at the end of the current note, not immediately. |
+
 ## Sources
 
 - IBM Personal Computer BASIC, Version 1.10 manual (May 1982): `SOUND`, `PLAY`, `CHAIN`, `DEF SEG`, `CLEAR`, `SCREEN` function, number conversion, and error 73: http://www.bitsavers.org/pdf/ibm/pc/languages/BASIC_1.1_May82.pdf
-- PCjs – BASIC Programs for PC DOS 1.00 (MUSIC 1.00 and SAMPLES listings, used for the 1.00 comparison): https://www.pcjs.org/software/pcx86/app/ibm/basic/1.00/
+- PCjs – BASIC Programs for PC DOS 1.00 (MUSIC 1.00 and SAMPLES listings, including SAMPLES line 1000; used for the 1.00 comparison): https://www.pcjs.org/software/pcx86/app/ibm/basic/1.00/
+- PCjs – IBM PC DOS 1.10: https://www.pcjs.org/software/pcx86/sys/dos/ibm/1.10/
+- PCjs – IBM PC DOS 2.00: https://www.pcjs.org/software/pcx86/sys/dos/ibm/2.00/
+- PCjs – IBM PC (Model 5150) with Color Graphics: https://www.pcjs.org/machines/pcx86/ibm/5150/cga/
 - PCjs – IBM PC BASIC ROMs: https://www.pcjs.org/machines/pcx86/ibm/5150/rom/basic/
 - PCjs – ROM BASIC image used for the SOUND and keyboard analysis: https://www.pcjs.org/machines/pcx86/ibm/5150/rom/basic/BASIC100.json5
-- PCjs – PC DOS 1.10 disk image (source of `BASICA.COM` 1.10 and the tokenised `MUSIC.BAS`): https://diskettes.pcjs.org/pcx86/sys/dos/ibm/1.10/PCDOS110.json
+- PCjs disk images (source of `BASICA.COM` 1.10, the tokenised `MUSIC.BAS`, SAMPLES 1.10 and the later MUSIC copies): https://diskettes.pcjs.org/pcx86/sys/dos/ibm/1.10/PCDOS110.json, https://diskettes.pcjs.org/pcx86/sys/dos/ibm/2.00/PCDOS200-DISK2.json, https://diskettes.pcjs.org/pcx86/sys/dos/ibm/2.10/PCDOS210-DISK2.json
+- PCjs source, speaker emulation (`chipset.js`): https://github.com/jeffpar/pcjs/blob/master/machines/pcx86/modules/v2/chipset.js
 - Microsoft GW-BASIC source, 1983 (`GWSTS.ASM` SOUND/PLAY code, `GIOKYB.ASM` soft-key expansion): https://github.com/microsoft/GW-BASIC
 - PC Magazine's "POKEs & PEEKs" (1985), a BASICA data-segment map covering soft-key strings and music buffer units: http://petesqbsite.com/sections/tutorials/tutorials/peekpoke.txt
 - Microsoft KB Q60140 – location of the BIOS keyboard buffer: https://jeffpar.github.io/kbarchive/kb/060/Q60140/
+- PC-BASIC repository and README: https://github.com/robhagemans/pcbasic
+- PC-BASIC documentation (presets, line endings, POKE, memory model): https://robhagemans.github.io/pcbasic/doc/2.0/
+- PC-BASIC memory emulation source: https://github.com/robhagemans/pcbasic/blob/master/pcbasic/basic/memory/memory.py
+- DOSBox wiki – Sound: https://www.dosbox.com/wiki/Sound
+- DOSBox wiki – dosbox.conf (machine option): https://www.dosbox.com/wiki/Dosbox.conf
+- Wikipedia – IBM BASIC: https://en.wikipedia.org/wiki/IBM_BASIC
 - Wikipedia – Intel 8253: https://en.wikipedia.org/wiki/Intel_8253
 - Wikipedia – PC speaker: https://en.wikipedia.org/wiki/PC_speaker
 - Wikipedia – Code page 437: https://en.wikipedia.org/wiki/Code_page_437

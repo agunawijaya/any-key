@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { oldestYear, programs, yearLabel, type Program } from "@/lib/catalog";
+import { games, oldestYear } from "@/lib/catalog";
+import { isPlayable, yearLabel, type GameManifest } from "@/lib/kit/manifest";
 import { ProgramPreview } from "@/components/previews/ProgramPreview";
 import { Sticker } from "@/components/ui/Sticker";
 import { pressAnyKey } from "./AnyKeyToy";
 import { Tile } from "./Tile";
+import { RefreshIcon } from "@/components/kit/icons";
 import styles from "./WallView.module.css";
 
 const HERO_KEYS = [
@@ -19,8 +21,12 @@ const HERO_KEYS = [
 
 const THIS_YEAR = new Date().getFullYear();
 
+const playable = games.filter(isPlayable);
+const upcoming = games.filter((game) => !isPlayable(game));
+const playableCount = playable.length;
+
 export function WallView() {
-  const featured = programs[0];
+  const [featured, ...rest] = playable;
 
   return (
     <section data-view="wall" aria-label="Wall" className={styles.wall}>
@@ -60,14 +66,11 @@ export function WallView() {
 
         <TriviaTile />
 
-        <Tile className={styles.years} label="Years since">
-          <p className={styles.eyebrowDark}>Since {oldestYear}</p>
-          <p className={styles.bigNumber}>{THIS_YEAR - oldestYear}</p>
-          <p className={styles.yearsText}>years since this code first ran. Still slaps.</p>
-        </Tile>
+        {/* What's on the drawing board gets the top slot; with nothing in design, the years tile has it. */}
+        {upcoming.length ? <ComingSoonTile game={upcoming[0]} /> : <YearsTile />}
 
-        {programs.slice(1).map((program) => (
-          <ProgramTile key={program.id} program={program} wide />
+        {rest.map((game) => (
+          <ProgramTile key={game.id} program={game} wide />
         ))}
 
         <Tile className={styles.how} label="How it works">
@@ -91,23 +94,29 @@ export function WallView() {
           </ol>
         </Tile>
 
-        <Tile className={styles.more} label="More coming">
-          <h3 className={styles.tileTitle}>More classics are loading</h3>
-          <div className={styles.loader} aria-hidden>
-            <span />
-          </div>
-          <p className={styles.moreText}>
-            {programs.length} program{programs.length === 1 ? "" : "s"} in the hall so far. New ones
-            drop as they’re rebuilt.
-          </p>
-        </Tile>
+        {upcoming.length ? (
+          <YearsTile wide />
+        ) : (
+          <Tile className={styles.more} label="More coming">
+            <h3 className={styles.tileTitle}>More classics are loading</h3>
+            <div className={styles.loader} aria-hidden>
+              <span />
+            </div>
+            <p className={styles.moreText}>
+              {playableCount} program{playableCount === 1 ? "" : "s"} in the hall so far. New ones
+              drop as they’re rebuilt.
+            </p>
+          </Tile>
+        )}
       </div>
     </section>
   );
 }
 
-function ProgramTile({ program, wide = false }: { program: Program; wide?: boolean }) {
+function ProgramTile({ program, wide = false }: { program: GameManifest; wide?: boolean }) {
   const [c1, c2, c3] = program.palette;
+  const playable = isPlayable(program);
+  const lead = program.stats[0];
   return (
     <Tile className={`${styles.program} ${wide ? styles.programWide : ""}`} label={program.title}>
       <div
@@ -121,9 +130,11 @@ function ProgramTile({ program, wide = false }: { program: Program; wide?: boole
           <Sticker color="var(--lime)" tilt={-6}>
             Est. {yearLabel(program)}
           </Sticker>
-          <Sticker color="#ffffff" tilt={4}>
-            {program.stats[0].value} {program.stats[0].label}
-          </Sticker>
+          {lead && (
+            <Sticker color="#ffffff" tilt={4}>
+              {lead.value} {lead.label}
+            </Sticker>
+          )}
         </div>
       </div>
 
@@ -154,31 +165,62 @@ function ProgramTile({ program, wide = false }: { program: Program; wide?: boole
       </div>
 
       <div className={styles.programFoot}>
-        {program.status === "playable" && program.href ? (
+        {playable ? (
           <span className={styles.actions}>
-            <a className={styles.play} href={program.href}>
+            <a className={styles.play} href={program.route}>
               Play now
             </a>
-            <a className={styles.story} href={`${program.href}#story`} aria-label={`Read the story of ${program.title}`}>
+            <a className={styles.story} href={`${program.route}#story`} aria-label={`Read the story of ${program.title}`}>
               Story
             </a>
           </span>
         ) : (
           <span className={styles.soon}>
-            <span className={styles.pulse} aria-hidden /> In the studio · coming soon
+            <span className={styles.pulse} aria-hidden /> On the drawing board · coming soon
           </span>
         )}
         <span className={styles.source}>
-          Based on {program.original.file} · {yearLabel(program)}
+          Based on {program.inspiredBy.file} · {yearLabel(program)}
         </span>
       </div>
     </Tile>
   );
 }
 
+function YearsTile({ wide = false }: { wide?: boolean }) {
+  return (
+    <Tile className={`${styles.years} ${wide ? styles.yearsWide : ""}`} label="Years since">
+      <p className={styles.eyebrowDark}>Since {oldestYear}</p>
+      <p className={styles.bigNumber}>{THIS_YEAR - oldestYear}</p>
+      <p className={styles.yearsText}>years since this code first ran. Still slaps.</p>
+    </Tile>
+  );
+}
+
+/** A game still being designed: a plain blueprint card, with no promise of art it hasn't got yet. */
+function ComingSoonTile({ game }: { game: GameManifest }) {
+  return (
+    <Tile className={styles.soonTile} label={`${game.title}, coming soon`}>
+      <div className={styles.soonHead}>
+        <span className={styles.kindDark}>Next on the bench</span>
+        <Sticker color="#ffffff" tilt={-5}>
+          Est. {yearLabel(game)}
+        </Sticker>
+      </div>
+      <div className={styles.soonPreview}>
+        <ProgramPreview id={game.id} />
+      </div>
+      <h3 className={styles.soonTitle}>{game.title}</h3>
+      <p className={styles.soonText}>
+        <span className={styles.pulse} aria-hidden /> On the drawing board · based on {game.inspiredBy.file}
+      </p>
+    </Tile>
+  );
+}
+
 /** Facts from every program in the hall, one at a time. */
 function TriviaTile() {
-  const facts = programs.flatMap((p) => p.trivia.map((fact) => ({ title: p.title, fact })));
+  const facts = games.flatMap((g) => g.trivia.map((fact) => ({ title: g.title, fact })));
   const [index, setIndex] = useState(0);
   const current = facts[index];
   return (
@@ -193,7 +235,7 @@ function TriviaTile() {
         {current.fact}
       </p>
       <button type="button" className={styles.nextFact} onClick={() => setIndex((index + 1) % facts.length)}>
-        Another one <span aria-hidden>↻</span>
+        Another one <RefreshIcon size={16} />
       </button>
     </Tile>
   );
