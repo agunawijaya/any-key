@@ -1,0 +1,57 @@
+/* ---------- Chrome: sun-bleached paper by day, indigo night with lanterns after dark ---------- */
+
+.app {
+  --th-paper: #f7eedb;
+  --th-paper-2: #efe1c3;
+  --th-ink: #3a2412;
+  --th-ink-2: #6a4a2b;
+  --th-ochre: #b8661a;
+  --th-on-ochre: #fff6e6;
+  --th-line: rgb(90 56 24 / 0.24);
+  --th-danger: #c2412d;
+  --th-danger-ink: #a5321f;
+  --th-water: #2f86c4;
+  --th-oasis: #2f8c6a;
+  --th-lantern: #ffb347;
+  /* The kit's own tokens, so the top bar and sheets wear the same paper. */
+  --bg: #f4ead4;
+  --bg-2: #eadcbd;
+  --surface: #fbf5e8;
+  --surface-2: #f6ecd7;
+  --ink: #3a2412;
+  --ink-2: #6a4a2b;
+  --ink-3: #7c5b3a;
+  --line: rgb(90 56 24 / 0.16);
+  --line-strong: rgb(90 56 24 / 0.3);
+  --accent: var(--th-ochre);
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--th-ink);
+}
+
+:root[data-theme="dark"] .app {
+  --th-paper: #1a1c47;
+  --th-paper-2: #23265a;
+  --th-ink: #f6e9cd;
+  --th-ink-2: #cdbd9c;
+  --th-ochre: #ffb347;
+  --th-on-ochre: #2a1a08;
+  --th-line: rgb(255 214 150 / 0.2);
+  --th-danger: #ff6b4f;
+  --th-danger-ink: #ff8a70;
+  --th-water: #6cc2ff;
+  --th-oasis: #6fe0b4;
+  --bg: #11122f;
+  --bg-2: #191a42;
+  --surface: #1c1e4b;
+  --surface-2: #23265a;
+  --ink: #f6e9cd;
+  --ink-2: #cdbd9c;
+  --ink-3: #ab9d80;
+  --line: rgb(255 214 150 / 0.14);
+  --line-strong: rgb(255 214 150 / 0.28);
+}
+
+.main {
+  position: relative;
+}

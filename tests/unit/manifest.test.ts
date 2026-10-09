@@ -23,7 +23,8 @@ describe("manifests", () => {
     expect(game.route.startsWith("/")).toBe(true);
   });
 
-  it("lists Desert as coming soon", () => {
-    expect(byId.desert).toMatchObject({ status: "coming-soon", title: "Desert (in design)", route: "/desert" });
+  it("lists Two Humps, the rebuild of Desert, as playable", () => {
+    expect(byId["two-humps"]).toMatchObject({ status: "playable", title: "Two Humps", route: "/two-humps" });
+    expect(byId["two-humps"].inspiredBy).toMatchObject({ originalTitle: "Desert", file: "DESERT.BAS", year: 1982 });
   });
 });

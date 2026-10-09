@@ -9,7 +9,7 @@ This file is excluded from formatters (`.prettierignore`) so parallel sessions d
 | Stickler | `23mtch` | Playable | 6 of 6 | 14 (7 common, 4 rare, 3 legendary) | Daily puzzle, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
 | Outta Here | `escape` | Playable | 6 of 6 | 12 (6 common, 4 rare, 2 legendary) | Daily Escape, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
 | Don't Crater | `lander` | Playable | 6 of 6 | 15 (7 common, 5 rare, 3 legendary) | Daily Drop, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
-| Desert (in design) | `desert` | Coming soon: placeholder manifest only | 0 of 6 | 0 | Not yet | 03 two-humps (next) |
+| Two Humps | `two-humps` | Playable | 6 of 6 | 15 (5 common, 7 rare, 3 legendary) | Daily Crossing, numbered from 2026-10-09 | 03 two-humps (2026-10-09) |
 
 ## Polish candidates
 
@@ -91,3 +91,12 @@ prompts. Items it did fix are not listed.
 - With the Ten-Second slider focused, the digit, F and X keys do nothing.
 - After Forget my data, the kept flag can still carry an emblem that is locked again.
 - W and S move the throttle in Live but not in Free Flight, where S is the scan.
+
+### Two Humps
+
+- The seed sack's drop target is "left of the camel, low on the sand", not the jerboas themselves.
+- On small portrait screens the HUD stacks over much of the scene; the game is designed for landscape.
+- The rival's caravan is drawn further from you than it really is, so a close race still shows two caravans.
+- 2560 × 1440 runs at 53–56 frames a second with a laptop GPU (60 at 1920 × 1080); without a GPU, 20–30.
+- Keys pressed while a turn is still playing out are ignored rather than queued; the cards say "Wait" meanwhile.
+- 1982 mode's `F1`–`F6` submit numbers, which the original's soft keys never did (they typed words).

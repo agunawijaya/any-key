@@ -2,6 +2,7 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { test, type Page } from "@playwright/test";
 import { crashTenSecond, keyringSeed, seed, winClassic } from "../e2e/helpers";
+import { playToTheEnd, settled, takeTheTutorial, tutorialToTheReins } from "../e2e/two-humps-helpers";
 
 /*
  * Every route and key screen, light and dark, at a laptop and a desktop size,
@@ -87,6 +88,54 @@ const SCREENS: Screen[] = [
     },
   },
   { name: "lander-results", path: "/dont-crater", go: crashTenSecond },
+  { name: "two-humps-menu", path: "/two-humps" },
+  { name: "two-humps-pick", path: "/two-humps", go: (page) => page.getByRole("button", { name: /^Crossing/ }).click() },
+  {
+    name: "two-humps-trek",
+    path: "/two-humps",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^Crossing/ }).click();
+      await page.getByRole("button", { name: /Set off/ }).click();
+      await page.keyboard.press("2");
+      await settled(page);
+      await page.waitForTimeout(1500);
+    },
+  },
+  {
+    // The tutorial's dice are fixed, so the camel always runs on after its first gallop.
+    name: "two-humps-roll",
+    path: "/two-humps",
+    go: async (page) => {
+      await page.getByRole("button", { name: /New here/ }).click();
+      await tutorialToTheReins(page);
+      await page.waitForTimeout(1200);
+    },
+  },
+  {
+    name: "two-humps-journal",
+    path: "/two-humps",
+    go: async (page) => {
+      // Shorter pauses: the whole crossing is played before the picture is taken.
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.getByRole("button", { name: /New here/ }).click();
+      await takeTheTutorial(page);
+      await playToTheEnd(page);
+      await page.waitForTimeout(1500);
+    },
+  },
+  { name: "two-humps-map", path: "/two-humps", go: (page) => page.getByRole("button", { name: /^Expedition/ }).click() },
+  {
+    name: "two-humps-1982",
+    path: "/two-humps",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^1982 mode/ }).click();
+      for (const command of ["2", "5", "2"]) {
+        await page.keyboard.type(command);
+        await page.keyboard.press("Enter");
+      }
+    },
+  },
+  { name: "two-humps-records", path: "/two-humps", go: (page) => page.getByRole("button", { name: /Records and settings/ }).click() },
 ];
 
 for (const screen of SCREENS) {

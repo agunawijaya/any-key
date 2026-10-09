@@ -8,6 +8,7 @@ const GAMES = [
   { route: "/stickler", title: "Stickler" },
   { route: "/outta-here", title: "Outta Here" },
   { route: "/dont-crater", title: "Don't Crater" },
+  { route: "/two-humps", title: "Two Humps" },
 ];
 
 test.beforeEach(async ({ page }) => seed(page));

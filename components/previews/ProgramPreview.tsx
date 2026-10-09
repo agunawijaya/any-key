@@ -4,6 +4,7 @@ import { DontCraterPreview } from "./DontCraterPreview";
 import { MusicPreview } from "./MusicPreview";
 import { OuttaPreview } from "./OuttaPreview";
 import { SticklerPreview } from "./SticklerPreview";
+import { TwoHumpsPreview } from "./TwoHumpsPreview";
 
 /** Each program brings its own living preview; the halls just place it. */
 export function ProgramPreview({ id }: { id: string }) {
@@ -16,6 +17,8 @@ export function ProgramPreview({ id }: { id: string }) {
       return <OuttaPreview />;
     case "lander":
       return <DontCraterPreview />;
+    case "two-humps":
+      return <TwoHumpsPreview />;
     default: {
       const game = gameById(id);
       return game ? <ComingSoonPreview game={game} /> : null;

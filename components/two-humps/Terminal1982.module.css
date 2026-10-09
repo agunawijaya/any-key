@@ -1,0 +1,252 @@
+.wrap {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 14px;
+  height: calc(100dvh - var(--shell-bar-h, 72px));
+  min-height: 560px;
+  padding: 16px clamp(16px, 2.4vw, 40px) 18px;
+  background:
+    radial-gradient(90% 60% at 50% 30%, color-mix(in srgb, var(--th-ochre) 8%, transparent), transparent 70%),
+    var(--bg);
+  color: var(--th-ink);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.back {
+  flex: none;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--th-line);
+  background: transparent;
+  color: var(--th-ink);
+  font: 600 14px/1 var(--font-geist-sans);
+  cursor: pointer;
+}
+
+.back:focus-visible,
+.fkey:focus-visible {
+  outline: 3px solid var(--th-ochre);
+  outline-offset: 2px;
+}
+
+.note {
+  margin: 0;
+  max-width: 92ch;
+  font: 500 13.5px/1.45 var(--font-geist-sans);
+  color: var(--th-ink-2);
+}
+
+/* ---------- An IBM colour display: beige case, black glass, grey text ---------- */
+
+.monitor {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  width: min(100%, 1180px);
+  min-height: 0;
+  margin: 0 auto;
+  padding: clamp(14px, 1.8vw, 26px) clamp(14px, 1.8vw, 26px) 10px;
+  border-radius: 26px 26px 18px 18px;
+  background: linear-gradient(180deg, #ddd5c3, #cbc2ad);
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.6),
+    inset 0 -3px 0 rgb(0 0 0 / 0.12),
+    0 30px 60px -30px rgb(0 0 0 / 0.6);
+}
+
+:root[data-theme="dark"] .monitor {
+  background: linear-gradient(180deg, #b9b19f, #a39a86);
+}
+
+.crt {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  padding: clamp(14px, 2vw, 28px) clamp(16px, 2.4vw, 34px) 12px;
+  border-radius: 18px;
+  background: radial-gradient(120% 100% at 50% 40%, #12141a 0%, #050506 80%);
+  box-shadow:
+    inset 0 0 0 6px #2a2824,
+    inset 0 0 50px rgb(0 0 0 / 0.9);
+  overflow: hidden;
+  cursor: text;
+}
+
+.crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.22) 0 1px, transparent 1px 3px),
+    radial-gradient(120% 100% at 50% 50%, transparent 62%, rgb(0 0 0 / 0.5) 100%);
+}
+
+.screen {
+  min-height: 0;
+  overflow-y: auto;
+  color: #d9dbe0;
+  font-size: clamp(19px, 1.6vw, 28px);
+  line-height: 1.12;
+  text-shadow:
+    0 0 5px rgb(220 226 255 / 0.45),
+    0 0 16px rgb(160 180 255 / 0.18);
+  scrollbar-width: none;
+}
+
+.line {
+  white-space: pre-wrap;
+}
+
+.prompt {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: pre;
+}
+
+.input {
+  min-width: 0.2ch;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-shadow: inherit;
+  caret-color: transparent;
+}
+
+/* The blinking block is the focus mark on this screen. */
+.input:focus,
+.input:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.cursor {
+  animation: blink 1.06s steps(1) infinite;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor {
+    animation: none;
+  }
+}
+
+:root[data-motion="reduce"] .cursor {
+  animation: none;
+}
+
+/* Row 25: the function keys, the way BASICA showed them, number then label in reverse. */
+.keyLine {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  padding-top: 10px;
+  font-size: clamp(17px, 1.4vw, 24px);
+}
+
+.fkey {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #d9dbe0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fkey:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.fnum {
+  text-shadow: 0 0 5px rgb(220 226 255 / 0.45);
+}
+
+.flabel {
+  padding: 0 4px;
+  background: #c9ccd3;
+  color: #050506;
+}
+
+.fkey:not(:disabled):hover .flabel {
+  background: #fff;
+}
+
+.chin {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 6px 0;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: #3b3a36;
+  color: #e9e3d4;
+  font: 700 11px/1.2 var(--font-geist-mono), monospace;
+  letter-spacing: 0.2em;
+}
+
+.led {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #47d16a;
+  box-shadow: 0 0 6px #47d16a;
+}
+
+/* ---------- What BASIC doesn't show ---------- */
+
+.hidden {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px dashed var(--th-line);
+  background: var(--th-paper);
+}
+
+.hidden h2 {
+  margin: 0 0 6px;
+  font: 700 11px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--th-ochre);
+}
+
+.hiddenNote {
+  margin: 0 0 4px;
+  font: 600 14px/1.4 var(--font-geist-sans);
+}
+
+.hiddenFacts {
+  margin: 0;
+  font: 500 12.5px/1.4 var(--font-geist-mono), monospace;
+  color: var(--th-ink-2);
+}
+
+@media (max-width: 900px) {
+  .head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

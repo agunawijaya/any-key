@@ -1,0 +1,553 @@
+/* ---------- Panels: field-journal paper by day, indigo with lantern light at night ---------- */
+
+.panel,
+.route,
+.supplies,
+.card,
+.roll,
+.event {
+  background: color-mix(in srgb, var(--th-paper) 93%, transparent);
+  border: 1px solid var(--th-line);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, var(--th-paper) 93%, transparent),
+    inset 0 0 0 4px var(--th-line),
+    0 14px 34px -18px rgb(40 18 0 / 0.55);
+  backdrop-filter: blur(8px) saturate(1.1);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
+  color: var(--th-ink);
+}
+
+:root[data-theme="dark"] .route,
+:root[data-theme="dark"] .supplies,
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .roll,
+:root[data-theme="dark"] .event {
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, var(--th-paper) 93%, transparent),
+    inset 0 0 0 4px var(--th-line),
+    0 14px 40px -16px rgb(0 0 20 / 0.8);
+}
+
+/* ---------- The route ---------- */
+
+.route {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 26px;
+  border-radius: 16px;
+  padding: 10px 24px;
+}
+
+.track {
+  position: relative;
+  height: 7px;
+  margin: 18px 6px 22px;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--th-ink) 12%, transparent);
+}
+
+.routeMiles {
+  display: grid;
+  margin: 0;
+  line-height: 1;
+}
+
+.routeMiles strong {
+  font: 800 30px/0.9 var(--font-bricolage);
+  letter-spacing: -0.02em;
+}
+
+.routeMiles span {
+  font: 600 12px/1.4 var(--font-geist-sans);
+  color: var(--th-ink-2);
+}
+
+.done {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 99px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--th-ochre) 55%, transparent), var(--th-ochre));
+}
+
+.danger {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  border-radius: 99px;
+  background: repeating-linear-gradient(-45deg, var(--th-danger) 0 6px, color-mix(in srgb, var(--th-danger) 60%, transparent) 6px 12px);
+  opacity: 0.85;
+}
+
+.tick {
+  position: absolute;
+  top: 12px;
+  width: 1px;
+  height: 6px;
+  background: color-mix(in srgb, var(--th-ink) 35%, transparent);
+  transform: translateX(-50%);
+}
+
+.tick[data-major] {
+  height: 9px;
+}
+
+.tickLabel {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font: 500 11px/1 var(--font-geist-mono), monospace;
+  color: var(--th-ink-2);
+}
+
+.oasis,
+.pursuer,
+.camel,
+.finish {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+}
+
+.oasis {
+  top: -14px;
+  color: var(--th-oasis);
+}
+
+.pursuer,
+.camel {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--th-paper);
+  box-shadow: 0 3px 10px -4px rgb(0 0 0 / 0.5);
+}
+
+.pursuer {
+  background: var(--th-danger);
+  color: #fff8ec;
+}
+
+.camel {
+  width: 38px;
+  height: 38px;
+  background: var(--th-ochre);
+  color: var(--th-on-ochre);
+}
+
+.finish {
+  color: var(--th-ink);
+  top: -12px;
+}
+
+.gap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  max-width: 150px;
+  font: 600 12px/1.25 var(--font-geist-sans);
+  color: var(--th-danger-ink);
+}
+
+.gap strong {
+  display: block;
+  font: 800 18px/1 var(--font-bricolage);
+}
+
+/* ---------- Supplies ---------- */
+
+.supplies {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+  border-radius: 16px;
+  padding: 12px 20px;
+}
+
+.supply {
+  display: grid;
+  gap: 8px;
+}
+
+.supplyLabel {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: 700 11px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--th-ink-2);
+}
+
+.pips,
+.bars {
+  display: flex;
+  gap: 3px;
+}
+
+.drop,
+.hump {
+  color: color-mix(in srgb, var(--th-ink) 18%, transparent);
+}
+
+.drop[data-full] {
+  color: var(--th-water);
+}
+
+.hump[data-full] {
+  color: var(--th-ochre);
+}
+
+.bar {
+  width: 18px;
+  height: 10px;
+  margin-top: 3px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--th-ink) 14%, transparent);
+}
+
+.bar[data-full] {
+  background: var(--th-water);
+}
+
+.bar[data-full][data-low] {
+  background: var(--th-danger);
+}
+
+/* ---------- Commands ---------- */
+
+.commands {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 3px;
+  width: clamp(166px, 12.6vw, 224px);
+  padding: 9px 12px 10px;
+  border-radius: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-right: 26px;
+}
+
+.cardGain {
+  font: 600 11px/1.25 var(--font-geist-mono), monospace;
+  color: var(--th-danger-ink);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.card:focus-visible {
+  outline: 3px solid var(--th-ochre);
+  outline-offset: 3px;
+}
+
+.card[aria-pressed="true"] {
+  transform: translateY(-8px);
+  border: 2px solid var(--th-ochre);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, var(--th-paper) 93%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--th-ochre) 22%, transparent),
+    0 20px 40px -18px rgb(40 18 0 / 0.6);
+}
+
+.key {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border-radius: 6px;
+  border: 1px solid var(--th-line);
+  font: 700 12px/1 var(--font-geist-mono), monospace;
+  color: var(--th-ink-2);
+  background: color-mix(in srgb, var(--th-ink) 5%, transparent);
+}
+
+.cardIcon {
+  color: var(--th-ochre);
+}
+
+.cardTitle {
+  font: 800 16.5px/1.1 var(--font-bricolage);
+  letter-spacing: -0.01em;
+}
+
+.cardPreview {
+  font: 500 12px/1.3 var(--font-geist-sans);
+  color: var(--th-ink-2);
+}
+
+.card[aria-pressed="true"] .cardPreview {
+  color: var(--th-ink);
+  font-weight: 600;
+}
+
+/* ---------- On a roll ---------- */
+
+.roll {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "dial kicker"
+    "dial text"
+    "reins reins";
+  align-items: center;
+  column-gap: 14px;
+  row-gap: 4px;
+  width: min(430px, calc(100vw - 32px));
+  padding: 16px 18px;
+  border-radius: 18px;
+}
+
+.rollKicker {
+  grid-area: kicker;
+  font: 700 11px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--th-ochre);
+}
+
+.rollDial {
+  grid-area: dial;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: conic-gradient(var(--th-ochre) calc(var(--chance) * 360deg), color-mix(in srgb, var(--th-ink) 12%, transparent) 0);
+}
+
+.rollDial span {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--th-paper);
+  font: 800 15px/1 var(--font-bricolage);
+}
+
+.rollText {
+  grid-area: text;
+  font: 500 13.5px/1.35 var(--font-geist-sans);
+  color: var(--th-ink-2);
+}
+
+.rollText strong {
+  color: var(--th-ink);
+}
+
+.reins {
+  grid-area: reins;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--th-line);
+  font: 700 14px/1 var(--font-geist-sans);
+}
+
+.reins kbd {
+  margin-left: auto;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--th-line);
+  font: 700 12px/1 var(--font-geist-mono), monospace;
+  background: color-mix(in srgb, var(--th-ink) 6%, transparent);
+}
+
+/* ---------- Event vignettes ---------- */
+
+.event {
+  width: min(440px, 90vw);
+  padding: 22px 26px;
+  border-radius: 20px;
+}
+
+.eventKicker {
+  margin: 0 0 6px;
+  font: 700 11px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--th-ochre);
+}
+
+.eventTitle {
+  margin: 0 0 8px;
+  font: 800 26px/1.05 var(--font-bricolage);
+  letter-spacing: -0.015em;
+}
+
+.eventBody {
+  font: 500 15px/1.45 var(--font-geist-sans);
+  color: var(--th-ink-2);
+}
+
+.eventBody p {
+  margin: 0;
+}
+
+.eventActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ---------- States ---------- */
+
+.oasis[data-dry] {
+  color: color-mix(in srgb, var(--th-ink) 40%, transparent);
+}
+
+.oasis[data-dry]::after {
+  content: "";
+  position: absolute;
+  inset: 45% -2px auto;
+  height: 2px;
+  background: var(--th-danger);
+  transform: rotate(-30deg);
+}
+
+.pursuer[data-kind="rival"] {
+  background: #7a2e8c;
+}
+
+.gap[data-kind="rival"] {
+  color: var(--th-ink-2);
+}
+
+.clock {
+  font: 800 18px/1 var(--font-geist-mono), monospace;
+  letter-spacing: -0.02em;
+}
+
+.bars[data-cold] .bar {
+  background: color-mix(in srgb, var(--th-water) 45%, #e8f4ff);
+}
+
+.card[aria-disabled="true"] {
+  opacity: 0.55;
+}
+
+.card[data-unready] {
+  opacity: 0.8;
+  transform: none;
+}
+
+.card[data-dim] {
+  opacity: 0.35;
+}
+
+.card[data-shake] {
+  animation: refuse 0.42s ease;
+  border: 2px solid var(--th-danger);
+  opacity: 1;
+}
+
+.card[data-shake] .cardPreview {
+  color: var(--th-danger-ink);
+  font-weight: 700;
+}
+
+@keyframes refuse {
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+/* ---------- Run-on decision ---------- */
+
+.rollWarn {
+  color: var(--th-danger-ink);
+}
+
+.rollActions {
+  grid-area: reins;
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--th-line);
+}
+
+.rollButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border-radius: 11px;
+  border: 1px solid var(--th-line);
+  background: color-mix(in srgb, var(--th-ink) 5%, transparent);
+  color: var(--th-ink);
+  font: 700 14px/1 var(--font-geist-sans);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rollButton kbd {
+  padding: 3px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--th-line);
+  font: 700 11px/1 var(--font-geist-mono), monospace;
+}
+
+.rollButton[data-danger] {
+  border-color: var(--th-danger);
+  color: var(--th-danger-ink);
+}
+
+.rollPrimary {
+  margin-left: auto;
+  background: var(--th-ochre);
+  border-color: transparent;
+  color: var(--th-on-ochre);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--th-ochre) 55%, #000);
+}
+
+.rollPrimary kbd {
+  border-color: color-mix(in srgb, var(--th-on-ochre) 40%, transparent);
+}
+
+.rollButton:focus-visible {
+  outline: 3px solid var(--th-ochre);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card[data-shake] {
+    animation: none;
+  }
+}

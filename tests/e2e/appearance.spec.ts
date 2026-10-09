@@ -24,7 +24,7 @@ test("appearance switches live between Light, Dark and System, and is remembered
   await expect(html).toHaveAttribute("data-theme", "dark");
 });
 
-test("the Hall shows the Keyring button, today's dailies and the game in design, in every style", async ({ page }) => {
+test("the Hall shows the Keyring button, today's dailies and the newest game, in every style", async ({ page }) => {
   await seed(page);
   await page.goto("/");
   await expect(page.getByRole("link", { name: /Keyring/ })).toBeVisible();
@@ -33,7 +33,7 @@ test("the Hall shows the Keyring button, today's dailies and the game in design,
     await page.getByRole("button", { name: style, exact: true }).click();
     const view = page.locator(`[data-view="${style.toLowerCase()}"]`);
     // Orbit draws its planets, so the name is the planet's label rather than text on the page.
-    const desert = style === "Orbit" ? view.getByRole("button", { name: /Desert \(in design\)/ }) : view.getByText("Desert (in design)");
-    await expect(desert.first()).toBeVisible();
+    const newest = style === "Orbit" ? view.getByRole("button", { name: /Two Humps/ }) : view.getByText("Two Humps");
+    await expect(newest.first()).toBeVisible();
   }
 });

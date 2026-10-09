@@ -55,7 +55,7 @@ Every game works the same way (`docs/NAVIGATION.md`):
 | **Stickler** (`/stickler`) | `23MTCH.BAS`, Bob Albrecht / People's Computer Company, DEC 1973 | Playable |
 | **Outta Here** (`/outta-here`) | `ESCAPE.BAS`, author unknown (TRS-80), c. 1980 | Playable |
 | **Don't Crater** (`/dont-crater`) | `LANDER.BAS`, Simutek (TRS-80), 1979 | Playable |
-| **Desert (in design)** | `DESERT.BAS`, IPCO Personal Computer Owners Group, 1982 | In design |
+| **Two Humps** (`/two-humps`) | `DESERT.BAS`, IPCO Personal Computer Owners Group (IBM PC), 1982 | Playable |
 
 ### Bop Box
 
@@ -99,6 +99,20 @@ over; design the flag your astronaut plants; or play the 1979 mode, which runs t
 arithmetic turn for turn, quirks included. A fuel setting (Generous, Standard, Tight) applies to every
 mode but 1979. The docs are in `docs/lander/`.
 
+### Two Humps
+
+Forty miles across the real Gobi on a Bactrian camel with a mind of its own. The 1982 IBM PC trek,
+rebuilt as a painted side-on diorama whose sun follows every turn: the light theme sets off at dawn, the
+dark one at dusk under the Milky Way. Choose who is behind you: the Haboob, a wall of sand that never
+sleeps; Captain Bluster's rival caravan, which drinks your oases dry; or the Ladle Gang, five pygmy
+jerboas who sleep all day, hunt all night and stop for seeds. Every command shows its odds before you
+pick it, and when the camel runs on by itself (the original's hidden bug, made fair) you decide whether
+to let it run or pull the reins. Play a Crossing on Chill, Normal or Hard, a five-leg Expedition through
+Khermen Tsav, Khongoryn Els, Bayanzag, Yolyn Am and a ger camp, a shareable Daily Crossing, or the 1982
+mode, which runs the original program turn for turn, bugs included. Nobody gets hurt: lose and you
+shelter from the storm or stay for porridge; win and your pursuer comes to the party. The docs are in
+`docs/two-humps/`.
+
 ## Project layout
 
 ```
@@ -118,6 +132,8 @@ lib/outta/           Outta Here: engine, levels, campaign, daily, bot, 1980 simu
 components/outta/    Outta Here lobby, canvas renderer, screens map, Versus, 1980 terminal
 lib/lander/          Don't Crater: worlds, flight model, hoverslam solver, missions, 1979 maths, Free Flight terrain
 components/dontcrater/ Don't Crater lobby, canvas scenes, flight screens, 1979 terminal
+lib/two-humps/       Two Humps: trek engine, pursuers, 1982 program, bots, Expedition, daily, progress
+components/two-humps/ Two Humps menu, pursuer pick, trek screen, Canvas 2D diorama, map, 1982 terminal
 docs/ARCHITECTURE.md How the app is built, and the folder map of every game
 docs/NAVIGATION.md   The navigation standard
 docs/adr/            Architecture decisions
@@ -154,6 +170,7 @@ npm run check:audio      # renders every style offline and flags silence or clip
 npm run check:stickler   # plays thousands of Stickler games to prove the maths
 npm run check:outta      # Outta Here's rules, the 1980 simulation, and human-like bots on every level and screen
 npm run check:lander     # 1979 maths; every world, mission, Daily Drop and Free Flight site can be landed by human-like pilots
+npm run check:two-humps  # Two Humps' balance against its targets, every Expedition leg, the Daily, and the 1982 program's numbers
 npm run build:soundfont -- path/to/MuseScore_General.sf3   # rebuild public/soundfont/bopbox.sf3
 ```
 
@@ -171,5 +188,5 @@ Third-party work, with thanks:
 - [SpessaSynth](https://github.com/spessasus/spessasynth_lib) SoundFont synthesizer (Apache-2.0).
 - [VexFlow](https://github.com/vexflow/vexflow) music engraving (MIT).
 - [Mermaid](https://github.com/mermaid-js/mermaid) diagrams and [marked](https://github.com/markedjs/marked) Markdown (MIT).
-- [VT323](https://fonts.google.com/specimen/VT323) font for Stickler's 1981 mode and Don't Crater's 1979 mode (SIL Open Font License).
+- [VT323](https://fonts.google.com/specimen/VT323) font for Stickler's 1981 mode, Don't Crater's 1979 mode and Two Humps' 1982 mode (SIL Open Font License).
 - Psyche's size and gravity are public figures; Don't Crater is not affiliated with NASA or the Psyche mission.

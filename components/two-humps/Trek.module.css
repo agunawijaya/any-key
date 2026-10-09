@@ -1,0 +1,439 @@
+.trek {
+  position: relative;
+}
+
+.stage {
+  position: relative;
+  height: calc(100dvh - var(--shell-bar-h, 72px));
+  min-height: 560px;
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* An invisible hit area over the camel: click it to pull the reins. */
+.camelHit {
+  position: absolute;
+  left: 49%;
+  top: 52%;
+  width: 16%;
+  height: 30%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+
+.camelHit:disabled {
+  cursor: default;
+  pointer-events: none;
+}
+
+.hudTop {
+  position: absolute;
+  top: 14px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.hudBottom {
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  bottom: 16px;
+}
+
+.legLine {
+  position: absolute;
+  top: 118px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--th-paper) 88%, transparent);
+  border: 1px solid var(--th-line);
+  font: 500 14px/1.3 var(--font-geist-sans);
+  color: var(--th-ink-2);
+  white-space: nowrap;
+}
+
+.legLine strong {
+  color: var(--th-ink);
+}
+
+.cardSpot {
+  position: absolute;
+  top: 22%;
+  left: 4%;
+}
+
+.rollSpot {
+  position: absolute;
+  right: max(24px, 6vw);
+  top: 28%;
+}
+
+.skip {
+  margin-top: 10px !important;
+  font: 500 12px/1 var(--font-geist-sans);
+  color: var(--th-ink-2);
+}
+
+.skip kbd,
+.action kbd,
+.seeds kbd {
+  padding: 3px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--th-line);
+  font: 700 11px/1 var(--font-geist-mono), monospace;
+  color: var(--th-ink-2);
+}
+
+/* ---------- Seeds (against the Ladle Gang) ---------- */
+
+.seeds {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: center;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--th-line);
+  background: color-mix(in srgb, var(--th-ochre) 14%, transparent);
+  color: var(--th-ink);
+  font: 600 13px/1 var(--font-geist-sans);
+  cursor: pointer;
+}
+
+.seeds strong {
+  font: 800 16px/1 var(--font-bricolage);
+}
+
+.seeds:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.seeds:focus-visible,
+.action:focus-visible {
+  outline: 3px solid var(--th-ochre);
+  outline-offset: 2px;
+}
+
+/* ---------- Buttons ---------- */
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--th-line);
+  background: color-mix(in srgb, var(--th-ink) 5%, transparent);
+  color: var(--th-ink);
+  font: 700 14px/1 var(--font-geist-sans);
+  cursor: pointer;
+}
+
+.primary {
+  background: var(--th-ochre);
+  border-color: transparent;
+  color: var(--th-on-ochre);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--th-ochre) 55%, #000);
+}
+
+.primary kbd {
+  color: inherit;
+  border-color: color-mix(in srgb, var(--th-on-ochre) 40%, transparent);
+}
+
+/* ---------- The tutorial coach ---------- */
+
+.coach {
+  position: absolute;
+  left: 24px;
+  top: 172px;
+  width: min(440px, calc(100vw - 48px));
+  margin: 0;
+  padding: 16px 20px;
+  border-radius: 16px;
+  background: var(--th-ink);
+  color: var(--th-paper);
+  font: 500 15px/1.45 var(--font-geist-sans);
+  box-shadow: 0 16px 40px -16px rgb(0 0 0 / 0.6);
+}
+
+.coach p {
+  margin: 0;
+}
+
+.coachStep {
+  margin-bottom: 4px !important;
+  font: 700 11px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+/* ---------- The journal page ---------- */
+
+.journalSpot {
+  position: absolute;
+  top: 24px;
+  left: 32px;
+  max-height: calc(100% - 48px);
+  overflow: auto;
+}
+
+.journal {
+  width: min(560px, calc(100vw - 64px));
+  padding: 26px 30px 24px;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--th-paper) 95%, transparent);
+  border: 1px solid var(--th-line);
+  box-shadow:
+    inset 0 0 0 3px color-mix(in srgb, var(--th-paper) 95%, transparent),
+    inset 0 0 0 4px var(--th-line),
+    0 24px 60px -24px rgb(0 0 0 / 0.6);
+  color: var(--th-ink);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.journalKicker {
+  margin: 0 0 8px;
+  font: 700 11px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--th-ochre);
+}
+
+.journalTitle {
+  margin: 0;
+  font: 800 48px/0.95 var(--font-bricolage);
+  letter-spacing: -0.03em;
+}
+
+.journalTitle em {
+  font-family: var(--font-instrument);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--th-ochre);
+}
+
+.journalText {
+  margin: 12px 0 14px;
+  font: 500 16px/1.5 var(--font-geist-sans);
+  color: var(--th-ink-2);
+}
+
+.journalPage {
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--th-ochre) 9%, transparent);
+  font: italic 400 17px/1.45 var(--font-instrument);
+  color: var(--th-ink);
+}
+
+.journalPage p {
+  margin: 0 0 6px;
+}
+
+.journalStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 12px 0;
+  border-top: 1px dashed var(--th-line);
+  border-bottom: 1px dashed var(--th-line);
+}
+
+.journalStats div {
+  display: grid;
+  gap: 4px;
+}
+
+.journalStats dt {
+  font: 700 10.5px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--th-ink-2);
+}
+
+.journalStats dd {
+  margin: 0;
+  font: 800 21px/1 var(--font-bricolage);
+}
+
+.caps {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.caps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.caps span {
+  display: grid;
+}
+
+.caps small {
+  color: var(--th-ink-2);
+}
+
+.journalExtras,
+.journalActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.journalExtras {
+  margin-bottom: 8px;
+}
+
+/* Spoken summaries for screen readers; the picture says the same for sighted players. */
+.said {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .hudTop {
+    flex-direction: column;
+    left: 12px;
+    right: 12px;
+  }
+
+  .rollSpot,
+  .cardSpot {
+    left: 50%;
+    right: auto;
+    top: auto;
+    bottom: 170px;
+    transform: translateX(-50%);
+  }
+
+  .hudBottom {
+    left: 8px;
+    right: 8px;
+    overflow-x: auto;
+  }
+
+  .journalSpot {
+    left: 12px;
+    right: 12px;
+    top: 12px;
+  }
+}
+
+.coachActions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.coachLink {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: 600 13px/1 var(--font-geist-sans);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.coachLink:focus-visible {
+  outline: 2px solid var(--th-ochre);
+  outline-offset: 3px;
+}
+
+/* ---------- The seed sack, dragged onto the gang ---------- */
+
+.seedGhost {
+  position: absolute;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--th-paper) 85%, transparent);
+  border: 2px dashed var(--th-line);
+  color: var(--th-ochre);
+  pointer-events: none;
+}
+
+.seedGhost[data-over] {
+  border-color: var(--th-ochre);
+  border-style: solid;
+  transform: scale(1.15);
+}
+
+/* ---------- The storm on top of you: the gauges flutter in the wind ---------- */
+
+.trek[data-storm] .hudTop {
+  animation: flutter 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes flutter {
+  from {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  to {
+    transform: translate(1.5px, -1px) rotate(0.25deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trek[data-storm] .hudTop {
+    animation: none;
+  }
+}
+
+:root[data-motion="reduce"] .trek[data-storm] .hudTop {
+  animation: none;
+}
+
+/* Reduced motion: a soft veil over each jump from one turn to the next. */
+.fade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--bg);
+  animation: veil 0.6s ease-out forwards;
+}
+
+@keyframes veil {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 0;
+  }
+}

@@ -32,6 +32,7 @@ Decisions behind these choices are in `docs/adr/`.
 | `/stickler` | `app/stickler/page.tsx` | Stickler |
 | `/outta-here` | `app/outta-here/page.tsx` | Outta Here |
 | `/dont-crater` | `app/dont-crater/page.tsx` | Don't Crater |
+| `/two-humps` | `app/two-humps/page.tsx` | Two Humps |
 
 Inside a game the hash says where you are: no hash is the game menu, `#play` is a round, `#story` is the Story
 tab. `docs/NAVIGATION.md` is the standard every game follows.
@@ -220,6 +221,7 @@ All saved data goes through `lib/kit/save.ts`.
 | Stickler | `anykey.23mtch.save` | 2 | v2: achievements move to the Keyring |
 | Outta Here | `anykey.escape.save` | 2 | v2: achievements move to the Keyring |
 | Don't Crater | `anykey.lander.save` | 3 | v2: achievements move to the Keyring; v3: flag emblems change from emoji to SVG emblem ids |
+| Two Humps | `anykey.two-humps.save` | 1 | None yet: born on the kit |
 
 `tests/unit/migration.test.ts` runs real version-1 saves (`tests/fixtures/*.v1.json`) through every migration.
 
@@ -253,7 +255,7 @@ new code and offers `float`, `int`, `pick`, `shuffle` and `fork`.
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run test` | Vitest: the kit (RNG, dailies, storage, migrations, Keyring, manifests) |
 | `npm run check:guardrails` | `scripts/guardrails.ts`: no raster art outside `docs/` and the sound bank, no emoji in `app/` or `components/`, no network URLs in shipped code |
-| `npm run check:music`, `check:audio`, `check:stickler`, `check:outta`, `check:lander` | Each game's own simulations and fixtures |
+| `npm run check:music`, `check:audio`, `check:stickler`, `check:outta`, `check:lander`, `check:two-humps` | Each game's own simulations and fixtures |
 | `npm run e2e` | `next build`, then Playwright on port 3211 (`tests/e2e/`) |
 | `npm run shots` | `next build`, then screenshots of every key screen into `docs/media/shots/` |
 
@@ -263,7 +265,7 @@ because `next dev` allows only one dev server per folder.
 ## Folder map
 
 One row per game. New games use one id everywhere: `app/<id>/`, `lib/<id>/`, `components/<id>/`, `docs/<id>/`.
-The four below predate that rule and keep their folders.
+The first four games predate that rule and keep their folders.
 
 | id | route | lib/ | components/ | docs/ | preview |
 |---|---|---|---|---|---|
@@ -271,7 +273,7 @@ The four below predate that rule and keep their folders.
 | `23mtch` | `/stickler` | `lib/stickler` | `components/stickler` | `docs/23mtch` | `components/previews/SticklerPreview.tsx` |
 | `escape` | `/outta-here` | `lib/outta` | `components/outta` | `docs/escape` | `components/previews/OuttaPreview.tsx` |
 | `lander` | `/dont-crater` | `lib/lander` | `components/dontcrater` | `docs/lander` | `components/previews/DontCraterPreview.tsx` |
-| `desert` | `/desert` (not built) | `lib/desert` (manifest only) | none yet | none yet | `components/previews/ComingSoonPreview.tsx` |
+| `two-humps` | `/two-humps` | `lib/two-humps` | `components/two-humps` | `docs/two-humps` | `components/previews/TwoHumpsPreview.tsx` |
 
 The rest of the tree:
 
