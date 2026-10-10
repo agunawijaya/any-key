@@ -8,6 +8,12 @@ import { idealPlan } from "./solver";
  * keeps only about 7% of it (never below 60% of the standard tank): still
  * winnable, as the human-pilot tests in scripts/check-lander.ts show, but
  * with no fuel to waste.
+ *
+ * The fuel row on the game menu has a fourth choice, Unlimited, for Free
+ * Flight only: the Standard tank, filled again each time it runs dry, with the
+ * refills counted so you can watch yourself need fewer. Every other mode flies
+ * the Standard tank when it is chosen, so missions keep their meaning and the
+ * Daily Drop stays the same for everyone.
  */
 
 export type Difficulty = "generous" | "standard" | "tight";
@@ -20,6 +26,17 @@ export const DIFFICULTIES: { id: Difficulty; name: string; how: string; shareGly
 ];
 
 export const difficultyOf = (id: Difficulty) => DIFFICULTIES.find((d) => d.id === id)!;
+
+/** The fuel row on the game menu: a difficulty, or unlimited fuel. */
+export type FuelChoice = Difficulty | "unlimited";
+
+export const FUEL_CHOICES: { id: FuelChoice; name: string; how: string }[] = [
+  ...DIFFICULTIES,
+  { id: "unlimited", name: "Unlimited", how: "Free Flight only: an empty tank is filled again, and the card counts the refills. Other modes fly the Standard tank." },
+];
+
+/** The tank every mode but Free Flight flies for a choice on the fuel row. */
+export const tankDifficulty = (choice: FuelChoice): Difficulty => (choice === "unlimited" ? "standard" : choice);
 
 export const GENEROUS = 1.3;
 export const TIGHT_MARGIN = 0.07;

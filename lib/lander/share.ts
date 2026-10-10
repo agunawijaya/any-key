@@ -49,10 +49,13 @@ export function freeFlightShare(f: {
   scanned: boolean;
   assisted: boolean;
   difficulty: Difficulty;
+  /** Refills on unlimited fuel; absent on a limited tank. */
+  refills?: number;
 }) {
   const g = GRADES[f.grade];
+  const fuel = f.refills === undefined ? `⛽ ${Math.round(f.fuelPct * 100)}%${fuelTag(f.difficulty)}` : `⛽ ♾️ ${f.refills === 0 ? "no refill" : `${f.refills} refill${f.refills === 1 ? "" : "s"}`}`;
   const where = f.detail ? ` · ${f.detail.split(" · ").slice(1).join(" · ")}` : "";
   const speed = f.speed === null ? "" : fmtSpeed(f.speed);
   const aim = f.stands ? (f.onTarget ? " · 🎯" : ` · ↪️ ${fmtKm(f.missBy)} off`) : "";
-  return `Don't Crater · Free Flight · ${f.site}\n${f.world.shareGlyph} ${f.world.name} · ${g.shareGlyph} ${speed}${where}${aim} · ⛽ ${Math.round(f.fuelPct * 100)}%${fuelTag(f.difficulty)}${f.scanned ? " · 🛰️" : ""}${f.assisted ? " · 🛟" : ""}\n${throttleLine(f.samples)}${g.shareGlyph}`;
+  return `Don't Crater · Free Flight · ${f.site}\n${f.world.shareGlyph} ${f.world.name} · ${g.shareGlyph} ${speed}${where}${aim} · ${fuel}${f.scanned ? " · 🛰️" : ""}${f.assisted ? " · 🛟" : ""}\n${throttleLine(f.samples)}${g.shareGlyph}`;
 }

@@ -31,7 +31,7 @@ For how the original works, see [ORIGINAL-ARCHITECTURE.md](ORIGINAL-ARCHITECTURE
 | The picture says "wreck" from 19 km/h, the text says "crash" from 20 | One cut-off, 20 km/h, everywhere but 1979 mode | A modern verdict should not contradict itself |
 | A hidden flag for landings at 5 km/h or less | Your own flag, designed on the game menu, planted by your astronaut under 5 km/h | The best moment in the original deserved to be yours |
 | No help beyond a page of instructions | A **burn guide** (the stop point), callouts, a **landing assist**, final-approach advice and a **flight recorder** that compares your flight with a perfect one | Players born decades later need to see the physics to learn it |
-| One tank per world | **Fuel**: Generous, Standard (the original tanks) or Tight, in every mode but 1979 mode | Room to learn, and a harder setting for experts |
+| One tank per world | **Fuel**: Generous, Standard (the original tanks) or Tight, in every mode but 1979 mode; and Unlimited in Free Flight, which refills the tank and counts the refills | Room to learn, a harder setting for experts, and a no-pressure way to practise that still shows progress |
 | The clock never resets between games | Every flight has its own clock (1979 mode keeps the old one) | A result should describe one flight |
 | A refused burn flashes a warning twenty times | The throttle simply can't leave 0–100 | Nothing to refuse with a lever |
 | "Try again?" with 1 or 2 | A result card with Fly again, Game menu and Back to the Hall, plus Share | The collection's navigation standard |
@@ -40,7 +40,7 @@ For how the original works, see [ORIGINAL-ARCHITECTURE.md](ORIGINAL-ARCHITECTURE
 
 - **Missions:** ten landings in order with stars, each with a twist: cargo, a short tank, a hot entry, dead instruments, a needle-fine touchdown.
 - **Daily Drop:** a world, entry speed, fuel load and cargo chosen from the date, the same for everyone, checked to be fair, with a shareable result.
-- **Free Flight:** the 1979 equations in two dimensions. The lander leans, drifts sideways and must stand upright on flat ground among rocks, on generated sites or six named ones, with a planned target and a scan assist.
+- **Free Flight:** the 1979 equations in two dimensions. The lander leans, drifts sideways, trims the drift with side jets and must stand upright on flat ground among rocks, on generated sites or six named ones, with a planned target and a scan assist.
 - **Ten-Second prediction:** a dotted path, a ghost lander and a check of whether a full burn would still stop you.
 - **Time warp**, the **last 30 m at half speed**, and a fast-forward when the tank is empty and the ending is decided.
 - **Fifteen achievements** as keycaps on the Keyring, six of them unlocking flag emblems.

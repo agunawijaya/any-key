@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { DIFFICULTIES, withDifficulty, type Difficulty } from "@/lib/lander/difficulty";
+import { FUEL_CHOICES, tankDifficulty, withDifficulty, type Difficulty } from "@/lib/lander/difficulty";
 import { NAMED_SITES, randomSeed, type FreeStart } from "@/lib/lander/freeflight";
 import { dailyDrop, dailySetup, MISSIONS, missionSetup, type Mission } from "@/lib/lander/missions";
 import { makeSetup } from "@/lib/lander/physics";
@@ -54,11 +54,13 @@ export function Lobby({ onPlay, onFree, onTerminal }: Props) {
   const stars = Object.values(progress.missions).reduce((a, b) => a + b, 0);
 
   const pick = (id: WorldId) => updateProgress((p) => ({ ...p, world: id }));
-  const difficulty = progress.difficulty;
+  // Unlimited fuel is for Free Flight; every other mode flies the Standard tank when it is chosen.
+  const fuel = progress.difficulty;
+  const difficulty = tankDifficulty(fuel);
   const live = () => onPlay({ mode: "live", title: `Live · ${world.name}`, world: world.id, setup: withDifficulty(makeSetup(world), difficulty), guide: progress.guide, assist: progress.assist, difficulty });
   const ten = () => onPlay({ mode: "ten", title: `Ten-Second · ${world.name}`, world: world.id, setup: withDifficulty(makeSetup(world), difficulty), guide: progress.guide, assist: progress.assist, difficulty });
   const siteStars = NAMED_SITES.reduce((a, n) => a + (progress.sites[n.id]?.stars ?? 0), 0);
-  const flyFree = (pick: FreeSpec["pick"], worldId = world.id) => onFree({ world: worldId, start: progress.freeStart, pick, difficulty });
+  const flyFree = (pick: FreeSpec["pick"], worldId = world.id) => onFree({ world: worldId, start: progress.freeStart, pick, difficulty: fuel });
   const flySeed = () => {
     const typed = Number.parseInt(seedText.replace(/\D/g, ""), 10);
     const seed = typed > 0 ? Math.min(typed, 999_999) : randomSeed();
@@ -202,14 +204,14 @@ export function Lobby({ onPlay, onFree, onTerminal }: Props) {
             <strong>Fuel</strong> · for every mode but 1979 mode
           </span>
           <span className={styles.fuelOptions}>
-            {DIFFICULTIES.map((d) => (
-              <button key={d.id} type="button" role="radio" aria-checked={difficulty === d.id} className={styles.fuelOption} onClick={() => updateProgress((p) => ({ ...p, difficulty: d.id }))} title={d.how}>
+            {FUEL_CHOICES.map((d) => (
+              <button key={d.id} type="button" role="radio" aria-checked={fuel === d.id} className={styles.fuelOption} onClick={() => updateProgress((p) => ({ ...p, difficulty: d.id }))} title={d.how}>
                 <FuelMark difficulty={d.id} />
                 {d.name}
               </button>
             ))}
           </span>
-          <span className={styles.fuelHow}>{DIFFICULTIES.find((d) => d.id === difficulty)!.how}</span>
+          <span className={styles.fuelHow}>{FUEL_CHOICES.find((d) => d.id === fuel)!.how}</span>
         </div>
         <label className={styles.guideToggle}>
           <input type="checkbox" checked={progress.guide} onChange={(e) => updateProgress((p) => ({ ...p, guide: e.target.checked }))} />

@@ -17,11 +17,20 @@ import { DRY_MASS } from "./worlds";
  * Upright (tilt 0) this is exactly advance() in physics.ts, step for step.
  * Rotation is the reaction-control system: 60°/s (20°/s fine), free of fuel,
  * and the tilt holds when you let go. There is no air drag, as in the original.
+ *
+ * The side jets are the same thrusters fired to move instead of turn: while
+ * held they push JET_PUSH km/h per second straight sideways, on every world,
+ * the moment you press. They burn from the main tank whatever the main engine
+ * would need for the same push (about 8 to 12 units a second on a final
+ * approach), so they are never the cheaper way to move, only the quicker one:
+ * no lean and no climb.
  */
 
 export const MAX_TILT = 75;
 export const TURN_RATE = 60;
 export const FINE_TURN_RATE = 20;
+/** The side jets' sideways push (km/h per second). */
+export const JET_PUSH = 8;
 /** The footpads sit 4 m either side of the centre; the engine bell 1.6 m above them. */
 export const FOOT_M = 4;
 export const BELL_M = 1.6;
@@ -36,8 +45,11 @@ const K = SECONDS_PER_HOUR_1979;
 /** A Free Flight state: x (km, positive = right), vx (km/h, positive = right) and tilt (degrees). */
 export type State2D = FlightState & { x: number; vx: number; tilt: number };
 
-/** What the pilot is doing: throttle 0–100, a rotation rate (deg/s, positive = towards nose-right), or levelling. */
-export type Control2D = { throttle: number; turn?: number; level?: boolean };
+/**
+ * What the pilot is doing: throttle 0–100, a rotation rate (deg/s, positive = towards nose-right), or levelling,
+ * and the side jets (−1 pushes left, +1 right).
+ */
+export type Control2D = { throttle: number; turn?: number; level?: boolean; jets?: number };
 
 /** Ground height (km) at x (km) and time t (s). */
 export type GroundFn = (xKm: number, t: number) => number;
@@ -105,18 +117,21 @@ export function advance2d(setup: Setup, from: State2D, control: Control2D, secon
   let left = seconds;
   let fuelOutAt: number | undefined;
   const throttle = control.throttle;
+  const jets = Math.sign(control.jets ?? 0);
   while (left > 1e-9) {
     const h = Math.min(dt, left);
     left -= h;
     const burn = s.fuel > 0 ? Math.min(throttle, s.fuel / h) : 0;
-    const fuel = Math.max(0, s.fuel - burn * h);
-    if (s.fuel > 0 && fuel === 0 && throttle > 0) fuelOutAt = s.t + h;
+    const side = sideJets(setup, jets, s.fuel, s.fuel - burn * h, h);
+    const jetBurn = side.burn;
+    const fuel = Math.max(0, s.fuel - (burn + jetBurn) * h);
+    if (s.fuel > 0 && fuel === 0 && (throttle > 0 || jets !== 0)) fuelOutAt = s.t + h;
     const tilt = nextTilt(s.tilt, control, h);
     const mid = ((s.tilt + tilt) / 2) * DEG;
     const midAlt = s.alt - (s.speed * h) / 2 / K;
     const push = (burn * setup.world.thrust) / (DRY_MASS + setup.cargo + (s.fuel + fuel) / 2);
     const a = gravityAt(setup.world, midAlt) - push * Math.cos(mid);
-    const ax = push * Math.sin(mid);
+    const ax = push * Math.sin(mid) + side.push;
     const speed = s.speed + a * h;
     const alt = s.alt - ((s.speed + speed) / 2) * (h / K);
     const vx = s.vx + ax * h;
@@ -130,7 +145,7 @@ export function advance2d(setup: Setup, from: State2D, control: Control2D, secon
         t: base.t + tau,
         alt: base.alt - (base.speed * tau + (a * tau * tau) / 2) / K,
         speed: base.speed + a * tau,
-        fuel: Math.max(0, base.fuel - burn * tau),
+        fuel: Math.max(0, base.fuel - (burn + jetBurn) * tau),
         x: base.x + (base.vx * tau + (ax * tau * tau) / 2) / K,
         vx: base.vx + ax * tau,
         tilt: nextTilt(base.tilt, control, tau),
@@ -151,10 +166,23 @@ export function advance2d(setup: Setup, from: State2D, control: Control2D, secon
   return { state: s, fuelOutAt };
 }
 
-/** Acceleration now (km/h per s): vertical (positive = speeding up downwards) and sideways. */
-export function acceleration2d(setup: Setup, s: State2D, throttle: number) {
+/**
+ * The side jets over a step of h seconds, for a lander carrying `fuel`: the fuel
+ * they burn (units per second) and their push (km/h per second). They run on
+ * what the main engine leaves in the tank (`fuelLeft`), and fade out with it.
+ */
+export function sideJets(setup: Setup, jets: number, fuel: number, fuelLeft: number, h: number) {
+  if (jets === 0 || fuelLeft <= 0) return { burn: 0, push: 0 };
+  const rate = (JET_PUSH * (DRY_MASS + setup.cargo + fuel)) / setup.world.thrust;
+  const burn = Math.min(rate, fuelLeft / h);
+  return { burn, push: (Math.sign(jets) * JET_PUSH * burn) / rate };
+}
+
+/** Acceleration now (km/h per s): vertical (positive = speeding up downwards) and sideways, side jets included. */
+export function acceleration2d(setup: Setup, s: State2D, throttle: number, jets = 0) {
   const push = s.fuel > 0 ? (throttle * setup.world.thrust) / (DRY_MASS + setup.cargo + s.fuel) : 0;
-  return { a: gravityAt(setup.world, s.alt) - push * Math.cos(s.tilt * DEG), ax: push * Math.sin(s.tilt * DEG) };
+  const side = s.fuel > 0 ? Math.sign(jets) * JET_PUSH : 0;
+  return { a: gravityAt(setup.world, s.alt) - push * Math.cos(s.tilt * DEG), ax: push * Math.sin(s.tilt * DEG) + side };
 }
 
 /* ---------- Touchdown ---------- */

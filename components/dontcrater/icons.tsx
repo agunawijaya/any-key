@@ -1,3 +1,4 @@
+import type { FuelChoice } from "@/lib/lander/difficulty";
 import type { GradeId } from "@/lib/lander/grades";
 import type { WorldId } from "@/lib/lander/worlds";
 
@@ -231,6 +232,19 @@ export const ScanIcon = (p: Props) => (
   </Glyph>
 );
 
+/** Side jets: a puff of gas behind an arrow pointing the way they push. */
+export function JetIcon({ dir, ...p }: Props & { dir: "left" | "right" }) {
+  return (
+    <Glyph {...p}>
+      <g transform={dir === "left" ? "matrix(-1 0 0 1 24 0)" : undefined}>
+        <path d="M10 12h10M15 7l5 5-5 5" strokeWidth="2.2" />
+        <circle cx="6" cy="12" r="2.1" {...solid} />
+        <circle cx="2.4" cy="12" r="1.3" {...solid} />
+      </g>
+    </Glyph>
+  );
+}
+
 /** A narrow ledge: a ruler. */
 export const RulerIcon = (p: Props) => (
   <Glyph {...p}>
@@ -247,12 +261,14 @@ export const DivertIcon = (p: Props) => (
   </Glyph>
 );
 
-/** The fuel setting's mark: a green drop of plenty, or a flame for Tight. Standard has none. */
-export function FuelMark({ difficulty, size = 14 }: { difficulty: "generous" | "standard" | "tight"; size?: number }) {
+/** The fuel setting's mark: a green drop of plenty, a flame for Tight, a blue loop for Unlimited. Standard has none. */
+export function FuelMark({ difficulty, size = 14 }: { difficulty: FuelChoice; size?: number }) {
   if (difficulty === "standard") return null;
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
-      {difficulty === "generous" ? (
+      {difficulty === "unlimited" ? (
+        <path d="M12 12c-1.7-2.3-3.1-3.4-4.7-3.4a3.4 3.4 0 0 0 0 6.8c1.6 0 3-1.1 4.7-3.4s3.1-3.4 4.7-3.4a3.4 3.4 0 0 1 0 6.8c-1.6 0-3-1.1-4.7-3.4z" fill="none" stroke="#2f7df6" strokeWidth="2.6" strokeLinecap="round" />
+      ) : difficulty === "generous" ? (
         <path d="M12 2.5c3.4 4 5.5 7.2 5.5 10a5.5 5.5 0 0 1-11 0c0-2.8 2.1-6 5.5-10z" fill="#1fbf6f" />
       ) : (
         <path d="M12 2.5c3 3.4 6 6.5 6 10.5a6 6 0 0 1-12 0c0-2.4 1.3-4.2 3-5.5 0 2 1 3.2 2.3 3.6C11 8.5 11.2 5.5 12 2.5z" fill="#ff6b1a" />

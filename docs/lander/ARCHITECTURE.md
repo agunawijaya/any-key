@@ -31,14 +31,14 @@ flowchart LR
     PROGRESS --> LOBBY
     SFX["sfx.ts"] --> FLIGHT
     LOBBY["Lobby.tsx, Postcard.tsx, FlagDesigner.tsx"] --> FLIGHT
-    DIFF["difficulty.ts: Generous, Standard, Tight"] --> LOBBY
+    DIFF["difficulty.ts: Generous, Standard, Tight, Unlimited"] --> LOBBY
     ORIG["original.ts: the 1979 arithmetic"] --> TERM["Terminal1979.tsx and trs80.ts"]
     PHYS --> PHYS2D["physics2d.ts: lean, drift, feet"]
     TERRAIN["terrain.ts: sites from a seed"] --> PHYS2D
     PHYS2D --> SOLVER2D["solver2d.ts: drift stop, impact point, autopilot"]
     SOLVER2D --> FREE["freeflight.ts: starts, sites, tanks, target"]
     FREE --> FREESIM["freesim.ts: one Free Flight"]
-    FREESIM --> FREEUI["FreeFlight.tsx: HUD, strip, rotate, result"]
+    FREESIM --> FREEUI["FreeFlight.tsx: HUD, strip, rotate and jets, result"]
     FREESCENE["freescene.ts: site, target, impact marker, scan"] --> FREEUI
     SCENE --> FREESCENE
     MANIFEST["manifest.ts"] --> SHELL["DontCrater.tsx in GameShell"]
@@ -57,7 +57,7 @@ flowchart LR
 | `lib/lander/solver.ts` | Where a full burn would stop you, how long you can still fall before you must burn, the perfect hoverslam, the landing assist's lines and the final-approach advice |
 | `lib/lander/grades.ts` | The ending for each impact speed, its stars, whether the flag goes up, and its share glyph |
 | `lib/lander/missions.ts` | Ten missions and the Daily Drop generator |
-| `lib/lander/difficulty.ts` | The fuel setting: Generous, Standard and Tight tanks for the straight-down modes |
+| `lib/lander/difficulty.ts` | The fuel setting: Generous, Standard and Tight tanks for the straight-down modes, and the fuel row's fourth choice, Unlimited (`FuelChoice`, `tankDifficulty`) |
 | `lib/lander/original.ts` | 1979 mode: the original's turn arithmetic, endings and verdicts, quirks included |
 | `lib/lander/flags.ts` | Flag shapes, patterns and colours, and `flagSvg`, one SVG builder for the page and the canvas |
 | `lib/lander/emblems.ts` | The nineteen flag emblems as SVG paths, which achievement unlocks which, and `EMBLEM_FROM_EMOJI` for the save migration |
@@ -213,6 +213,8 @@ The share text (`descentShare` in `lib/lander/share.ts`) has three lines: a titl
 
 One setting on the game menu, for every mode but 1979 mode (which keeps the original's numbers exactly): **Generous** (30% more fuel), **Standard** (the tank every mode was balanced on) or **Tight**. In the straight-down modes Tight trims the tank until a perfect hoverslam keeps about 7% of it, never below 60% of the Standard tank; Free Flight has its own table (below). The setting is remembered, shown on the ready card, and marked in share texts, so Daily Drop results stay comparable at the same setting.
 
+The fuel row has a fourth choice, **Unlimited**, for Free Flight only. The menu stores it as a `FuelChoice`; every other mode turns it into Standard through `tankDifficulty`, so missions keep their meaning and the Daily Drop stays the same for everyone. 1979 mode ignores the row as before.
+
 | World (Live, Ten-Second) | Standard tank | Tight | A perfect run then keeps | Generous |
 |---|---|---|---|---|
 | Moon | 11,660 | 9,375 (80%) | 7.0% | 15,158 |
@@ -255,11 +257,13 @@ The 1979 equations gain a lean (`tilt`, degrees, positive = nose to the right, a
 
 ```text
 vertical:   speed changes by   gravity − throttle × engine / mass × cos(tilt)     km/h per second
-sideways:   vx changes by      throttle × engine / mass × sin(tilt)               km/h per second
+sideways:   vx changes by      throttle × engine / mass × sin(tilt)  ± 8 while a side jet is held   km/h per second
 height falls by speed / 3200 km every second; x moves by vx / 3200 km every second
 ```
 
 Both axes use the program's own km/h → km/s conversion (3200, not 3600), so a kilometre sideways and a kilometre of height are the same distance on screen and in the physics. There is no air drag, as in the original. Rotation is the reaction-control system: 60°/s (20°/s with `Shift`), no fuel, and the lean holds when you let go; `U` levels the lander in about half a second (0.6 s from 75°, 0.5 s from 40°). Leaning costs nothing, but pushing sideways does: every km/h of drift you kill or build comes out of the same tank as the braking.
+
+The **side jets** (`Q`, `E`, `JET_PUSH` in `physics2d.ts`) push straight sideways at 8 km/h per second on every world, from the first frame, whatever the lean. They burn what the main engine would need for the same push (`sideJets`: 8 × mass ÷ engine units a second, about 8 to 12 on a final approach), so they obey the main engine's rocket equation and are never the cheaper way to move, only the quicker one; they share the tank and stop with it. They exist because leaning is slow to brake with when you hold your height: the sideways part of the push is then only gravity × tan(lean), 1.6 km/h per second on the Moon at 20°, and in play a drift that kept going for 25 s and 161 m after the lean reversed made landings hard to control. With the jets the same 40 km/h dies in 5 s and 31 m.
 
 `physics2d.ts` steps this in 20 ms slices exactly like `advance()`, with the lean taken at the middle of each slice. Held upright over flat ground it *is* `advance()`: `check-lander.ts` flies twelve flights on all four worlds through coasts, burns and empty tanks, and the heights, speeds, fuel and touchdowns agree to 4.5 × 10⁻¹³.
 
@@ -278,23 +282,25 @@ The feet are 4 m either side of the centre; contact is the first foot (or the en
 
 ### Seeing where you're going
 
-- **Camera.** The log-altitude zoom still sets the scale vertically. Sideways the view follows the lander and looks a little ahead towards where it will come down; low down it widens to at least ±2 × your height and never less than ±150 m (±70 m on a phone). Close in, the lander is drawn at its true size (feet 8 m apart), so you can see whether it fits. After touchdown the view closes in: tight for a tip-over or a splash, wider for a flag, so the rough valley stays around it.
+- **Camera.** The log-altitude zoom still sets the scale vertically. Sideways the view stays centred on the lander, so what slides past is the ground at your real speed (a look-ahead towards the touchdown point swung the view whenever the lean changed, and a drift you were braking seemed to lurch on); low down it widens to at least ±2 × your height and never less than ±150 m (±70 m on a phone). Close in, the lander is drawn at its true size (feet 8 m apart), so you can see whether it fits. After touchdown the view closes in: tight for a tip-over or a splash, wider for a flag, so the rough valley stays around it.
 - **The ground.** Facets turned to the light catch it, the others fall into shade; a bright rim runs along the lit edges by day, a faint one by Earthshine or starlight at night. Flats have no shading at all, which is what makes them look calm. Behind the landing line, two hazy layers of hills (mesas on Mars, crags on Psyche) move slower than the ground, so the valley reads around you; nothing in them can be landed on. The ground is textured with pebbles and small craters fixed to the world, so they slide and zoom with it.
 - **The target** is a gold bracket along its flat with a dashed beam and "LAND HERE" above it; off screen, a pill at the edge of the view points to it with the distance. The beam fades as you come in low over it.
 - **The impact marker** is a bracket as wide as the lander's feet, on the ground where the current path meets it at the current throttle and tilt, with faint dots along the path. It is recomputed every frame.
 - **The terrain strip** across the top is the whole site in profile: your position with a drift arrow, the target as a gold flag, where the path meets the ground, and while you brake against the drift a green tick where it will die. Off the site it says how far away it is.
 - **Scan assist** (`S`, remembered on the game menu, off by default) shades the ground within 1.5 km of the lander green (4° or less), amber (4–8°) or red (steeper); a column wider than a couple of metres shows the gentlest ground in it, so flats show from higher up. With the scan on, the impact marker takes the scan's colour. A flight flown with it is marked with a satellite in the share text and on the recorder.
-- **The HUD** adds the drift (with an arrow for its direction, coloured like the speed near the ground) with "stops in 0.9 km" while you push against it, and the tilt in degrees, or "upright". The burn guide and the landing assist work as in Live, on the vertical part of the thrust at your current lean; when the lean is too great to brake, the guide says "level up to brake (U)". In the last 60 m a second advice line handles the sideways part: "aim 0 sideways · tilt 5° left", then "stand up (U)" once the drift is gone.
-- **Time warp** follows Live's rules, and also stays at ×1 while you rotate low down, under 2.5 km while the drift is over 15 km/h, and whenever the path is heading for steep ground with less than 10 s to go ("Rough ground ahead!").
+- **The HUD** adds the drift (with an arrow for its direction, coloured like the speed near the ground) with "stops in 0.9 km" while you push against it, and the tilt in degrees, or "upright". The burn guide and the landing assist work as in Live, on the vertical part of the thrust at your current lean; when the lean is too great to brake, the guide says "level up to brake (U)". In the last 60 m a second advice line handles the sideways part: "aim 0 sideways · jets ◀ Q" while the jets can kill the drift within about four seconds (32 km/h or less), otherwise "aim 0 sideways · tilt 5° left", then "stand up (U)" once the drift is gone. "Stops in" counts the jets when they push against the drift.
+- **The side jets** are drawn by `drawJets` in `freescene.ts`: a short white plume from the cabin on the side away from the push, level whatever the lean, with a faint dark edge by day so it reads on a bright sky, and puffs of gas that drift off (none with reduced motion). The plume never draws smaller than 18 px, because close in the lander is at its true size. While they fire, the RCS hiss (`sfx.rcs`) repeats a little faster and louder than for rotation, and the jet button lights up.
+- **Time warp** follows Live's rules, and also stays at ×1 while you rotate or fire the jets low down, under 2.5 km while the drift is over 15 km/h, and whenever the path is heading for steep ground with less than 10 s to go ("Rough ground ahead!").
 
 | Input | Action |
 |---|---|
 | `←` / `→` (+ `Shift`) | Rotate (fine) |
 | `U` | Level the lander |
+| `Q` / `E` | Side jets, push left / right |
 | `Space`, `↑`/`↓`, `0`–`9`, `F`, `X` | Throttle, as in Live |
 | `S`, `A`, `G`, `T` | Scan assist, landing assist, burn guide, time warp |
 | `P`, `R`, `N` | Pause, fly again, new site (after a flight) |
-| Touch | Two rotate buttons bottom left (both at once levels), the lever and BURN bottom right |
+| Touch | Two jet buttons and two rotate buttons bottom left (both rotate buttons at once level), the lever and BURN bottom right |
 
 ### The result and the recorder
 
@@ -312,6 +318,8 @@ The card gives the ending, the landing in words ("Butter · 34 m clearing · dea
 | Full descent (× the world's own tank) | Generous | 1.43 | 1.30 | 1.56 | 1.30 |
 | | Standard | 1.10 | 1.00 | 1.20 | 1.00 |
 | | Tight | 0.99 | 0.85 | 1.09 | 0.91 |
+
+**Unlimited fuel.** `freeFlight(…, "unlimited")` builds the Standard flight (the same tank, start and target) with `unlimited: true`. `FreeSim.advance` runs the step; if the tank runs dry inside it, the step is run again up to that moment, the tank is filled, a `refill` event is sent, and the rest of the step continues, so the push never drops out, even for a frame. A tank within 10⁻⁶ units of empty counts as empty, because rounding can otherwise leave a crumb of fuel that pushes for nothing through a whole frame (the check script caught exactly that). On unlimited fuel the guides (stop point, burn deadline, landing lines, touchdown point and drift stop) fly a full tank, since a refill is always coming; the heavier lander errs on the safe side. `tanksUsed` is refills + the share of the current tank burnt. The result card shows the refills and the tanks used against `freeTanks` in the save, the fewest tanks a standing landing has used per world and start (`"moon-final"`); a hundredth of a tank less is a new best. The share text replaces the fuel left with the infinity mark and the refills ("2 refills"). Stars, named-site records and achievements count as on any tank.
 
 **The budget case.** An autopilot that knows the whole site (`solver2d.ts`) is the perfect pilot. High up it falls freely, nudges its drift early (cheap), then brakes at full power pushing straight against its motion, so the fall and the drift die together; low down it flies to the flat at a safe height above the rocks and comes straight down. The budget case is the largest drift (140 km/h on the final approach, 650 km/h on the full descent), then 1 km (final approach) or 3 km (full descent) sideways to flat ground. Tight is set by it: there the perfect pilot keeps about 8% of the tank in the budget case.
 
@@ -438,7 +446,7 @@ npm test                      (vitest: the unit tests in tests/unit/)
 - **Daily Drop:** every day of 2026 is fair (at least 6% to spare; the slimmest day keeps 6.3%), every day repeats exactly, all four worlds appear, and the autopilot lands a sample of 53 days.
 - **Fuel difficulty:** every straight-down mode at Generous and Tight, flown by the same slow human pilots (see the table below).
 - **Grades:** every speed band boundary.
-- **Free Flight:** upright flights match `advance()`; the sideways rocket equation; rotation rates; terrain determinism and flat counts; the touchdown rules on both sides of each boundary; the fuel budget; fairness of seeds 1–1,000 at Standard and Tight; the named sites at every setting; and slow human pilots on every named site and a sample of random sites.
+- **Free Flight:** upright flights match `advance()`; the sideways rocket equation; rotation rates; the side jets (8 km/h per second on every world, the drift stop with them, their rocket-equation cost, and an empty tank); unlimited fuel (the same flight as Standard, refills at the moment the tank empties with no frame lost, and slow human pilots on every named site without a refill); terrain determinism and flat counts; the touchdown rules on both sides of each boundary; the fuel budget; fairness of seeds 1–1,000 at Standard and Tight; the named sites at every setting; and slow human pilots on every named site and a sample of random sites.
 
 `check-lander.ts` flies every straight-down mode at Generous and Tight with the same slow human pilots as at Standard: all four worlds with the landing assist, the burn guide and no helpers; all ten missions (on Instruments Out the pilot remembers where to brake from Red Planet at the same setting); a Daily Drop every 45 days; and Ten-Second mode on every world, planned turn by turn from the prediction panel with whole-number burns. All of them land. Touchdown speeds, km/h:
 

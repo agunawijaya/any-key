@@ -42,9 +42,10 @@ Ten-Second mode has no time warp and no hold-to-burn: each turn plays at the bur
 |---|---|---|
 | Hold `←` / `→` | Hold the rotate buttons at the bottom left | Lean left or right at 60° a second; with `Shift`, 20° a second. The lean stays when you let go |
 | Hold `U` | Hold both rotate buttons | Level the lander (about half a second from a big lean) |
+| Hold `Q` / `E` | Hold the jet buttons above the rotate buttons | Side jets: push left or right at 8 km/h a second, at once and without leaning. They burn fuel from the main tank |
 | `S` | Scan button | Scan assist on or off (remembered for next time) |
 
-`←` and `→` also start the descent from the ready card.
+`←`, `→`, `Q` and `E` also start the descent from the ready card.
 
 ### Results
 
@@ -134,7 +135,11 @@ To stand, the lander needs:
 - a sideways slide of 6 km/h or less (relative to the deck, on a drifting barge);
 - a vertical speed under 20 km/h, as everywhere.
 
+There is no air out there to slow a drift: once you are sliding sideways you keep sliding until something pushes the other way. Two things can. Leaning tips the main engine's push sideways, which is strong but slow to set up, and while you hold your height it gives only part of the engine's push (on the Moon a 20° lean takes about 25 seconds to stop a 40 km/h drift). The **side jets** push straight sideways the moment you press `Q` or `E`, on every world at the same 8 km/h a second, so the same drift dies in 5 seconds and 31 m, upright. They burn as much fuel as the main engine would for the same push, so big drifts are still cheapest to kill by leaning during the main burn.
+
 Come down gently but break one of those rules and the lander tips over; on Earth, miss the barges and it splashes into the sea. The result card says what went wrong. Any flat ground saves you, but only the target earns all three stars.
+
+**Unlimited fuel.** Choose **Unlimited** on the fuel row to fly Free Flight without the worry. You get the Standard tank, and whenever it runs dry it is filled again at once, with a gush and a banner ("Tank refilled · refill 2"); the engine never misses a beat. The HUD counts the refills under the fuel bar. The result card shows **Refills** in place of the fuel left, and how many tanks the flight used ("1.5 tanks", or "52% of a tank" without a refill) against your best for that world and start; a standing landing that uses less sets a new best, so you can watch yourself need fewer refills. Stars, named sites and keycaps count as usual, and the share text says how many refills it took. Missions, the Daily Drop and 1979 mode never offer it.
 
 **New site** builds a site from a random number, shown on screen and in the share text. Type a number into **Site #** and press **Fly** (or `Enter`) to fly that site again. Six **named sites** unlock in order, one star on a site opening the next, for 18 stars in all:
 
@@ -147,7 +152,7 @@ Come down gently but break one of those rules and the lander tips over; on Earth
 | Iron Crags | Psyche | Metal spires with a few shelves |
 | Barge Row | Earth | Barges on the swell, one of them drifting |
 
-In the last 60 m a second advice line handles the sideways part ("aim 0 sideways · tilt 5° left"), and tells you when to stand up with `U`.
+In the last 60 m a second advice line handles the sideways part: "aim 0 sideways · jets ◀ Q" for a drift the jets can kill in a few seconds, "aim 0 sideways · tilt 12° left" for a bigger one, and "stand up (U)" once the drift is gone.
 
 ### 1979 mode
 
@@ -175,7 +180,7 @@ Like the original, the clock keeps counting from one game to the next, and a lan
 
 | Setting | What it does |
 |---|---|
-| **Fuel**: Generous, Standard or Tight | Generous carries 30% more fuel. Standard is the tank every mode was balanced on. Tight leaves a perfect run only about 7% to spare (Free Flight has its own tight tanks). Every mode but 1979 mode; a non-Standard setting shows on the ready card and in the share text |
+| **Fuel**: Generous, Standard, Tight or Unlimited | Generous carries 30% more fuel. Standard is the tank every mode was balanced on. Tight leaves a perfect run only about 7% to spare (Free Flight has its own tight tanks). Every mode but 1979 mode; a non-Standard setting shows on the ready card and in the share text. **Unlimited** is for Free Flight only: see below. Every other mode flies the Standard tank while it is chosen |
 | **Burn guide** (on at first) | A dashed line at the stop point: where a full burn started now would stop you. Green while safe, amber when close, red "CAN'T STOP" when too late. The instruments count down ("burn in 0:34", then "stops at 2.1 km" while braking) |
 | **Landing assist** (off at first) | Two lines to fly by. Keep the lander above the green line and braking at about 85% brings you down under 5 km/h; below the amber line even full power can't get you under 20. Close to the ground a chip shows what holding your throttle would do. Flights with it are marked in the share text |
 | **Free Flight start** | Final approach or Full descent |
@@ -272,6 +277,6 @@ Free Flight landings count towards First Touch, Butter, Postcard Set and Flag Pl
 2. **Use the number keys.** `0` to coast, `F` or a held `Space` to brake, then the advised figure in the final approach. The lever is there for fine trims.
 3. **Use the slow last 30 m.** Time runs at half speed there. Aim for the target speed the advice gives you, not for zero.
 4. **On Psyche, think small.** Hovering takes under 1% of throttle, so tap rather than hold, and use `Shift` with the arrows.
-5. **Kill the drift while you brake.** In Free Flight, lean against the drift during the main burn, when the engine is running anyway; fixing it later costs far more fuel. Stand up with `U` in the last few metres.
+5. **Kill the drift while you brake.** In Free Flight, lean against the drift during the main burn, when the engine is running anyway; fixing it later costs far more fuel. Trim the last few km/h with the side jets (`Q`, `E`): they need no lean, so you can stay upright over the flat. Stand up with `U` in the last few metres.
 6. **Remember Red Planet.** On Instruments Out the speed reading is dead above 40 km. A perfect run on Mars starts braking at about 130 km.
 7. **In 1979 mode, decimals are allowed.** The asteroid needs a burn of about 0.7 to hover; 1 is already too much.

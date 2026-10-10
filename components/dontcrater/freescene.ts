@@ -8,9 +8,10 @@ import { blend, clamp, drawAstronaut, drawLander, mix, Scene, smooth, STYLE, vno
  * Free Flight, drawn on the same canvas as the other modes.
  *
  * Camera: the log-altitude zoom still sets the scale vertically. Sideways the
- * view follows the lander, looks a little ahead towards where it will come
- * down, and low down it widens to at least ±2 × the height (never under
- * ±150 m, ±70 m on a phone) so there is ground to choose from.
+ * view stays centred on the lander, and low down it widens to at least ±2 × the
+ * height (never under ±150 m, ±70 m on a phone) so there is ground to choose
+ * from. The touchdown point and the target show at the screen's edge when
+ * they lie beyond it.
  *
  * High up the planet is the usual fractal one; within a few km of the site
  * the site's own ground (the same heights the physics uses) takes over, so
@@ -40,6 +41,8 @@ export type FreeFrame = {
   /** Ground height right under the lander (km). */
   ground: number;
   throttle: number;
+  /** Side jets firing: −1 pushes left, +1 right, 0 off. */
+  jets: number;
   now: number;
   ending: FreeEnding | null;
   stop: { alt: number | null } | null;
@@ -60,7 +63,6 @@ const SCAN = { flat: "#39e58c", edge: "#ffb020", steep: "#ff4d5e" };
 
 export class FreeScene extends Scene {
   private refG = NaN;
-  private look = 0;
   /** Last frame's camera, to carry particles along with the ground when the view moves. */
   private prevCam: { camX: number; refG: number; s: number; groundY: number } | null = null;
   private camTilt = 0;
@@ -113,13 +115,11 @@ export class FreeScene extends Scene {
     const s = cam.kmPerPx;
     const cx = this.w / 2;
 
-    // Look a little ahead, towards where the lander will come down.
-    const halfKm = (this.w / 2) * s;
-    const aim = f.ending ? 0 : f.impact ? clamp(((f.impact.x - f.x) / halfKm) * 0.4, -0.3, 0.3) : clamp((f.vx * 4) / 3200 / halfKm, -0.25, 0.25);
-    this.look += (aim - this.look) * Math.min(1, dtReal * 1.5);
-    const x = f.ending ? f.ending.x : f.x;
-    const camX = x + this.look * halfKm;
-    const lx = cx + (x - camX) / s;
+    // Sideways the view stays centred on the lander, so the only sideways motion on screen is the
+    // ground passing at the lander's real speed. A look-ahead towards the touchdown point swung the
+    // whole view each time the lean or throttle changed, and braking a drift looked like a lurch onwards.
+    const camX = f.ending ? f.ending.x : f.x;
+    const lx = cx;
     const yOf = (hKm: number) => cam.groundY - (hKm - this.refG) / s;
     // Particles live on the screen; when the view pans or zooms, move them with the ground.
     const prev = this.prevCam;
@@ -778,6 +778,7 @@ export class FreeScene extends Scene {
       const ly = yOf(f.alt);
       this.emitFree(f, cam, lx, ly, yOf, dt);
       drawLander(ctx, lx, ly, size, { throttle: f.throttle, t, night: this.nightMix, compress: 0, tilt: f.tilt * DEG, broken: 0 });
+      this.drawJets(f, lx, ly, size, dt);
       return;
     }
     const e = f.ending;
@@ -808,6 +809,55 @@ export class FreeScene extends Scene {
     }
     // Crashes: the usual endings, at the point of contact.
     this.drawLanderAndEnding(frame, pal, cam, lx, tau, dt, gy);
+  }
+
+  /**
+   * The side jets: a short white plume from the thruster on the far side of
+   * the cabin. The thruster turns with the lander, but the gas leaves level,
+   * because the jets push straight sideways whatever the lean.
+   */
+  private drawJets(f: FreeFrame, lx: number, ly: number, size: number, dt: number) {
+    if (!f.jets) return;
+    const { ctx } = this;
+    const away = -Math.sign(f.jets);
+    const tilt = f.tilt * DEG;
+    const qx = away * size * 0.31;
+    const qy = -size * 0.56;
+    const x = lx + qx * Math.cos(tilt) - qy * Math.sin(tilt);
+    const y = ly + qx * Math.sin(tilt) + qy * Math.cos(tilt);
+    const flicker = f.reduced ? 1 : 0.85 + 0.3 * Math.abs(Math.sin(this.sceneTime * 41) * Math.sin(this.sceneTime * 29 + 2));
+    // Never smaller than a thumbnail can show: close in, the lander is drawn at its true size.
+    const len = Math.max(18, size * 0.5) * flicker;
+    const root = Math.max(1.6, size * 0.035);
+    const end = Math.max(4.5, size * 0.14);
+    // A faint dark edge under the white, so the plume still reads against a bright day sky (not needed by night).
+    const edge = 0.24 * (1 - this.nightMix);
+    const layers: [number, string, string][] = [
+      [Math.max(1, size * 0.02), `rgba(30,40,60,${edge.toFixed(3)})`, "rgba(30,40,60,0)"],
+      [0, "rgba(255,255,255,0.95)", "rgba(205,225,255,0)"],
+    ];
+    ctx.save();
+    for (const [grow, from, to] of layers) {
+      const tip = x + away * (len + grow);
+      const g = ctx.createLinearGradient(x, y, tip, y);
+      g.addColorStop(0, from);
+      g.addColorStop(1, to);
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(x, y - root - grow);
+      ctx.lineTo(tip, y - end - grow);
+      ctx.quadraticCurveTo(tip + away * len * 0.15, y, tip, y + end + grow);
+      ctx.lineTo(x, y + root + grow);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+    if (f.reduced) return;
+    // Puffs that drift on and fade, so the jets feel like gas and not a painted cone.
+    for (let i = 0, n = Math.min(3, 45 * dt + Math.random()); i < n; i++) {
+      const speed = Math.max(60, size * 3) * (0.7 + Math.random() * 0.6);
+      this.particles.push({ x: x + away * len * 0.6, y: y + (Math.random() - 0.5) * end, vx: away * speed, vy: (Math.random() - 0.5) * speed * 0.25, life: 0, max: 0.25 + Math.random() * 0.25, size: end * (0.35 + Math.random() * 0.3), color: "#f2f6ff", kind: "smoke", rot: 0, vr: 0 });
+    }
   }
 
   /** Exhaust along the engine's axis, and dust blown sideways where the plume meets the ground. */

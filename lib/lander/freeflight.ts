@@ -1,4 +1,4 @@
-import { GENEROUS, type Difficulty } from "./difficulty";
+import { GENEROUS, tankDifficulty, type Difficulty, type FuelChoice } from "./difficulty";
 import { makeSetup, startState, type Setup } from "./physics";
 import { start2d, type State2D, type Verdict } from "./physics2d";
 import { idealPlan } from "./solver";
@@ -72,7 +72,10 @@ export const namedSite = (id: string) => NAMED_SITES.find((n) => n.id === id) ??
 export type FreeFlight = {
   world: World;
   start: FreeStart;
+  /** The tank's difficulty: Standard when the fuel is unlimited. */
   difficulty: Difficulty;
+  /** Unlimited fuel: the tank is filled again whenever it runs dry. */
+  unlimited: boolean;
   /** The seed the player sees (and can type in to replay). */
   seed: number;
   named: NamedSite | null;
@@ -147,7 +150,9 @@ export function planLanding(site: Site, setup: Setup, state: State2D, natural: n
 }
 
 /** A Free Flight on a named site or a seeded one. The same inputs always give the same flight. */
-export function freeFlight(worldId: WorldId, start: FreeStart, pick: { seed: number } | { named: string }, difficulty: Difficulty = "standard"): FreeFlight {
+export function freeFlight(worldId: WorldId, start: FreeStart, pick: { seed: number } | { named: string }, fuel: FuelChoice = "standard"): FreeFlight {
+  const difficulty = tankDifficulty(fuel);
+  const unlimited = fuel === "unlimited";
   const named = "named" in pick ? namedSite(pick.named) : null;
   const world = worldById(named?.world ?? worldId);
   const seed = named ? named.seed : (pick as { seed: number }).seed;
@@ -158,8 +163,8 @@ export function freeFlight(worldId: WorldId, start: FreeStart, pick: { seed: num
     const site = buildSite(world.id, named ? seed : s, named?.kind);
     const { setup, state, natural } = startOn(world, site, start, s, difficulty);
     const plan = planLanding(site, setup, state, natural, start);
-    if (plan) return { world, start, difficulty, seed, named, site, setup, state, plan, rerolls: k };
-    last = { world, start, difficulty, seed, named, site, setup, state, plan: { spot: landingSpots(site)[0], index: 0, fuelLeft: 0, verdict: null as unknown as Verdict }, rerolls: k };
+    if (plan) return { world, start, difficulty, unlimited, seed, named, site, setup, state, plan, rerolls: k };
+    last = { world, start, difficulty, unlimited, seed, named, site, setup, state, plan: { spot: landingSpots(site)[0], index: 0, fuelLeft: 0, verdict: null as unknown as Verdict }, rerolls: k };
   }
   return last!;
 }

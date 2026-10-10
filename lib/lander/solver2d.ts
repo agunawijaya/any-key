@@ -1,5 +1,5 @@
 import { gravityAt, SECONDS_PER_HOUR_1979, type Setup } from "./physics";
-import { advance2d, groundOf, judgeTouchdown, MAX_TILT, type Control2D, type State2D, type Verdict } from "./physics2d";
+import { advance2d, groundOf, judgeTouchdown, MAX_TILT, sideJets, type Control2D, type State2D, type Verdict } from "./physics2d";
 import { stopPoint, type StopPoint } from "./solver";
 import { bargeTilt, bargeX, heightAt, type Flat, type Site } from "./terrain";
 import { DRY_MASS } from "./worlds";
@@ -35,23 +35,27 @@ export function stopPoint2d(setup: Setup, s: State2D, groundKm: number, dt = 0.1
 
 /**
  * How far sideways (km, signed) the lander goes before its drift dies, at
- * this throttle and tilt. Null when that push doesn't work against the drift
- * or the tank runs dry first.
+ * this throttle and tilt, with the side jets as they are (−1, 0 or +1). Null
+ * when that push doesn't work against the drift or the tank runs dry first.
  */
-export function driftStop(setup: Setup, s: State2D, throttle: number, tilt: number): number | null {
+export function driftStop(setup: Setup, s: State2D, throttle: number, tilt: number, jets = 0): number | null {
   const dir = Math.sign(s.vx);
   if (!dir) return 0;
   const sin = Math.sin(tilt * DEG);
-  if (sin * dir > -1e-4 || throttle <= 0 || s.fuel <= 0) return null;
+  if (s.fuel <= 0) return null;
+  if (!jets && (sin * dir > -1e-4 || throttle <= 0)) return null;
   let vx = s.vx;
   let fuel = s.fuel;
   let d = 0;
   for (let i = 0; i < 40_000; i++) {
     const dt = 0.05;
     const burn = fuel > 0 ? Math.min(throttle, fuel / dt) : 0;
-    if (burn <= 0) return null;
-    const next = Math.max(0, fuel - burn * dt);
-    const ax = ((burn * setup.world.thrust) / (DRY_MASS + setup.cargo + (fuel + next) / 2)) * sin;
+    const side = sideJets(setup, jets, fuel, fuel - burn * dt, dt);
+    if (burn + side.burn <= 0) return null;
+    const next = Math.max(0, fuel - (burn + side.burn) * dt);
+    const ax = ((burn * setup.world.thrust) / (DRY_MASS + setup.cargo + (fuel + next) / 2)) * sin + side.push;
+    // With the jets on, the sum must still be braking (a lean with the drift can outdo them).
+    if (jets && ax * dir >= 0) return null;
     const v2 = vx + ax * dt;
     if (Math.sign(v2) !== dir) {
       const f = vx / (vx - v2);

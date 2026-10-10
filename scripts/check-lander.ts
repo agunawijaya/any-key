@@ -18,7 +18,7 @@ import { BUDGET_MARGIN, DRIFT, FAIR_MARGIN, FINAL_ALT, FINAL_SPEED, freeFlight, 
 import { FreeSim } from "../components/dontcrater/freesim";
 import type { Difficulty } from "../lib/lander/difficulty";
 import { advance2d, judgeTouchdown, start2d, STAND_DRIFT, STAND_SLOPE, STAND_TILT_OFF, type Contact } from "../lib/lander/physics2d";
-import { flatTarget, flyAutopilot, type AutoOptions } from "../lib/lander/solver2d";
+import { driftStop, flatTarget, flyAutopilot, type AutoOptions } from "../lib/lander/solver2d";
 import { buildSite, footSlope, heightAt, landingSpots, SITE_HALF, type Site } from "../lib/lander/terrain";
 
 let failures = 0;
@@ -558,6 +558,29 @@ verbose = true;
     return t;
   });
   check(levelled.every((t) => t <= 0.7), `U levels the lander from 75°, 40° and 10° in ${levelled.map((t) => t.toFixed(2)).join(", ")} s`);
+
+  // Side jets: the same push on every world, straight away, paid for at the main engine's rate.
+  const rates: string[] = [];
+  let jetsExact = true;
+  for (const w of WORLDS) {
+    const setup = { ...makeSetup(w, { alt: 3, speed: 0 }), fuel: tankFor(w, "final") };
+    const from = { ...start2d(setup), alt: 2 };
+    const held = advance2d(setup, from, { throttle: 0, jets: 1 }, 5);
+    const used = setup.fuel - held.state.fuel;
+    // Pushing sideways with the main engine's exhaust: Δv = engine × ln(m0 / m1), so 40 km/h costs m0 × (1 − e^(−40 / engine)).
+    const m0 = DRY_MASS + setup.fuel;
+    const rocketCost = m0 * (1 - Math.exp(-40 / w.thrust));
+    rates.push(`${w.name} ${(used / 5).toFixed(1)}`);
+    const stop = driftStop(setup, { ...from, vx: 40 }, 0, 0, -1);
+    jetsExact &&= near(held.state.vx, 40, 1e-9) && near(held.state.x * 1000, 31.25, 1e-9) && near(used, rocketCost, rocketCost * 1e-4) && stop !== null && near(stop * 1000, 31.25, 1e-9);
+  }
+  check(jetsExact, `side jets: 40 km/h in 5 s and 31.25 m on every world, killed again in the same 31.25 m, at the main engine's rocket-equation cost (final approach: ${rates.join(", ")} units/s)`);
+  const moon = { ...makeSetup(worldById("moon"), { alt: 3, speed: 0 }), fuel: 3 };
+  const dry = advance2d(moon, { ...start2d(moon), alt: 2 }, { throttle: 0, jets: -1 }, 1);
+  const empty = advance2d(moon, { ...start2d(moon), alt: 2, fuel: 0 }, { throttle: 0, jets: -1 }, 1);
+  // 3 units at the main engine's rate: Δv = engine × ln(m0 / m1), close to 3 × engine / mass.
+  const dryDv = moon.world.thrust * Math.log((DRY_MASS + 3) / DRY_MASS);
+  check(dry.state.fuel === 0 && dry.fuelOutAt !== undefined && near(-dry.state.vx, dryDv, 1e-3) && empty.state.vx === 0, `the jets stop when the tank runs dry (3 units gave ${(-dry.state.vx).toFixed(2)} km/h, the rocket equation ${dryDv.toFixed(2)}) and do nothing on an empty one`);
 }
 
 console.log("Free Flight: terrain");
@@ -839,11 +862,11 @@ function flyFreeHuman(flight: FreeFlight, scan = false) {
     const events = sim.update(1 / 60);
     own.push(sim.state.tilt - before);
     for (const e of events) {
-      if (e.kind === "touchdown") return { verdict: e.verdict, onTarget: e.verdict.stands && onTarget(flight, sim.state.x, sim.state.t), fuel: e.fuel / setup.fuel };
-      if (e.kind === "lost") return { verdict: null, onTarget: false, fuel: 0 };
+      if (e.kind === "touchdown") return { verdict: e.verdict, onTarget: e.verdict.stands && onTarget(flight, sim.state.x, sim.state.t), fuel: e.fuel / setup.fuel, refills: sim.refills };
+      if (e.kind === "lost") return { verdict: null, onTarget: false, fuel: 0, refills: sim.refills };
     }
   }
-  return { verdict: null, onTarget: false, fuel: 0 };
+  return { verdict: null, onTarget: false, fuel: 0, refills: sim.refills };
 }
 
 console.log("Free Flight: human pilots (0.8 s reaction, whole-number throttle, rotate keys)");
@@ -897,6 +920,47 @@ console.log("Free Flight: human pilots (0.8 s reaction, whole-number throttle, r
       console.log(`  ${d.padEnd(8)} ${start.padEnd(5)} ${rows.join(" · ")}`);
     }
   }
+}
+
+console.log("Free Flight: unlimited fuel");
+{
+  // The same flight as Standard: the same tank, start and planned target.
+  const same = WORLDS.every((w) =>
+    (["final", "full"] as const).every((start) => {
+      const a = freeFlight(w.id, start, { seed: 7 }, "unlimited");
+      const b = freeFlight(w.id, start, { seed: 7 }, "standard");
+      return a.unlimited && !b.unlimited && a.difficulty === "standard" && a.setup.fuel === b.setup.fuel && a.state.x === b.state.x && a.state.vx === b.state.vx && a.plan.index === b.plan.index;
+    }),
+  );
+  check(same, "unlimited fuel flies the Standard tank, start and target on every world and start");
+
+  // A 200-unit tank at full power (100 units a second) runs dry every 2 s: 7 s of it is three refills,
+  // each at the moment the tank empties, so the push never drops out for a frame.
+  const base = freeFlight("moon", "final", { seed: 7 }, "unlimited");
+  const small = { ...base, setup: { ...base.setup, fuel: 200 }, state: { ...base.state, fuel: 200 } };
+  const sim = new FreeSim(small, false);
+  sim.autoWarp = false;
+  sim.lever = 100;
+  let refillEvents = 0;
+  let weakest = Infinity;
+  let emptyFrames = 0;
+  for (let frame = 0; frame < 60 * 7; frame++) {
+    const before = sim.state.speed;
+    refillEvents += sim.update(1 / 60).filter((e) => e.kind === "refill").length;
+    weakest = Math.min(weakest, (before - sim.state.speed) * 60);
+    if (sim.state.fuel <= 0) emptyFrames++;
+  }
+  const thrustUp = (100 * base.setup.world.thrust) / (DRY_MASS + 200) - base.setup.world.g2;
+  check(refillEvents === 3 && sim.refills === 3 && emptyFrames === 0 && near(sim.tanksUsed, 3.5, 0.01) && weakest > thrustUp * 0.97, `a 200-unit tank at full power: ${sim.refills} refills in 7 s, ${sim.tanksUsed.toFixed(2)} tanks used, never empty, weakest frame ${weakest.toFixed(1)} km/h per s up (full power ${thrustUp.toFixed(1)})`);
+
+  // The guides and slow human pilots fly unlimited fuel as they fly Standard: on target, no refill needed.
+  const line: string[] = [];
+  for (const n of NAMED_SITES) {
+    const r = flyFreeHuman(freeFlight(n.world, "final", { named: n.id }, "unlimited"));
+    check(r.onTarget && r.refills === 0, `${n.name}, final, unlimited: a slow human stands on the target without a refill (${r.verdict?.grade ?? "no landing"}, ${r.refills} refills)`);
+    line.push(`${n.name} ${r.onTarget ? `${r.verdict!.grade} ${Math.round(100 * (1 - r.fuel))}% of a tank` : (r.verdict?.grade ?? "—")}`);
+  }
+  console.log(`  human pilots, final approach: ${line.join(" · ")}`);
 }
 
 console.log(failures ? `\n${failures} check(s) failed` : "\nAll checks passed");

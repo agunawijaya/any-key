@@ -164,6 +164,13 @@ export function fanfare() {
 
 /* ---------- Free Flight ---------- */
 
+/** Unlimited fuel: the tank filled again, a gush of fuel and two rising notes. */
+export function refill() {
+  noiseBurst({ dur: 0.35, from: 700, to: 2200, q: 1.4, level: 0.08, type: "bandpass" });
+  tone({ at: 0.06, freq: 523, dur: 0.12, level: 0.07, type: "triangle" });
+  tone({ at: 0.17, freq: 784, dur: 0.2, level: 0.07, type: "triangle" });
+}
+
 /** The reaction-control thrusters: a short hiss of gas. */
 export function rcs(level = 1) {
   noiseBurst({ dur: 0.11, from: 5200, to: 3400, q: 1.1, level: 0.05 * level, type: "highpass" });

@@ -7,7 +7,7 @@ import { footSlope, heightAt } from "@/lib/lander/terrain";
 import { altLabel } from "./sim";
 
 /*
- * One Free Flight, independent of React: throttle, rotation, time warp,
+ * One Free Flight, independent of React: throttle, rotation, side jets, refills, time warp,
  * callouts, the burn guide and landing assist (on the vertical part of the
  * thrust), the impact point, the drift stop and the flight recording. The
  * screen calls update() every frame and reacts to the events it returns.
@@ -22,11 +22,14 @@ export type FreeEvent =
   | { kind: "late" }
   | { kind: "fuel-low" }
   | { kind: "fuel-out"; hopeless: boolean }
+  | { kind: "refill"; count: number }
   | { kind: "climbing" }
   | { kind: "slope-ahead" }
   | { kind: "lean" };
 
 const CALLOUTS = [100, 50, 20, 10, 5, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01];
+/** A tank this close to empty is empty: rounding can leave a crumb that would push for nothing through a whole frame. */
+const EMPTY = 1e-6;
 
 export class FreeSim {
   state: State2D;
@@ -38,6 +41,8 @@ export class FreeSim {
   turn = 0;
   fine = false;
   level = false;
+  /** Side jets: −1 pushes left, 0 off, +1 pushes right. */
+  jets = 0;
   autoWarp = true;
   warp = 1;
   guide: boolean;
@@ -61,6 +66,8 @@ export class FreeSim {
   verdict: Verdict | null = null;
   /** Largest sideways speed killed so far (for the Sidewinder badge). */
   driftKilled = 0;
+  /** Unlimited fuel: how many times the tank has been filled again. */
+  refills = 0;
   private deadline = Infinity;
   private deadlineAge = 99;
   private impactAge = 99;
@@ -105,7 +112,7 @@ export class FreeSim {
   }
 
   get control(): Control2D {
-    return { throttle: this.throttle, turn: this.turn * (this.fine ? FINE_TURN_RATE : TURN_RATE), level: this.level };
+    return { throttle: this.throttle, turn: this.turn * (this.fine ? FINE_TURN_RATE : TURN_RATE), level: this.level, jets: this.done ? 0 : this.jets };
   }
 
   /** Seconds of free fall left before a full burn can't stop you (cached). */
@@ -128,13 +135,13 @@ export class FreeSim {
     const events: FreeEvent[] = [];
     if (this.done) return events;
     const throttle = this.throttle;
-    this.idleFor = throttle === this.lastThrottle && this.turn === 0 ? this.idleFor + dtReal : 0;
+    this.idleFor = throttle === this.lastThrottle && this.turn === 0 && this.jets === 0 ? this.idleFor + dtReal : 0;
     this.lastThrottle = throttle;
     this.updateWarp(dtReal, throttle);
     const seconds = dtReal * this.warp;
     const fuelBefore = this.state.fuel;
     const before = this.above;
-    const r = advance2d(this.setup, this.state, this.control, seconds, this.ground);
+    const r = this.advance(seconds, events);
     this.state = r.state;
     this.driftKilled = Math.max(this.driftKilled, this.peakDrift - Math.abs(this.state.vx));
     this.peakDrift = Math.max(this.peakDrift, Math.abs(this.state.vx));
@@ -194,6 +201,40 @@ export class FreeSim {
     return events;
   }
 
+  /** Unlimited fuel: tanks used so far, the one in use included (2.4 = two refills and 40% of the third). */
+  get tanksUsed() {
+    return this.refills + 1 - this.state.fuel / this.setup.fuel;
+  }
+
+  /**
+   * Advances the flight. On unlimited fuel the tank is filled again at the
+   * moment it runs dry, so the engine and the jets never miss a beat.
+   */
+  private advance(seconds: number, events: FreeEvent[]) {
+    if (!this.flight.unlimited) return advance2d(this.setup, this.state, this.control, seconds, this.ground);
+    let from = this.state;
+    let left = seconds;
+    for (;;) {
+      if (from.fuel <= EMPTY) from = this.refill(from, events);
+      const r = advance2d(this.setup, from, this.control, left, this.ground);
+      if (r.fuelOutAt === undefined || (r.touchdown && r.touchdown.t <= r.fuelOutAt)) {
+        return r.touchdown || r.state.fuel > EMPTY ? r : { ...r, state: this.refill(r.state, events) };
+      }
+      // Run again only up to the moment it ran dry; the top of the loop fills it.
+      const dry = advance2d(this.setup, from, this.control, r.fuelOutAt - from.t, this.ground);
+      if (dry.touchdown) return dry;
+      left -= dry.state.t - from.t;
+      from = { ...dry.state, fuel: 0 };
+    }
+  }
+
+  private refill(s: State2D, events: FreeEvent[]): State2D {
+    this.refills++;
+    this.fuelLow = false;
+    events.push({ kind: "refill", count: this.refills });
+    return { ...s, fuel: this.setup.fuel };
+  }
+
   /** The steepest ground under the feet where the path meets the ground (degrees). */
   get impactSlope() {
     if (!this.impact) return null;
@@ -202,7 +243,8 @@ export class FreeSim {
   }
 
   private refresh(dtReal: number, first: boolean) {
-    const s = this.state;
+    // On unlimited fuel the guides fly a full tank: a refill is always coming, and the heavier lander errs on the safe side.
+    const s = this.flight.unlimited ? { ...this.state, fuel: this.setup.fuel } : this.state;
     const g = this.groundHere;
     // The burn guide and the assist use the vertical part of the thrust at the current tilt.
     this.stop = stopPoint2d(this.setup, s, g, this.above < 5 ? 0.05 : 0.1);
@@ -227,8 +269,8 @@ export class FreeSim {
       this.impactAge = 0;
       this.impact = impactPoint(this.setup, this.flight.site, s, this.throttle);
     }
-    const push = acceleration2d(this.setup, s, this.throttle).ax;
-    this.driftStop = push * s.vx < 0 ? driftStop(this.setup, s, this.throttle, s.tilt) : null;
+    const push = acceleration2d(this.setup, s, this.throttle, this.jets).ax;
+    this.driftStop = push * s.vx < 0 ? driftStop(this.setup, s, this.throttle, s.tilt, this.jets) : null;
     this.deadlineAge += dtReal;
     if (first || this.deadlineAge > 0.25) {
       this.deadlineAge = 0;
@@ -253,7 +295,7 @@ export class FreeSim {
       const impact = s.speed > 0 ? agl / descent : Infinity;
       const decide = this.deadline > 0.4 ? this.deadline : Infinity;
       target = Math.min(decide / 4, impact / 8);
-      if (throttle > 0 || this.turn !== 0) target = Math.min(target, agl > 40 ? 8 : agl > 8 ? 4 : 2);
+      if (throttle > 0 || this.turn !== 0 || this.jets !== 0) target = Math.min(target, agl > 40 ? 8 : agl > 8 ? 4 : 2);
       // The last 2.5 km in real time; only a long, hands-off, drift-free fall is sped up, gently.
       if (agl < 2.5) target = throttle === 0 && this.idleFor > 4 && impact > 40 && Math.abs(s.vx) < 15 ? Math.min(4, impact / 20) : 1;
       if (this.stop && !this.stop.stops && s.speed > 0) target = 1;

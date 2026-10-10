@@ -5,15 +5,15 @@ import { ShareButton } from "@/components/kit/ShareButton";
 import { usePlayScreen, useShell } from "@/components/kit/shell-context";
 import { TargetIcon } from "@/components/kit/icons";
 import { Stars } from "@/components/kit/Stars";
-import { AssistIcon, DivertIcon, GradeIcon, GuideIcon, ScanIcon, WarpIcon, WorldIcon } from "./icons";
+import { AssistIcon, DivertIcon, FuelMark, GradeIcon, GuideIcon, JetIcon, ScanIcon, WarpIcon, WorldIcon } from "./icons";
 import { holdAnnouncements } from "@/lib/kit/achievements";
-import { difficultyLabel, type Difficulty } from "@/lib/lander/difficulty";
+import { difficultyLabel, type FuelChoice } from "@/lib/lander/difficulty";
 import { flagSvg, type FlagDesign } from "@/lib/lander/flags";
 import { freeFlight, onTarget, targetAt, type FreeFlight as Flight2D, type FreeStart } from "@/lib/lander/freeflight";
 import { GRADES, type GradeId } from "@/lib/lander/grades";
 import { SECONDS_PER_HOUR_1979 } from "@/lib/lander/physics";
-import { acceleration2d, type Verdict } from "@/lib/lander/physics2d";
-import { addOnce, updateProgress, withAchievement } from "@/lib/lander/progress";
+import { acceleration2d, JET_PUSH, type Verdict } from "@/lib/lander/physics2d";
+import { addOnce, getProgress, updateProgress, withAchievement } from "@/lib/lander/progress";
 import { approachAdvice, inFinalApproach } from "@/lib/lander/solver";
 import * as sfx from "@/lib/lander/sfx";
 import { bargeTarget, flatTarget, autopilot } from "@/lib/lander/solver2d";
@@ -28,8 +28,8 @@ import { Recorder2D, type Track } from "./Recorder2D";
 import styles from "./Flight.module.css";
 import free from "./FreeFlight.module.css";
 
-/** What to fly: a world, a start, a seeded or named site, and the fuel difficulty. */
-export type FreeSpec = { world: WorldId; start: FreeStart; pick: { seed: number } | { named: string }; difficulty: Difficulty };
+/** What to fly: a world, a start, a seeded or named site, and the fuel choice (a difficulty, or unlimited). */
+export type FreeSpec = { world: WorldId; start: FreeStart; pick: { seed: number } | { named: string }; difficulty: FuelChoice };
 
 type Phase = "ready" | "flying" | "paused" | "ended";
 type Banner = { text: string; tone: "info" | "warn" | "good"; key: number };
@@ -48,6 +48,12 @@ type Result = {
   detail: string;
   insight: string;
   share: string;
+  /** Unlimited fuel: refills, tanks used, and the best so far on this world and start (before this flight). */
+  unlimited: boolean;
+  refills: number;
+  tanksUsed: number;
+  bestTanks: number | null;
+  newBest: boolean;
   samples: Sample2D[];
   you: Track;
   ideal: Track;
@@ -94,8 +100,34 @@ function targetWords(flight: Flight2D) {
   return `${Math.round(width)} m ${noun} ${fmtKm(d)} to your ${d < 0 ? "left" : "right"}`;
 }
 
+/** "62% of a tank", "2.4 tanks". */
+function fmtTanks(tanks: number) {
+  return tanks < 1 ? `${Math.round(tanks * 100)}% of a tank` : `${tanks.toFixed(1)} tanks`;
+}
+
+/** Unlimited fuel on the result card: what this flight used, against your best on this world and start. */
+function tanksLine(r: Result, where: string) {
+  const used = fmtTanks(r.tanksUsed);
+  if (r.newBest) return r.bestTanks === null ? `${used}: your first record ${where}. Need less next time.` : `New best ${where}: ${used}, down from ${fmtTanks(r.bestTanks)}.`;
+  return r.bestTanks === null ? `${used} used.` : `${used} used · your best ${where}: ${fmtTanks(r.bestTanks)}.`;
+}
+
 function siteLabel(flight: Flight2D) {
   return flight.named ? flight.named.name : `${flight.world.name} · site ${flight.seed}`;
+}
+
+type JetKeys = { jetLeft: boolean; jetRight: boolean; touchJetLeft: boolean; touchJetRight: boolean };
+
+/** Which way the side jets push, from the keys and buttons held: both sides at once cancel out. */
+function jetSide(k: JetKeys): "left" | "right" | null {
+  const left = k.jetLeft || k.touchJetLeft;
+  const right = k.jetRight || k.touchJetRight;
+  return left === right ? null : left ? "left" : "right";
+}
+
+function jetsFrom(k: JetKeys) {
+  const side = jetSide(k);
+  return side === "left" ? -1 : side === "right" ? 1 : 0;
 }
 
 export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn, scan: scanOn, onExit, onRetry, onNewSite }: Props) {
@@ -117,7 +149,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
   /** Where Resume goes back to: a flight can be paused before it starts. */
   const pausedFrom = useRef<Phase>("flying");
   const timersRef = useRef<number[]>([]);
-  const keysRef = useRef({ left: false, right: false, touchLeft: false, touchRight: false, level: false, fine: false });
+  const keysRef = useRef({ left: false, right: false, touchLeft: false, touchRight: false, level: false, fine: false, jetLeft: false, jetRight: false, touchJetLeft: false, touchJetRight: false });
   const altRef = useRef<HTMLElement>(null);
   const speedRef = useRef<HTMLElement>(null);
   const trendRef = useRef<HTMLSpanElement>(null);
@@ -125,6 +157,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
   const driftSubRef = useRef<HTMLSpanElement>(null);
   const tiltRef = useRef<HTMLElement>(null);
   const fuelRef = useRef<HTMLSpanElement>(null);
+  const refillRef = useRef<HTMLSpanElement>(null);
   const fuelBarRef = useRef<HTMLSpanElement>(null);
   const timeRef = useRef<HTMLSpanElement>(null);
   const warpRef = useRef<HTMLElement>(null);
@@ -143,6 +176,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
   const [banner, setBanner] = useState<Banner | null>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [turning, setTurning] = useState<"left" | "right" | "level" | null>(null);
+  const [jetting, setJetting] = useState<"left" | "right" | null>(null);
   const [flown, setFlown] = useState(false);
   const shell = useShell();
 
@@ -199,6 +233,11 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       // Standing on the target earns the grade's stars; a safe landing elsewhere (a diversion), one.
       const stars = stands ? (hit ? g.stars : Math.min(1, g.stars)) : 0;
       const fuelPct = fuel / flight.setup.fuel;
+      const tanksUsed = sim.refills + 1 - fuelPct;
+      const bestKey = `${world.id}-${flight.start}`;
+      const bestTanks = flight.unlimited ? (getProgress().freeTanks[bestKey] ?? null) : null;
+      // A record needs a standing landing; a hundredth of a tank is the smallest step the card shows.
+      const newBest = flight.unlimited && stands && (bestTanks === null || tanksUsed < bestTanks - 0.005);
       const insight = insightFor(sim, flight, grade, verdict);
       const share = freeFlightShare({
         site: flight.named ? flight.named.name : `site ${flight.seed}`,
@@ -214,11 +253,13 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
         scanned: sim.scanUsed,
         assisted: sim.assistUsed,
         difficulty: flight.difficulty,
+        refills: flight.unlimited ? sim.refills : undefined,
       });
       // New keycaps wait for the card, so the toast doesn't land on top of the landing.
       releaseRef.current = holdAnnouncements();
       updateProgress((p) => {
         let n = { ...p, flights: p.flights + 1, freeSeed: flight.named ? p.freeSeed : flight.seed };
+        if (newBest) n = { ...n, freeTanks: { ...n.freeTanks, [bestKey]: tanksUsed } };
         if (stands) {
           const speed = Math.abs(verdict!.speed);
           n = { ...n, landings: n.landings + 1, landed: addOnce(n.landed, world.id), best: { ...n.best, [world.id]: Math.min(n.best[world.id] ?? Infinity, speed) } };
@@ -247,7 +288,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       };
       const you: Track = sim.samples.map((p) => ({ t: p.t, alt: p.alt, off: mid(p.t) - p.x, throttle: p.throttle, tilt: p.tilt }));
       const ideal: Track = sim.ideal.path.map((p) => ({ t: p.t, alt: Math.max(0, p.alt - heightAt(flight.site, p.x, p.t) / 1000), off: mid(p.t) - p.x, throttle: p.throttle, tilt: p.tilt }));
-      const r: Result = { verdict, onTarget: hit, missBy, grade, fuelPct, time: sim.state.t, stars, narrow, centre, detail, insight, share, samples: [...sim.samples], you, ideal, scanned: sim.scanUsed };
+      const r: Result = { verdict, onTarget: hit, missBy, grade, fuelPct, time: sim.state.t, stars, narrow, centre, detail, insight, share, unlimited: flight.unlimited, refills: sim.refills, tanksUsed, bestTanks, newBest, samples: [...sim.samples], you, ideal, scanned: sim.scanUsed };
       const delay = liveRef.current.reduced ? 700 : g.flag ? 4300 : grade === "tipped" ? 3800 : grade === "splash" ? 3000 : grade === "oil" ? 3400 : g.landed ? 1800 : 2400;
       timersRef.current.push(
         window.setTimeout(() => {
@@ -272,7 +313,10 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
           say("Burn now!", "warn");
         } else if (e.kind === "fuel-low") {
           if (on) sfx.warning();
-          say("Fuel low", "warn");
+          say(flight.unlimited ? "Fuel low · a refill is coming" : "Fuel low", "warn");
+        } else if (e.kind === "refill") {
+          if (on) sfx.refill();
+          say(`Tank refilled · refill ${e.count}`, "info");
         } else if (e.kind === "fuel-out") {
           say(e.hopeless ? "Out of fuel · fast-forwarding" : "Out of fuel", "warn");
         } else if (e.kind === "climbing") {
@@ -305,7 +349,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
         }
       }
     },
-    [finish, say, setPhase],
+    [finish, say, setPhase, flight.unlimited],
   );
 
   // The frame loop.
@@ -372,6 +416,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       sim.level = k.level || (k.touchLeft && k.touchRight);
       sim.turn = sim.level ? 0 : left === right ? 0 : left ? -1 : 1;
       sim.fine = k.fine;
+      sim.jets = jetsFrom(k);
       if (auto && !sim.done) {
         const c = auto(sim.state);
         const diff = c.tilt - sim.state.tilt;
@@ -384,9 +429,10 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
         if (live.sound && !sim.done) {
           sfx.engineStart();
           sfx.engineSet(sim.throttle, sim.above < 0.05 ? 1 : 0);
-          if ((sim.turn !== 0 || (sim.level && sim.state.tilt !== 0)) && nowMs - rcsAt > 230) {
+          const jetsOn = sim.jets !== 0 && sim.state.fuel > 0;
+          if ((sim.turn !== 0 || jetsOn || (sim.level && sim.state.tilt !== 0)) && nowMs - rcsAt > (jetsOn ? 150 : 230)) {
             rcsAt = nowMs;
-            sfx.rcs(sim.fine ? 0.6 : 1);
+            sfx.rcs(jetsOn ? 1.4 : sim.fine ? 0.6 : 1);
           }
         }
       } else if (phaseRef.current === "paused") sfx.engineSet(0);
@@ -404,6 +450,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
         tilt: s.tilt,
         ground: sim.groundHere,
         throttle: phaseRef.current === "flying" ? sim.throttle : 0,
+        jets: phaseRef.current === "flying" && s.fuel > 0 ? sim.jets : 0,
         now: nowMs / 1000,
         ending: endingRef.current,
         stop: sim.guide && !sim.assist && sim.stop ? { alt: sim.stop.stops ? sim.stop.alt : null } : null,
@@ -451,6 +498,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
         fuelBarRef.current.style.transform = `scaleX(${clamp(pct / 100, 0, 1)})`;
         fuelBarRef.current.dataset.low = pct < 10 ? "true" : "";
       }
+      if (refillRef.current) refillRef.current.textContent = !flight.unlimited ? "" : sim.refills === 0 ? "unlimited · no refill yet" : `unlimited · ${sim.refills} refill${sim.refills === 1 ? "" : "s"}`;
       if (timeRef.current) timeRef.current.textContent = `T+${fmtTime(s.t)}`;
       if (warpRef.current) {
         const w = Math.round(sim.warp);
@@ -524,6 +572,10 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
           const g = Math.max(0.3, flight.setup.world.g2);
           if (Math.abs(s.vx) <= 3) {
             text = Math.abs(s.tilt) > 3 ? "sideways ✓ · stand up (U)" : "sideways ✓";
+          } else if (s.fuel > 0 && Math.abs(s.vx) <= JET_PUSH * 4) {
+            // The jets kill this much drift within about four seconds, with no lean to undo afterwards.
+            text = `aim 0 sideways · jets ${s.vx > 0 ? "◀ Q" : "E ▶"}`;
+            tone = Math.abs(s.vx) > 6 ? "close" : "ok";
           } else {
             // The lean that kills the drift in about four seconds, gentler in the last few metres.
             const limit = agl < 0.012 ? 8 : 20;
@@ -693,6 +745,13 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
         setTurning("level");
         return;
       }
+      if (k === "q" || k === "Q" || k === "e" || k === "E") {
+        e.preventDefault();
+        keysRef.current[k === "q" || k === "Q" ? "jetLeft" : "jetRight"] = true;
+        setJetting(jetSide(keysRef.current));
+        if (phaseRef.current === "ready") start();
+        return;
+      }
       if (k === "ArrowUp") {
         e.preventDefault();
         nudge(e.shiftKey ? 1 : 5);
@@ -716,11 +775,15 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       if (e.key === "ArrowRight") keysRef.current.right = false;
       if (e.key === "u" || e.key === "U") keysRef.current.level = false;
       if (["ArrowLeft", "ArrowRight", "u", "U"].includes(e.key)) setTurning(null);
+      if (e.key === "q" || e.key === "Q") keysRef.current.jetLeft = false;
+      if (e.key === "e" || e.key === "E") keysRef.current.jetRight = false;
+      if (["q", "Q", "e", "E"].includes(e.key)) setJetting(jetSide(keysRef.current));
     };
     const blur = () => {
-      Object.assign(keysRef.current, { left: false, right: false, level: false, touchLeft: false, touchRight: false });
+      Object.assign(keysRef.current, { left: false, right: false, level: false, touchLeft: false, touchRight: false, jetLeft: false, jetRight: false, touchJetLeft: false, touchJetRight: false });
       setHolding(false);
       setTurning(null);
+      setJetting(null);
     };
     window.addEventListener("keydown", down);
     window.addEventListener("keyup", up);
@@ -751,6 +814,16 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       const keys = keysRef.current;
       keys[side === "left" ? "touchLeft" : "touchRight"] = down;
       setTurning(!down ? null : keys.touchLeft && keys.touchRight ? "level" : side);
+      if (down) start();
+    },
+    [start],
+  );
+
+  const pressJet = useCallback(
+    (side: "left" | "right", down: boolean) => {
+      const keys = keysRef.current;
+      keys[side === "left" ? "touchJetLeft" : "touchJetRight"] = down;
+      setJetting(jetSide(keys));
       if (down) start();
     },
     [start],
@@ -840,6 +913,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
             <span className={styles.fuelTrack} aria-hidden>
               <span ref={fuelBarRef} className={styles.fuelBar} />
             </span>
+            <span ref={refillRef} className={styles.trend} />
           </dd>
         </div>
         <div className={styles.timeRow}>
@@ -853,6 +927,24 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
       </dl>
 
       <div className={free.rotate} hidden={phase === "ended"}>
+        <button type="button" className={free.jet} aria-label="Side jets, push left (hold, Q)" title="Side jets, push left (Q)" data-on={jetting === "left" || undefined} onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            pressJet("left", true);
+          }}
+          onPointerUp={() => pressJet("left", false)}
+          onPointerCancel={() => pressJet("left", false)}>
+          <JetIcon size={20} dir="left" />
+          <kbd>Q</kbd>
+        </button>
+        <button type="button" className={free.jet} aria-label="Side jets, push right (hold, E)" title="Side jets, push right (E)" data-on={jetting === "right" || undefined} onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            pressJet("right", true);
+          }}
+          onPointerUp={() => pressJet("right", false)}
+          onPointerCancel={() => pressJet("right", false)}>
+          <kbd>E</kbd>
+          <JetIcon size={20} dir="right" />
+        </button>
         <button type="button" className={free.turn} aria-label="Rotate left (hold)" data-on={turning === "left" || turning === "level" || undefined} onPointerDown={(e) => {
             e.currentTarget.setPointerCapture(e.pointerId);
             pressRotate("left", true);
@@ -926,7 +1018,7 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
           <div className={styles.card}>
             <p className={styles.kicker}>
               <WorldIcon world={world.id} size={16} /> {siteLabel(flight)} · {spec.start === "full" ? "full descent" : "final approach"}
-              {flight.difficulty !== "standard" && ` · ${difficultyLabel(flight.difficulty)}`}
+              {flight.unlimited ? " · unlimited fuel" : flight.difficulty !== "standard" && ` · ${difficultyLabel(flight.difficulty)}`}
             </p>
             <h2 className={styles.cardTitle}>Free Flight</h2>
             <p className={styles.cardText}>
@@ -936,6 +1028,9 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
             <ul className={styles.keys}>
               <li>
                 <kbd>←</kbd> <kbd>→</kbd> rotate (<kbd>Shift</kbd> for fine) · <kbd>U</kbd> level up
+              </li>
+              <li>
+                hold <kbd>Q</kbd> <kbd>E</kbd> side jets: push left or right at once, no lean needed
               </li>
               <li>
                 hold <kbd>Space</kbd> or BURN: full power · <kbd>↑</kbd> <kbd>↓</kbd> <kbd>0</kbd>–<kbd>9</kbd> throttle
@@ -986,10 +1081,15 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
               <dd>{result.verdict ? fmtSpeed(result.verdict.drift) : "—"}</dd>
             </div>
             <div>
-              <dt>Fuel left</dt>
-              <dd>{Math.round(result.fuelPct * 100)}%</dd>
+              <dt>{result.unlimited ? "Refills" : "Fuel left"}</dt>
+              <dd>{result.unlimited ? result.refills : `${Math.round(result.fuelPct * 100)}%`}</dd>
             </div>
           </dl>
+          {result.unlimited && (
+            <p className={free.tanks} data-best={result.newBest || undefined}>
+              <FuelMark difficulty="unlimited" size={16} /> {tanksLine(result, `on ${world.id === "moon" ? "the Moon" : world.name}, ${flight.start === "full" ? "full descent" : "final approach"}`)}
+            </p>
+          )}
           {(named || result.stars > 0) && (
             <p className={styles.stars}>
               <Stars value={result.stars} size={22} />{" "}
@@ -1025,6 +1125,13 @@ export function FreeFlight({ spec, flag, sound, guide: guideOn, assist: assistOn
 
 function insightFor(sim: FreeSim, flight: Flight2D, grade: GradeId, v: Verdict | null) {
   if (grade === "lost") return "You were climbing when it mattered. Let gravity pull you down and brake on the way in.";
+  if (v?.stands && flight.unlimited) {
+    const used = sim.tanksUsed;
+    const perfect = 1 - sim.ideal.fuelLeft / flight.setup.fuel;
+    if (sim.refills === 0 && used <= 1 - 0.9 * (1 - perfect)) return `Textbook, and no refill. You used ${Math.round(used * 100)}% of the tank; the autopilot, knowing every rock, used ${Math.round(perfect * 100)}%.`;
+    if (sim.refills === 0) return `Down and standing without a refill. The autopilot, knowing every rock, would have used ${Math.round(perfect * 100)}% of the tank to your ${Math.round(used * 100)}%: kill the drift during the main burn, not after it.`;
+    return `Down and standing on ${fmtTanks(used)}. The autopilot, knowing every rock, needs ${Math.round(perfect * 100)}% of one: brake later, kill the drift during the main burn, and the refills will go.`;
+  }
   if (v?.stands) {
     const left = sim.state.fuel / flight.setup.fuel;
     const perfect = sim.ideal.fuelLeft / flight.setup.fuel;
@@ -1035,10 +1142,10 @@ function insightFor(sim: FreeSim, flight: Flight2D, grade: GradeId, v: Verdict |
     if (!v) return "";
     if (Math.max(...v.feet) > 8) return "Soft enough, but the ground was too steep. Look for ground that stays level for at least 8 m: the lander's feet are that far apart.";
     if (v.tiltOff > 10) return "Soft enough, but you were leaning. Level up with U in the last few metres.";
-    return "Soft enough, but still sliding sideways. Kill the drift before the feet touch: tilt against it, then stand up.";
+    return "Soft enough, but still sliding sideways. Kill the drift before the feet touch: hold the side jets against it (Q or E), or tilt against it and stand up.";
   }
   if (grade === "splash") return "That was the sea. The barges are the only flat ground out there: steer onto one before you come down.";
-  if (sim.state.fuel <= 1) return "You ran dry. Kill the drift during the main burn, when the engine is running anyway: it costs far less than fixing it later.";
+  if (!flight.unlimited && sim.state.fuel <= 1) return "You ran dry. Kill the drift during the main burn, when the engine is running anyway: it costs far less than fixing it later.";
   return "Too fast at the end. Brake harder in the last few hundred metres, and keep the speed under 20 km/h.";
 }
 

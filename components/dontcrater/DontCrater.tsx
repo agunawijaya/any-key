@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { GameShell } from "@/components/kit/GameShell";
 import { usePrefs } from "@/components/kit/hooks";
 import type { DocTab } from "@/components/kit/Story";
+import { tankDifficulty } from "@/lib/lander/difficulty";
 import { randomSeed } from "@/lib/lander/freeflight";
 import { landerManifest } from "@/lib/lander/manifest";
 import { MISSIONS } from "@/lib/lander/missions";
@@ -20,6 +21,7 @@ const SHORTCUTS = [
   { keys: "Space", does: "Start the descent; hold for full burn" },
   { keys: "↑ ↓  0–9", does: "Throttle" },
   { keys: "← →", does: "Lean (Free Flight)" },
+  { keys: "Q E", does: "Side jets, push left or right (Free Flight)" },
   { keys: "T  A  G", does: "Time warp, landing assist, burn guide" },
   { keys: "P", does: "Pause" },
 ];
@@ -35,7 +37,7 @@ export function DontCrater({ docs }: { docs: DocTab[] }) {
 
   const nextMission = (session: Session) => {
     const next = session.mission && MISSIONS.find((m) => m.id === session.mission!.id + 1);
-    return next ? () => play(missionSession(next, progress.guide, progress.assist, progress.difficulty)) : undefined;
+    return next ? () => play(missionSession(next, progress.guide, progress.assist, tankDifficulty(progress.difficulty))) : undefined;
   };
 
   return (

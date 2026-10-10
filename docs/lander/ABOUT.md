@@ -14,7 +14,7 @@ The worlds look like travel posters, by day in the light theme and by night in t
 - **Ten missions and a Daily Drop**: cargo, short tanks, hot entries, dead instruments, and one descent a day that everyone flies.
 - **Free Flight**: the lander leans and drifts, and has to stand upright on a ledge between the rocks or on a barge at sea.
 - **Your own flag**, planted on every landing under 5 km/h, with emblems you earn.
-- **Help that teaches**: a burn guide, a landing assist and fuel settings from Generous to Tight.
+- **Help that teaches**: a burn guide, a landing assist and fuel settings from Generous to Tight, plus Unlimited for Free Flight, where the card counts your refills so you can watch them disappear.
 - **1979 mode**: the original program's numbers and quirks, turn for turn, on a blocky screen.
 
 ## The original

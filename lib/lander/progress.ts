@@ -5,7 +5,7 @@ import { forgetGame } from "@/lib/kit/forget";
 import { LEGACY_SAVES, LEGACY_VERSION } from "@/lib/kit/legacy";
 import { createProgress, withoutAchievements } from "@/lib/kit/progress";
 import { createStore } from "@/lib/kit/save";
-import type { Difficulty } from "./difficulty";
+import type { FuelChoice } from "./difficulty";
 import { EMBLEM_FROM_EMOJI, emblemById } from "./emblems";
 import { DEFAULT_FLAG, type FlagDesign } from "./flags";
 import type { FreeStart } from "./freeflight";
@@ -33,13 +33,15 @@ export type Progress = {
   /** Landing assist: the soft (5 km/h) and limit (20 km/h) lines. */
   assist: boolean;
   world: WorldId;
-  /** Fuel difficulty for every mode but 1979 mode. */
-  difficulty: Difficulty;
+  /** The fuel row: a difficulty for every mode but 1979 mode, or unlimited fuel (Free Flight only). */
+  difficulty: FuelChoice;
   /** Free Flight: the scan assist, the last start chosen, the last seed flown, and the named sites' best results. */
   scan: boolean;
   freeStart: FreeStart;
   freeSeed: number;
   sites: Record<string, SiteBest>;
+  /** Free Flight on unlimited fuel: the fewest tanks a standing landing has used, per world and start ("moon-final"). */
+  freeTanks: Record<string, number>;
 };
 
 /** A named site's best: stars from the landing grade, and the precision bonuses earned there. */
@@ -65,6 +67,7 @@ const EMPTY: Progress = {
   freeStart: "final",
   freeSeed: 0,
   sites: {},
+  freeTanks: {},
 };
 
 type Saved = Omit<Progress, "achievements">;
