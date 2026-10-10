@@ -10,6 +10,7 @@ This file is excluded from formatters (`.prettierignore`) so parallel sessions d
 | Outta Here | `escape` | Playable | 6 of 6 | 12 (6 common, 4 rare, 2 legendary) | Daily Escape, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
 | Don't Crater | `lander` | Playable | 6 of 6 | 15 (7 common, 5 rare, 3 legendary) | Daily Drop, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
 | Two Humps | `two-humps` | Playable | 6 of 6 | 15 (5 common, 7 rare, 3 legendary) | Daily Crossing, numbered from 2026-10-09 | 03 two-humps (2026-10-09) |
+| Same Trick Twice | `long-memory` | Playable | 6 of 6 | 11 (5 common, 4 rare, 2 legendary) | Daily Endgame, numbered from 2026-10-09 | 09 long-memory (2026-10-09) |
 
 ## Polish candidates
 
@@ -100,3 +101,14 @@ prompts. Items it did fix are not listed.
 - 2560 × 1440 runs at 53–56 frames a second with a laptop GPU (60 at 1920 × 1080); without a GPU, 20–30.
 - Keys pressed while a turn is still playing out are ignored rather than queued; the cards say "Wait" meanwhile.
 - 1982 mode's `F1`–`F6` submit numbers, which the original's soft keys never did (they typed words).
+
+### Same Trick Twice
+
+- Owner question: Oware is a solved draw, so against perfect play no Oware table can be won; the Hard Scholar
+  is strong but not perfect. Does "every table winnable" need more than that for Oware?
+- The Daily Endgame uses only 1978 Awari and Kalah: Oware positions can repeat, which the exact solver can't
+  prove its way through.
+- With reduced motion on, seeds can't be carried by hand: a drag sows the pit when it is let go.
+- Without WebGL2 only the 1970s terminal can be played; a flat Canvas 2D board would keep the rest playable.
+- Without a graphics card the light board shows faceted pit rims and a toothed front edge; a mesh that is dense
+  only around the pits would smooth them at little cost.

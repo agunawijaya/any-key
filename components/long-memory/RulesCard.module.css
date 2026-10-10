@@ -1,0 +1,85 @@
+.board {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  margin: 4px auto 16px;
+}
+
+.wood {
+  fill: #9a5328;
+  stroke: #6e3615;
+  stroke-width: 2;
+}
+
+:root[data-theme="dark"] .wood {
+  fill: #7d4220;
+  stroke: #4a230c;
+}
+
+.hollow {
+  fill: #6b3417;
+  stroke: rgb(255 220 180 / 0.25);
+  stroke-width: 1.2;
+}
+
+.hollow[data-start="true"] {
+  stroke: #ffd18a;
+  stroke-width: 2.4;
+}
+
+.hollow[data-off="true"] {
+  opacity: 0.45;
+}
+
+.route {
+  fill: none;
+  stroke: rgb(255 226 180 / 0.55);
+  stroke-width: 1.6;
+  stroke-dasharray: 3 4;
+}
+
+.seed {
+  fill: #e9e0cc;
+  stroke: #3a2a1c;
+  stroke-width: 1;
+}
+
+.drop {
+  fill: #e9e0cc;
+  opacity: 0;
+  animation: land 2.6s ease-in infinite;
+}
+
+.drop[data-still="true"] {
+  animation: none;
+  opacity: 0.9;
+}
+
+@keyframes land {
+  0%,
+  10% {
+    opacity: 0;
+  }
+  18%,
+  85% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.lines {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 20px;
+  padding-left: 20px;
+  color: var(--ink-2);
+  font: 450 15px/1.5 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.lines li::marker {
+  color: var(--lm-accent);
+  font-weight: 700;
+}

@@ -1,0 +1,117 @@
+.pick {
+  top: clamp(16px, 3vh, 32px);
+  left: clamp(16px, 2.6vw, 40px);
+  width: min(480px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow: auto;
+  /* A choice reached with Tab scrolls clear of the pinned Start bar. */
+  scroll-padding-bottom: 96px;
+  gap: 16px;
+}
+
+/* Start stays in reach when the choices run past the bottom of a short window. */
+.actions {
+  position: sticky;
+  bottom: -26px;
+  z-index: 1;
+  margin: 0 -30px -26px;
+  padding: 14px 30px 26px;
+  border-top: 1px solid var(--lm-line);
+  border-radius: 0 0 24px 24px;
+  background: var(--lm-paper);
+}
+
+.group,
+.inline {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.legend {
+  margin-bottom: 4px;
+  padding: 0;
+  color: var(--lm-ink-3);
+  font: 600 11px/1.2 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.inline .legend {
+  margin-right: 8px;
+}
+
+.option {
+  position: relative;
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px 13px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--lm-line);
+  background: color-mix(in srgb, var(--lm-paper) 70%, transparent);
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.option input,
+.chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.option[data-checked="true"] {
+  border-color: var(--lm-accent);
+  background: color-mix(in srgb, var(--lm-accent) 10%, var(--lm-paper));
+  box-shadow: inset 4px 0 0 var(--lm-accent);
+}
+
+.option[data-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.option:has(input:focus-visible),
+.chip:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.optionTitle {
+  font: 400 21px/1.15 var(--font-instrument), Georgia, serif;
+}
+
+.optionNote {
+  color: var(--lm-ink-2);
+  font: 450 13.5px/1.45 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.chip {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-width: 44px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--lm-line-strong);
+  background: var(--lm-paper);
+  font: 600 14px/1 var(--font-geist-sans), system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.chip[data-checked="true"] {
+  border-color: var(--lm-accent);
+  background: var(--lm-accent);
+  color: var(--lm-on-accent);
+}

@@ -1,0 +1,295 @@
+/* ---------- The HUD over the carved board: sunlit paper by day, lamplit ink by night ---------- */
+
+.hud {
+  --hud-ink: #2b1a0e;
+  --hud-ink-2: #5d4330;
+  --hud-surface: rgb(252 247 238 / 0.9);
+  --hud-line: rgb(80 50 25 / 0.16);
+  --hud-accent: #9a4d16;
+  --hud-ghost: #2d55c8;
+  --hud-count: #2b1a0e;
+  --hud-count-halo: rgb(255 250 240 / 0.75);
+  --hud-chip: rgb(255 249 238 / 0.92);
+  --hud-on-accent: #fff6ea;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  color: var(--hud-ink);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+:root[data-theme="dark"] .hud {
+  --hud-ink: #f6e8d2;
+  --hud-ink-2: #cdb698;
+  --hud-surface: rgb(22 18 26 / 0.82);
+  --hud-line: rgb(255 214 160 / 0.16);
+  --hud-accent: #f2a65a;
+  --hud-ghost: #8fbaff;
+  --hud-count: #f3dcc0;
+  --hud-count-halo: rgb(10 8 14 / 0.8);
+  --hud-chip: rgb(24 18 22 / 0.86);
+  --hud-on-accent: #1d1006;
+}
+
+/* ---------- The match line, top left ---------- */
+
+.match {
+  position: absolute;
+  top: 22px;
+  right: clamp(16px, 2.4vw, 32px);
+  text-align: right;
+  display: grid;
+  gap: 2px;
+  padding: 12px 18px 13px;
+  border-radius: 16px;
+  border: 1px solid var(--hud-line);
+  background: var(--hud-surface);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 14px 30px -22px rgb(30 15 5 / 0.6);
+}
+
+.kicker {
+  color: var(--hud-accent);
+  font: 600 11px/1.2 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.matchTitle {
+  font: 400 26px/1.05 var(--font-instrument), Georgia, serif;
+}
+
+.matchMove {
+  color: var(--hud-ink-2);
+  font: 500 13px/1.3 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* ---------- Counts by the pits ---------- */
+
+/* Small paper tokens on the wood, readable over any grain. */
+.count {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--hud-chip);
+  color: var(--hud-ink);
+  font: 600 15px/1 var(--font-geist-sans), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.5) inset,
+    0 2px 5px -1px rgb(40 18 4 / 0.45);
+}
+
+.far {
+  width: 27px;
+  height: 27px;
+  font-size: 14px;
+}
+
+.marked {
+  background: var(--hud-accent);
+  color: var(--hud-on-accent);
+}
+
+/* ---------- Stores' totals at the ends ---------- */
+
+.score {
+  position: absolute;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  transform: translate(-50%, -50%);
+}
+
+.scoreLabel {
+  color: var(--hud-ink-2);
+  font: 600 11px/1.2 var(--font-geist-mono), monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.scoreValue {
+  font: 400 76px/0.9 var(--font-instrument), Georgia, serif;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 18px var(--hud-count-halo);
+}
+
+.scoreUnit {
+  color: var(--hud-ink-2);
+  font: 500 13px/1 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.scoreRight .scoreValue {
+  color: var(--hud-accent);
+}
+
+.gain {
+  position: absolute;
+  top: 20px;
+  left: calc(100% + 4px);
+  color: var(--hud-accent);
+  font: 400 italic 30px/1 var(--font-instrument), Georgia, serif;
+  text-shadow: 0 0 12px var(--hud-count-halo);
+}
+
+/* ---------- The Learner's note ---------- */
+
+/* It opens to the right of the pit: the Memory Book lies open to the upper left, and the note must not cover it. */
+
+.callout {
+  position: absolute;
+  display: grid;
+  gap: 3px;
+  max-width: 300px;
+  padding: 10px 14px 11px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--hud-ghost) 45%, transparent);
+  background: var(--hud-surface);
+  backdrop-filter: blur(8px);
+  transform: translate(-28px, calc(-100% - 14px));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--hud-ghost) 12%, transparent), 0 18px 34px -24px rgb(10 20 60 / 0.7);
+}
+
+.callout::after {
+  content: "";
+  position: absolute;
+  left: 27px;
+  bottom: -15px;
+  width: 1.5px;
+  height: 15px;
+  background: color-mix(in srgb, var(--hud-ghost) 70%, transparent);
+}
+
+.calloutKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--hud-ghost);
+  font: 600 11px/1.2 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.calloutText {
+  font: 400 19px/1.2 var(--font-instrument), Georgia, serif;
+}
+
+/* ---------- The turn line, bottom centre ---------- */
+
+.turn {
+  position: absolute;
+  left: 50%;
+  bottom: 26px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hud-line);
+  background: var(--hud-surface);
+  backdrop-filter: blur(10px);
+  transform: translateX(-50%);
+  box-shadow: 0 16px 34px -24px rgb(30 15 5 / 0.65);
+  white-space: nowrap;
+}
+
+.turnMark {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--hud-accent) 14%, transparent);
+  color: var(--hud-accent);
+}
+
+.turnLearner .turnMark {
+  background: color-mix(in srgb, var(--hud-ghost) 14%, transparent);
+  color: var(--hud-ghost);
+}
+
+.turnText {
+  display: grid;
+  gap: 1px;
+}
+
+.turnText strong {
+  font: 400 21px/1.1 var(--font-instrument), Georgia, serif;
+}
+
+.turnText span {
+  color: var(--hud-ink-2);
+  font: 500 13px/1.3 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.keys {
+  display: flex;
+  gap: 5px;
+  padding-left: 6px;
+  border-left: 1px solid var(--hud-line);
+  margin-left: 2px;
+}
+
+.keys kbd {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--hud-line);
+  border-bottom-width: 3px;
+  background: color-mix(in srgb, var(--hud-surface) 70%, white 30%);
+  color: var(--hud-ink);
+  font: 600 13px/1 var(--font-geist-mono), monospace;
+}
+
+:root[data-theme="dark"] .keys kbd {
+  background: rgb(255 255 255 / 0.06);
+}
+
+/* ---------- A word over the turn line ---------- */
+
+.notice {
+  position: absolute;
+  left: 50%;
+  bottom: 96px;
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--hud-accent);
+  color: var(--hud-on-accent);
+  font: 400 italic 20px/1.1 var(--font-instrument), Georgia, serif;
+  transform: translateX(-50%);
+  animation: rise 1.6s ease both;
+}
+
+@keyframes rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 10px);
+  }
+  15%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notice {
+    animation: none;
+  }
+}
+
+:root[data-motion="reduce"] .notice {
+  animation: none;
+}

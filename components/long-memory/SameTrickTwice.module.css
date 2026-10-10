@@ -1,0 +1,109 @@
+/* ---------- Same Trick Twice: sunlit paper and warm wood by day, lamplit ink by night ---------- */
+
+.app {
+  --lm-paper: #fbf6ee;
+  --lm-paper-2: #f3eadb;
+  --lm-ink: #2b1a0e;
+  --lm-ink-2: #5d4330;
+  --lm-ink-3: #7a5a45;
+  --lm-line: rgb(80 50 25 / 0.16);
+  --lm-line-strong: rgb(80 50 25 / 0.3);
+  --lm-accent: #9a4d16;
+  --lm-on-accent: #fff6ea;
+  --lm-ghost: #2d55c8;
+  --lm-good: #2f7d4f;
+  --lm-glass: rgb(252 247 238 / 0.9);
+  --lm-shadow: 0 18px 40px -26px rgb(40 18 4 / 0.55);
+  /* The kit's own tokens, so the top bar and sheets wear the same paper. */
+  --bg: #f3ebe0;
+  --bg-2: #eadfcd;
+  --surface: #fbf6ee;
+  --surface-2: #f6eee1;
+  --ink: #2b1a0e;
+  --ink-2: #5d4330;
+  --ink-3: #7a5a45;
+  --line: rgb(80 50 25 / 0.14);
+  --line-strong: rgb(80 50 25 / 0.28);
+  --accent: #a4561f;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--lm-ink);
+}
+
+:root[data-theme="dark"] .app {
+  --lm-paper: #1b161c;
+  --lm-paper-2: #241d24;
+  --lm-ink: #f6e8d2;
+  --lm-ink-2: #cdb698;
+  --lm-ink-3: #a8957c;
+  --lm-line: rgb(255 214 160 / 0.14);
+  --lm-line-strong: rgb(255 214 160 / 0.28);
+  --lm-accent: #f2a65a;
+  --lm-on-accent: #1d1006;
+  --lm-ghost: #8fbaff;
+  --lm-good: #7fd6a2;
+  --lm-glass: rgb(22 18 24 / 0.84);
+  --lm-shadow: 0 22px 48px -26px rgb(0 0 0 / 0.85);
+  --bg: #0c0b12;
+  --bg-2: #15121a;
+  --surface: #1b161c;
+  --surface-2: #241d24;
+  --ink: #f6e8d2;
+  --ink-2: #cdb698;
+  --ink-3: #a8957c;
+  --line: rgb(255 214 160 / 0.12);
+  --line-strong: rgb(255 214 160 / 0.26);
+  --accent: #f0a45c;
+}
+
+.stage {
+  position: relative;
+  height: calc(100dvh - var(--shell-bar-h, 72px));
+  min-height: 540px;
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  transition: opacity 0.4s ease;
+}
+
+/* Hidden until its first frame is drawn: the shaders may still be compiling in the background. */
+.canvas:not([data-ready]) {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) .canvas {
+    transition: none;
+  }
+}
+
+:root[data-motion="reduce"] .canvas {
+  transition: none;
+}
+
+/* Behind the records and the settings the board rests, softly out of the way. */
+.veil {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.noWebgl {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  max-width: 420px;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--lm-ink-2);
+  font: 500 15px/1.5 var(--font-geist-sans), system-ui, sans-serif;
+}

@@ -1,0 +1,27 @@
+.waiting {
+  position: absolute;
+  left: 50%;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--lm-line);
+  background: var(--lm-glass);
+  color: var(--lm-ink-2);
+  font: 400 italic 19px/1.2 var(--font-instrument), Georgia, serif;
+  transform: translateX(-50%);
+}
+
+.waiting p {
+  margin: 0;
+}
+
+.waiting button {
+  border: 0;
+  background: none;
+  color: var(--lm-accent);
+  font: 600 14px/1 var(--font-geist-sans), system-ui, sans-serif;
+  cursor: pointer;
+}

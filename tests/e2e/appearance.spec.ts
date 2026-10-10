@@ -33,7 +33,7 @@ test("the Hall shows the Keyring button, today's dailies and the newest game, in
     await page.getByRole("button", { name: style, exact: true }).click();
     const view = page.locator(`[data-view="${style.toLowerCase()}"]`);
     // Orbit draws its planets, so the name is the planet's label rather than text on the page.
-    const newest = style === "Orbit" ? view.getByRole("button", { name: /Two Humps/ }) : view.getByText("Two Humps");
+    const newest = style === "Orbit" ? view.getByRole("button", { name: /Same Trick Twice/ }) : view.getByText("Same Trick Twice");
     await expect(newest.first()).toBeVisible();
   }
 });

@@ -56,6 +56,7 @@ Every game works the same way (`docs/NAVIGATION.md`):
 | **Outta Here** (`/outta-here`) | `ESCAPE.BAS`, author unknown (TRS-80), c. 1980 | Playable |
 | **Don't Crater** (`/dont-crater`) | `LANDER.BAS`, Simutek (TRS-80), 1979 | Playable |
 | **Two Humps** (`/two-humps`) | `DESERT.BAS`, IPCO Personal Computer Owners Group (IBM PC), 1982 | Playable |
+| **Same Trick Twice** (`/long-memory`) | `AWARI.BAS`, Geoff Wyvill / Creative Computing, 1978 | Playable |
 
 ### Bop Box
 
@@ -113,6 +114,18 @@ mode, which runs the original program turn for turn, bugs included. Nobody gets 
 shelter from the storm or stay for porridge; win and your pursuer comes to the party. The docs are in
 `docs/two-humps/`.
 
+### Same Trick Twice
+
+Sow seeds round a carved wooden board against an opponent that learns. The 1978 Awari program noted every
+game it failed to win and steered away from those openings the next time; here that mind is the Learner,
+and its notes fill a Memory Book that lies open on the table, where you can watch it read before it moves.
+Beat it once, then try the same trick twice. Play the 1978 rules, traditional Oware (Abapa) or Kalah against
+the Scholar, which searches ahead on Easy, Normal or Hard, or against a friend on one screen; click a pit,
+press its number or carry the seeds round by hand; solve a shareable Daily Endgame; or switch to 1970s
+mode, which runs the original program turn for turn, its never-cleared score and its crash after the
+51st lesson included. The board is drawn in WebGL2: a sunlit courtyard in the light theme, a lamplit table
+in the dark. The docs are in `docs/long-memory/`.
+
 ## Project layout
 
 ```
@@ -134,6 +147,8 @@ lib/lander/          Don't Crater: worlds, flight model, hoverslam solver, missi
 components/dontcrater/ Don't Crater lobby, canvas scenes, flight screens, 1979 terminal
 lib/two-humps/       Two Humps: trek engine, pursuers, 1982 program, bots, Expedition, daily, progress
 components/two-humps/ Two Humps menu, pursuer pick, trek screen, Canvas 2D diorama, map, 1982 terminal
+lib/long-memory/     Same Trick Twice: three rule sets, the 1978 program, the Learner, the Scholar, solver, Daily Endgame
+components/long-memory/ Same Trick Twice menu, WebGL2 board and seed physics, Memory Book, match screen, 1970s terminal
 docs/ARCHITECTURE.md How the app is built, and the folder map of every game
 docs/NAVIGATION.md   The navigation standard
 docs/adr/            Architecture decisions
@@ -171,6 +186,7 @@ npm run check:stickler   # plays thousands of Stickler games to prove the maths
 npm run check:outta      # Outta Here's rules, the 1980 simulation, and human-like bots on every level and screen
 npm run check:lander     # 1979 maths; every world, mission, Daily Drop and Free Flight site can be landed by human-like pilots
 npm run check:two-humps  # Two Humps' balance against its targets, every Expedition leg, the Daily, and the 1982 program's numbers
+npm run check:long-memory # Same Trick Twice's rule sets, the 1978 program against PC-BASIC recordings, the Learner, the Scholar, every Daily Endgame
 npm run build:soundfont -- path/to/MuseScore_General.sf3   # rebuild public/soundfont/bopbox.sf3
 ```
 

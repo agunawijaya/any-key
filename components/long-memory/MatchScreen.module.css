@@ -1,0 +1,60 @@
+.tools {
+  position: absolute;
+  left: clamp(16px, 2.4vw, 32px);
+  bottom: 26px;
+  display: flex;
+  gap: 8px;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 12px 0 12px;
+  border-radius: 12px;
+  border: 1px solid var(--lm-line-strong);
+  background: var(--lm-glass);
+  backdrop-filter: blur(10px);
+  color: var(--lm-ink);
+  font: 600 13.5px/1 var(--font-geist-sans), system-ui, sans-serif;
+  box-shadow: 0 2px 0 var(--lm-line-strong);
+  cursor: pointer;
+}
+
+.tool:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.tool kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  border: 1px solid var(--lm-line-strong);
+  font: 600 11px/1 var(--font-geist-mono), monospace;
+  opacity: 0.8;
+}
+
+.tool:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.summary {
+  margin: 0;
+  color: var(--ink-2);
+  font: 450 15px/1.55 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+@media (max-width: 720px) {
+  .tools {
+    bottom: 96px;
+  }
+
+  .tool {
+    height: 38px;
+  }
+}

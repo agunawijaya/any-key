@@ -1,0 +1,54 @@
+.menu {
+  top: clamp(16px, 3.4vh, 36px);
+  left: clamp(16px, 2.6vw, 40px);
+  width: min(440px, calc(100% - 32px));
+  max-height: calc(100% - 32px);
+  overflow: auto;
+}
+
+.wordmark {
+  margin: 0;
+  font: 400 clamp(44px, 4.4vw, 62px) / 0.95 var(--font-instrument), Georgia, serif;
+  letter-spacing: -0.015em;
+}
+
+.wordmark em {
+  color: var(--lm-accent);
+  font-style: italic;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.done {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--lm-good) 18%, transparent);
+  color: var(--lm-good);
+  font: 600 11px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 720px) {
+  .menu {
+    top: auto;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 70%;
+  }
+
+  .pair {
+    grid-template-columns: 1fr;
+  }
+}

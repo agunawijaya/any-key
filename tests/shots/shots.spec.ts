@@ -2,6 +2,7 @@ import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { test, type Page } from "@playwright/test";
 import { crashTenSecond, keyringSeed, seed, winClassic } from "../e2e/helpers";
+import { LESSON, playToTheEnd as playSameTrickTwice, returningSave, withSave } from "../e2e/long-memory-helpers";
 import { playToTheEnd, settled, takeTheTutorial, tutorialToTheReins } from "../e2e/two-humps-helpers";
 
 /*
@@ -136,6 +137,71 @@ const SCREENS: Screen[] = [
     },
   },
   { name: "two-humps-records", path: "/two-humps", go: (page) => page.getByRole("button", { name: /Records and settings/ }).click() },
+  { name: "long-memory-menu", path: "/long-memory" },
+  { name: "long-memory-rules", path: "/long-memory", go: (page) => page.getByRole("button", { name: /^Play the Learner/ }).click() },
+  {
+    name: "long-memory-match",
+    path: "/long-memory",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^Play the Learner/ }).click();
+      await page.getByRole("button", { name: /^Got it/ }).click();
+      await page.keyboard.press("2");
+      await page.getByRole("status").filter({ hasText: "Your move" }).waitFor();
+      await page.waitForTimeout(1500);
+    },
+  },
+  {
+    // Caught while the remembered sowing is replayed in ghost seeds over the board.
+    name: "long-memory-remembers",
+    path: "/long-memory",
+    go: async (page) => {
+      await withSave(page, returningSave({ mind: { lessons: [LESSON], q: 0, a: 0 } }));
+      await page.getByRole("button", { name: /^Play the Learner/ }).click();
+      await page.keyboard.press("3");
+      await page.getByText("It remembers this").waitFor();
+      await page.waitForTimeout(900);
+    },
+  },
+  {
+    name: "long-memory-book",
+    path: "/long-memory",
+    go: async (page) => {
+      const lessons = ["2026-10-04", "2026-10-06", "2026-10-07", "2026-10-09"].map((learned, i) => ({ ...LESSON, learned, you: LESSON.you - i }));
+      await withSave(page, returningSave({ mind: { lessons, q: 0, a: 0 } }));
+      await page.getByRole("button", { name: /^Memory Book/ }).click();
+    },
+  },
+  { name: "long-memory-pick", path: "/long-memory", go: (page) => page.getByRole("button", { name: /^Choose rules and opponent/ }).click() },
+  {
+    name: "long-memory-daily",
+    path: "/long-memory",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^Daily Endgame/ }).click();
+      await page.getByText(/^Daily Endgame #\d+ · /).first().waitFor({ timeout: 30_000 });
+      await page.waitForTimeout(1500);
+    },
+  },
+  {
+    name: "long-memory-results",
+    path: "/long-memory",
+    go: async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await withSave(page, returningSave());
+      await page.getByRole("button", { name: /^Play the Learner/ }).click();
+      await playSameTrickTwice(page, "mouse");
+    },
+  },
+  {
+    name: "long-memory-1978",
+    path: "/long-memory",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^1970s mode/ }).click();
+      for (const pit of ["3", "5"]) {
+        await page.keyboard.type(pit);
+        await page.keyboard.press("Enter");
+      }
+    },
+  },
 ];
 
 for (const screen of SCREENS) {

@@ -9,6 +9,7 @@ const GAMES = [
   { route: "/outta-here", title: "Outta Here" },
   { route: "/dont-crater", title: "Don't Crater" },
   { route: "/two-humps", title: "Two Humps" },
+  { route: "/long-memory", title: "Same Trick Twice" },
 ];
 
 test.beforeEach(async ({ page }) => seed(page));

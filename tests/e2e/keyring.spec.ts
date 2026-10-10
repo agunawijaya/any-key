@@ -45,7 +45,7 @@ test("the unlock shows on the Keyring page, with its XP", async ({ page }) => {
   await page.keyboard.press("4");
   await expect(toast(page, "Rule Bender")).toBeVisible();
   await page.goto("/keyring");
-  await expect(page.getByText("1 of 64 keycaps on the ring")).toBeVisible();
+  await expect(page.getByText("1 of 75 keycaps on the ring")).toBeVisible();
   await expect(page.getByText("10 / 40 XP")).toBeVisible();
 });
 
@@ -57,15 +57,15 @@ test("Keyring: forgetting one game asks first and keeps the others", async ({ pa
     localStorage.setItem("anykey.keyring.save", JSON.stringify(s["anykey.keyring.save"]));
   }, keyringSeed);
   await page.goto("/keyring");
-  await expect(page.getByText("20 of 64 keycaps on the ring")).toBeVisible();
+  await expect(page.getByText("20 of 75 keycaps on the ring")).toBeVisible();
   await page.getByRole("button", { name: "Forget my Stickler data" }).click();
   const ask = page.getByRole("alertdialog");
   await expect(ask).toBeVisible();
   await ask.getByRole("button", { name: "Keep it" }).click();
-  await expect(page.getByText("20 of 64 keycaps on the ring")).toBeVisible();
+  await expect(page.getByText("20 of 75 keycaps on the ring")).toBeVisible();
   await page.getByRole("button", { name: "Forget my Stickler data" }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Forget", exact: true }).click();
-  await expect(page.getByText("14 of 64 keycaps on the ring")).toBeVisible();
+  await expect(page.getByText("14 of 75 keycaps on the ring")).toBeVisible();
 });
 
 test("Keyring: the week's streak and today's dailies", async ({ page }) => {

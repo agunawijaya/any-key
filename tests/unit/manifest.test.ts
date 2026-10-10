@@ -27,4 +27,9 @@ describe("manifests", () => {
     expect(byId["two-humps"]).toMatchObject({ status: "playable", title: "Two Humps", route: "/two-humps" });
     expect(byId["two-humps"].inspiredBy).toMatchObject({ originalTitle: "Desert", file: "DESERT.BAS", year: 1982 });
   });
+
+  it("lists Same Trick Twice, the rebuild of Awari, as playable", () => {
+    expect(byId["long-memory"]).toMatchObject({ status: "playable", title: "Same Trick Twice", route: "/long-memory" });
+    expect(byId["long-memory"].inspiredBy).toMatchObject({ originalTitle: "Awari", file: "AWARI.BAS", year: 1978 });
+  });
 });
