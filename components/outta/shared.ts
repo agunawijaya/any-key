@@ -19,16 +19,21 @@ export const CAUSES: Record<string, string> = {
   eraser: "The Eraser caught up with you.",
   bouncer: "A Bouncer walked into you.",
   glitch: "Glitch found you.",
+  copycat: "The Copycat caught up with you.",
   rain: "A block landed on you.",
   bomb: "Your own bomb got you.",
+  "copycat-bomb": "The Copycat's bomb got you.",
 };
 
 /** A key as one lower-case letter, or its name ("ArrowUp"). */
 export const keyOf = (e: KeyboardEvent) => (e.key.length === 1 ? e.key.toLowerCase() : e.key);
 
 export function playSound(e: GameEvent) {
-  if (e.kind === "bomb") sfx.bomb();
-  else if (e.kind === "boom") sfx.boom(e.broken, e.chain);
+  if (e.kind === "bomb") (e.mega ? sfx.megaBomb : e.by === "copycat" ? sfx.copycatBomb : sfx.bomb)();
+  else if (e.kind === "boom") {
+    if (e.mega) sfx.megaBoom();
+    sfx.boom(e.broken, e.chain);
+  } else if (e.kind === "copycat") (e.act === "brace" ? sfx.copycatBrace : e.act === "arm" ? sfx.copycatArm : sfx.copycatPush)();
   else if (e.kind === "pickup") sfx.pickup(e.item !== "letter");
   else if (e.kind === "hit") sfx.hit();
   else if (e.kind === "bump") sfx.bump();

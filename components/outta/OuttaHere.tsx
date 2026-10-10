@@ -22,6 +22,7 @@ type View = { kind: "lobby" } | { kind: "screens" } | { kind: "play"; session: S
 const SHORTCUTS = [
   { keys: "Arrows  WASD", does: "Move (hold to keep going)" },
   { keys: "Space  B", does: "Drop a bomb" },
+  { keys: "M  E", does: "Drop the Mega bomb you carry (Normal and Hard)" },
   { keys: "R  N", does: "Try again, new screen" },
   { keys: "P", does: "Pause" },
 ];

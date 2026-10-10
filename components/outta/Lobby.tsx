@@ -170,7 +170,8 @@ export function Lobby({ onChoose }: { onChoose: (mode: ModeId) => void }) {
           <p className={styles.tagline}>The walls grow while you hesitate.</p>
           <p className={styles.lead}>
             You are the star of a 1980 program called ESCAPE: an asterisk on a TRS-80 screen that has to reach the exit while blocks fall
-            around it. Now the blocks come in wood, glass and stone, you have bombs, and three chasers want you caught.
+            around it. Now the blocks come in wood, glass and stone, you have bombs (and a Mega bomb for the stone), and four chasers want you
+            caught.
           </p>
         </div>
       </section>

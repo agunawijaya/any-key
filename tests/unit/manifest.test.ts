@@ -5,9 +5,10 @@ import legacy from "../fixtures/achievements.v1.json";
 const byId = Object.fromEntries(games.map((g) => [g.id, g]));
 
 describe("manifests", () => {
-  // The lists the games carried before the kit, captured when the emoji icons were retired.
+  // The lists the games carried before the kit, captured when the emoji icons were retired. New ones may follow them.
   it.each(Object.entries(legacy))("%s keeps every achievement title and hint it had", (id, list) => {
-    expect(byId[id].achievements.map(({ id, title, hint }) => ({ id, name: title, how: hint }))).toEqual(list);
+    const now = byId[id].achievements.map(({ id, title, hint }) => ({ id, name: title, how: hint }));
+    expect(now.slice(0, list.length)).toEqual(list);
   });
 
   it("gives Bop Box six to eight achievements of its own", () => {

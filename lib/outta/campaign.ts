@@ -48,6 +48,9 @@ function settingsFor(computer: ComputerId, i: number): Settings {
     floors: i < 2 ? 3 : 4,
     rain: ramp(2.2, 3),
     bouncers: 2,
+    // The screens were picked by the bots before the Copycat and the Mega bomb existed; they stay as picked.
+    copycat: null,
+    megaBombs: 0,
   };
   switch (computer) {
     case "green":

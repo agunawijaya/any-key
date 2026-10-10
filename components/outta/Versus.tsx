@@ -18,11 +18,25 @@ import styles from "./Versus.module.css";
  */
 
 const PLAYERS = [
-  { name: "Player 1", keys: "WASD · bomb Space", dirs: { w: "up", s: "down", a: "left", d: "right" } as Record<string, Dir>, bomb: [" ", "f"] },
-  { name: "Player 2", keys: "Arrows · bomb Enter", dirs: { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" } as Record<string, Dir>, bomb: ["Enter", "/", "0"] },
+  {
+    name: "Player 1",
+    keys: "WASD · bomb Space",
+    megaKeys: " · Mega E",
+    dirs: { w: "up", s: "down", a: "left", d: "right" } as Record<string, Dir>,
+    bomb: [" ", "f"],
+    mega: ["e"],
+  },
+  {
+    name: "Player 2",
+    keys: "Arrows · bomb Enter",
+    megaKeys: " · Mega right Shift",
+    dirs: { ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right" } as Record<string, Dir>,
+    bomb: ["Enter", "/", "0"],
+    mega: ["ShiftRight", "."],
+  },
 ];
 
-type Side = { t: number; hearts: number; bombs: number; chain: number; state: Game["state"]; cause: string };
+type Side = { t: number; hearts: number; bombs: number; mega: number; chain: number; state: Game["state"]; cause: string };
 
 export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolean; onExit: () => void }) {
   const [seed, setSeed] = useState(() => 1 + Math.floor(Math.random() * 99999));
@@ -33,6 +47,7 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
   const [paused, setPaused] = useState(false);
   const pausedRef = useRef(false);
   const shell = useShell();
+  const megas = LEVELS[level].megaBombs > 0;
 
   const canvasesRef = useRef<(HTMLCanvasElement | null)[]>([null, null]);
   const wrapsRef = useRef<(HTMLDivElement | null)[]>([null, null]);
@@ -79,7 +94,7 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
           if (held && now - held.since > 180) g.move(held.dir);
           g.update(dt);
           for (const e of g.drainEvents()) {
-            if (e.kind === "boom") booms[i].push({ x: e.x, y: e.y, at: now / 1000, cells: e.cells, chain: e.chain });
+            if (e.kind === "boom") booms[i].push({ x: e.x, y: e.y, at: now / 1000, cells: e.cells, chain: e.chain, mega: e.mega, blocks: e.blocks });
             if (e.kind === "hit") causes[i] = CAUSES[e.by] ?? "";
             if (soundRef.current) playSound(e);
           }
@@ -101,7 +116,7 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
       if (now - lastHud > 90) {
         lastHud = now;
         setCount(Math.max(0, left));
-        setSides(games.map((g, i) => ({ t: g.t, hearts: g.hearts, bombs: Math.max(0, g.s.bombsOnScreen - g.bombs.length), chain: g.chainCharges, state: g.state, cause: causes[i] })));
+        setSides(games.map((g, i) => ({ t: g.t, hearts: g.hearts, bombs: g.bombsLeft(), mega: g.megas, chain: g.chainCharges, state: g.state, cause: causes[i] })));
       }
     };
     frame = requestAnimationFrame(loop);
@@ -161,6 +176,9 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
         } else if (p.bomb.includes(key)) {
           e.preventDefault();
           if (!e.repeat && goRef.current) g?.bomb();
+        } else if (megas && (p.mega.includes(key) || p.mega.includes(e.code))) {
+          e.preventDefault();
+          if (!e.repeat && goRef.current) g?.megaBomb();
         }
       });
     };
@@ -176,7 +194,7 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [newScreen, rematch, shell, winner]);
+  }, [megas, newScreen, rematch, shell, winner]);
 
   return (
     <div className={styles.versus}>
@@ -200,12 +218,16 @@ export function Versus({ level, sound, onExit }: { level: LevelId; sound: boolea
             <section key={p.name} className={styles.board} data-player={i + 1} data-won={winner === i}>
               <header className={styles.side}>
                 <strong>{p.name}</strong>
-                <span className={styles.keys}>{p.keys}</span>
+                <span className={styles.keys}>
+                  {p.keys}
+                  {megas && p.megaKeys}
+                </span>
                 <span>{fmt(side?.t ?? 0)} s</span>
                 <span aria-label={`Hearts: ${Number.isFinite(side?.hearts ?? 0) ? side?.hearts : "unlimited"}`}>
                   <Hearts count={side?.hearts ?? LEVELS[level].hearts} />
                 </span>
-                <span>Bomb {side?.bombs ?? 1}</span>
+                <span>Bomb {side?.bombs ?? LEVELS[level].bombsOnScreen}</span>
+                {(side?.mega ?? 0) > 0 && <span>Mega {side?.mega}</span>}
                 {(side?.chain ?? 0) > 0 && <span>Chain ×{side?.chain}</span>}
               </header>
               <div

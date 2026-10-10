@@ -1,4 +1,4 @@
-import { EMPTY, GLASS, STONE, WOOD, type Game } from "@/lib/outta/engine";
+import { DIRS, EMPTY, GLASS, MEGA_CARRY, STONE, WOOD, type Block, type Bomb, type Enemy, type Game, type Pos } from "@/lib/outta/engine";
 
 /*
  * Draws one frame of Outta Here on a canvas: the keyboard strip on top (the
@@ -28,6 +28,12 @@ export type Palette = {
   bouncer: string;
   eraser: string;
   glitch: string;
+  /** The Copycat's coat and eyes: a black cat on the light screen, a white one on the dark. */
+  copycat: string;
+  copycatEyes: string;
+  /** The Mega bomb, and the crack drawn on it. */
+  mega: string;
+  megaInk: string;
   bomb: string;
   chain: string;
   rush: string;
@@ -59,6 +65,10 @@ export const LIGHT: Palette = {
   bouncer: "#3A86FF",
   eraser: "#FF4F9A",
   glitch: "#7B2FF7",
+  copycat: "#2B2233",
+  copycatEyes: "#C6E83A",
+  mega: "#E0352B",
+  megaInk: "#FFF4E6",
   bomb: "#2B2233",
   chain: "#00A37A",
   rush: "#F2B230",
@@ -90,6 +100,10 @@ export const DARK: Palette = {
   bouncer: "#45D2FF",
   eraser: "#FF5FA8",
   glitch: "#B388FF",
+  copycat: "#F4F1FF",
+  copycatEyes: "#2F7BFF",
+  mega: "#FF5A4E",
+  megaInk: "#1A0B12",
   bomb: "#E9ECFF",
   chain: "#2EF2A0",
   rush: "#FFD66B",
@@ -222,7 +236,7 @@ export const WORLDS: Record<"green" | "amber" | "micro" | "lcd" | "last", Palett
   }),
 };
 
-export type Boom = { x: number; y: number; at: number; cells: number[]; chain: boolean };
+export type Boom = { x: number; y: number; at: number; cells: number[]; chain: boolean; mega?: boolean; blocks?: Block[] };
 
 export type View = {
   cell: number;
@@ -366,6 +380,11 @@ export function draw(ctx: CanvasRenderingContext2D, g: Game, v: View, pal: Palet
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(it.letter!, cx, cy + 1);
+    } else if (it.kind === "mega") {
+      // With your hands full it waits, faded, until you have used yours.
+      ctx.globalAlpha = g.megas >= MEGA_CARRY ? 0.4 : 1;
+      drawMegaPickup(ctx, cx, cy, s, pal, v.reducedMotion ? 0 : v.now);
+      ctx.globalAlpha = 1;
     } else {
       const life = Math.max(0, (it.until - g.t) / 8);
       drawChainIcon(ctx, cx, cy, s * 0.42, it.kind === "rush" ? pal.rush : pal.chain, it.kind === "rush");
@@ -378,62 +397,49 @@ export function draw(ctx: CanvasRenderingContext2D, g: Game, v: View, pal: Palet
   }
 
   // Bombs, with their fuse running round them.
-  for (const b of g.bombs) {
-    const cx = X(b.x) + s / 2;
-    const cy = Y(b.y) + s / 2;
-    const left = Math.max(0, (b.at - g.t) / g.s.fuse);
-    const throb = v.reducedMotion ? 1 : 1 + (1 - left) * 0.18 * Math.abs(Math.sin(v.now * 14));
-    ctx.beginPath();
-    ctx.arc(cx, cy, s * 0.34 * throb, 0, Math.PI * 2);
-    ctx.fillStyle = pal.bomb;
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cx, cy, s * 0.48, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left);
-    ctx.strokeStyle = b.chain ? pal.chain : pal.warn;
-    ctx.lineWidth = b.chain ? 3 : 2;
-    ctx.stroke();
-    // Where it will reach.
-    ctx.globalAlpha = 0.1 + (1 - left) * 0.12;
-    ctx.fillStyle = b.chain ? pal.chain : pal.bomb;
-    ctx.fillRect(X(b.x - 1), Y(b.y - 1), s * 3, s * 3);
-    ctx.globalAlpha = 1;
-  }
+  for (const b of g.bombs) drawBomb(ctx, X(b.x), Y(b.y), s, b, Math.max(0, (b.at - g.t) / g.s.fuse), pal, v);
 
-  // Blasts and chain flashes.
+  // Blasts and chain flashes; the pieces that fly are the blocks that broke.
   for (const boom of booms) {
     const age = v.now - boom.at;
     if (age > 0.45) continue;
     const a = 1 - age / 0.45;
     ctx.globalAlpha = a * 0.55;
-    ctx.fillStyle = boom.chain ? pal.chain : pal.exit;
+    ctx.fillStyle = boom.mega ? pal.mega : boom.chain ? pal.chain : pal.exit;
     ctx.fillRect(X(boom.x - 1), Y(boom.y - 1), s * 3, s * 3);
     ctx.globalAlpha = a;
-    for (const i of boom.cells) {
+    boom.cells.forEach((i, k) => {
       const x = i % g.cols;
       const y = Math.floor(i / g.cols);
       const grow = v.reducedMotion ? 0 : age * s * 0.6;
-      ctx.fillStyle = pal.glassBlock;
-      ctx.fillRect(X(x) + s / 2 - s * 0.1 - grow, Y(y) + s / 2 - s * 0.1, s * 0.2, s * 0.2);
-      ctx.fillRect(X(x) + s / 2 + grow, Y(y) + s / 2 - grow, s * 0.16, s * 0.16);
-    }
+      const block = boom.blocks?.[k] ?? GLASS;
+      const chunk = block === STONE ? 1.4 : 1;
+      ctx.fillStyle = block === WOOD ? pal.wood : block === STONE ? pal.stone : pal.glassBlock;
+      ctx.fillRect(X(x) + s / 2 - s * 0.1 - grow, Y(y) + s / 2 - s * 0.1, s * 0.2 * chunk, s * 0.2 * chunk);
+      ctx.fillRect(X(x) + s / 2 + grow, Y(y) + s / 2 - grow, s * 0.16 * chunk, s * 0.16 * chunk);
+      if (block === STONE) ctx.fillRect(X(x) + s / 2 - grow * 0.6, Y(y) + s / 2 + grow * 0.8, s * 0.18, s * 0.14);
+    });
     ctx.globalAlpha = 1;
   }
 
-  // Chasers.
+  // Chasers. The Eraser and the Copycat show faintly where they will come in.
   for (const e of g.enemies) {
     if (e.awayUntil > g.t) {
-      if (e.kind === "eraser" && e.awayUntil - g.t < 6) {
+      if ((e.kind === "eraser" || e.kind === "copycat") && e.awayUntil - g.t < 6) {
         ctx.globalAlpha = 0.35;
-        drawEraser(ctx, X(e.x) + s / 2, Y(e.y) + s / 2, s, pal, 0);
+        if (e.kind === "eraser") drawEraser(ctx, X(e.x) + s / 2, Y(e.y) + s / 2, s, pal, 0);
+        else drawCopycat(ctx, X(e.x) + s / 2, Y(e.y) + s / 2, s, pal, 0, { x: 0, y: 0 });
         ctx.globalAlpha = 1;
       }
       continue;
     }
     const cx = X(e.x) + s / 2;
     const cy = Y(e.y) + s / 2;
-    if (e.kind === "bouncer") drawBouncer(ctx, cx, cy, s, pal, v.reducedMotion ? 0 : v.now);
-    else if (e.kind === "eraser") drawEraser(ctx, cx, cy, s, pal, v.reducedMotion ? 0 : v.now);
-    else drawGlitch(ctx, cx, cy, s, pal, v.reducedMotion ? 0 : v.now);
+    const now = v.reducedMotion ? 0 : v.now;
+    if (e.kind === "bouncer") drawBouncer(ctx, cx, cy, s, pal, now);
+    else if (e.kind === "eraser") drawEraser(ctx, cx, cy, s, pal, now);
+    else if (e.kind === "glitch") drawGlitch(ctx, cx, cy, s, pal, now);
+    else drawCopycatAndWindUp(ctx, e, g, X, Y, s, pal, v);
   }
 
   // The star.
@@ -450,7 +456,214 @@ export function draw(ctx: CanvasRenderingContext2D, g: Game, v: View, pal: Palet
     ctx.stroke();
   }
   drawStar(ctx, px, py, s * 0.72, pal.star, pal.starInk);
+  // A Mega bomb in your pocket rides on your shoulder.
+  if (g.megas > 0) drawMegaBall(ctx, px + s * 0.36, py - s * 0.32, s * 0.17, pal, 0);
   ctx.globalAlpha = 1;
+}
+
+function drawBomb(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, b: Bomb, left: number, pal: Palette, v: View) {
+  const cx = x + s / 2;
+  const cy = y + s / 2;
+  const throb = v.reducedMotion ? 1 : 1 + (1 - left) * 0.18 * Math.abs(Math.sin(v.now * 14));
+  const theirs = b.owner === "copycat";
+  const tint = b.mega ? pal.mega : b.chain ? pal.chain : theirs ? pal.copycat : pal.bomb;
+  // Where it will reach.
+  ctx.globalAlpha = 0.1 + (1 - left) * (b.mega ? 0.18 : 0.12);
+  ctx.fillStyle = tint;
+  ctx.fillRect(x - s, y - s, s * 3, s * 3);
+  ctx.globalAlpha = 1;
+  if (b.mega) drawMegaBall(ctx, cx, cy, s * 0.36 * throb, pal, 0);
+  else {
+    // The Copycat's bombs are yours with two little ears on, so you can tell whose is whose.
+    if (theirs) drawEars(ctx, cx, cy, s * 0.34 * throb, pal.copycat, 0.5);
+    ctx.beginPath();
+    ctx.arc(cx, cy, s * 0.34 * throb, 0, Math.PI * 2);
+    ctx.fillStyle = theirs ? pal.copycat : pal.bomb;
+    ctx.fill();
+  }
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, s * 0.5, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * left);
+  if (theirs) ctx.setLineDash([3, 2.5]);
+  ctx.strokeStyle = b.mega ? pal.mega : b.chain ? pal.chain : theirs ? pal.copycat : pal.warn;
+  ctx.lineWidth = b.mega || b.chain ? 3 : 2;
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** Two pointed ears on top of a circle of radius r (`tall` shortens them): the Copycat's mark, on its head and on its bombs. */
+function drawEars(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, color: string, tall = 1) {
+  ctx.fillStyle = color;
+  for (const side of [-1, 1]) {
+    ctx.beginPath();
+    ctx.moveTo(cx + side * r * 0.95, cy - r * 0.15);
+    ctx.lineTo(cx + side * r * 0.82, cy - r * (0.75 + 0.5 * tall));
+    ctx.lineTo(cx + side * r * 0.2, cy - r * 0.8);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+/** The Mega bomb itself: a red ball with a crack across it, the kind of crack it puts in stone. */
+function drawMegaBall(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number, pal: Palette, now: number) {
+  ctx.strokeStyle = pal.mega;
+  ctx.lineWidth = Math.max(1.5, r * 0.22);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx + r * 0.55, cy - r * 0.75);
+  ctx.quadraticCurveTo(cx + r * 0.95, cy - r * 1.25, cx + r * 1.2, cy - r * 1.05);
+  ctx.stroke();
+  if (now) {
+    ctx.fillStyle = pal.exit;
+    const spark = 0.6 + 0.4 * Math.abs(Math.sin(now * 11));
+    ctx.beginPath();
+    ctx.arc(cx + r * 1.2, cy - r * 1.05, r * 0.26 * spark, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = pal.mega;
+  ctx.fill();
+  ctx.strokeStyle = pal.megaInk;
+  ctx.lineWidth = Math.max(1.2, r * 0.18);
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.55, cy - r * 0.35);
+  ctx.lineTo(cx - r * 0.1, cy - r * 0.05);
+  ctx.lineTo(cx - r * 0.3, cy + r * 0.2);
+  ctx.lineTo(cx + r * 0.5, cy + r * 0.45);
+  ctx.stroke();
+}
+
+/** A Mega bomb waiting to be picked up: the bomb on a slowly turning dashed pad. */
+function drawMegaPickup(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, pal: Palette, now: number) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(now * 0.8);
+  ctx.setLineDash([s * 0.12, s * 0.1]);
+  ctx.strokeStyle = pal.mega;
+  ctx.lineWidth = Math.max(1.5, s * 0.07);
+  ctx.beginPath();
+  ctx.arc(0, 0, s * 0.47, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+  drawMegaBall(ctx, cx - s * 0.03, cy + s * 0.04, s * 0.27, pal, now);
+}
+
+/**
+ * The Copycat, and what it is about to do. Before a push it leans into the
+ * wood and arrows on the wood show the way it will slide; before a bomb it
+ * holds the bomb over its head and its blast is marked out, filling as the
+ * moment comes.
+ */
+function drawCopycatAndWindUp(ctx: CanvasRenderingContext2D, e: Enemy, g: Game, X: (x: number) => number, Y: (y: number) => number, s: number, pal: Palette, v: View) {
+  const cx = X(e.x) + s / 2;
+  const cy = Y(e.y) + s / 2;
+  const now = v.reducedMotion ? 0 : v.now;
+  const intent = e.intent;
+  const lean: Pos = intent?.kind === "push" ? DIRS[intent.dir] : { x: 0, y: 0 };
+  if (intent?.kind === "push") {
+    const shake = now ? Math.sin(now * 40) * s * 0.03 : 0;
+    drawPushArrows(ctx, X(e.x + lean.x) + s / 2 + shake, Y(e.y + lean.y) + s / 2, s, lean, pal);
+  }
+  if (intent?.kind === "bomb") {
+    const done = Math.min(1, (g.t - intent.since) / Math.max(0.01, intent.at - intent.since));
+    ctx.save();
+    ctx.globalAlpha = 0.08 + done * 0.14;
+    ctx.fillStyle = pal.copycat;
+    ctx.fillRect(X(e.x - 1), Y(e.y - 1), s * 3, s * 3);
+    ctx.globalAlpha = 0.85;
+    ctx.setLineDash([4, 3]);
+    ctx.strokeStyle = pal.copycat;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(X(e.x - 1) + 1, Y(e.y - 1) + 1, s * 3 - 2, s * 3 - 2);
+    ctx.restore();
+  }
+  drawCopycat(ctx, cx, cy, s, pal, now, lean);
+  if (intent?.kind === "bomb") {
+    const r = s * 0.25;
+    const by = cy - s * 0.8;
+    drawEars(ctx, cx, by, r, pal.copycat, 0.5);
+    ctx.beginPath();
+    ctx.arc(cx, by, r, 0, Math.PI * 2);
+    ctx.fillStyle = pal.copycat;
+    ctx.fill();
+    ctx.strokeStyle = pal.glass;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    if (!now || Math.floor(now * 10) % 2 === 0) {
+      ctx.fillStyle = pal.exit;
+      ctx.beginPath();
+      ctx.arc(cx + r * 1.1, by - r * 1.1, r * 0.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+/** Two chevrons on a block, pointing the way it is about to be pushed. */
+function drawPushArrows(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, d: Pos, pal: Palette) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(Math.atan2(d.y, d.x));
+  ctx.strokeStyle = pal.copycat;
+  ctx.lineWidth = Math.max(2, s * 0.11);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  for (const off of [-0.16, 0.12]) {
+    ctx.beginPath();
+    ctx.moveTo(s * (off - 0.1), -s * 0.2);
+    ctx.lineTo(s * (off + 0.1), 0);
+    ctx.lineTo(s * (off - 0.1), s * 0.2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** A cat's head with pointed ears and slit eyes, and a tail curling up beside it. */
+function drawCopycat(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, pal: Palette, now: number, lean: Pos) {
+  const x = cx + lean.x * s * 0.12;
+  const y = cy + lean.y * s * 0.12 + (now ? Math.sin(now * 9) * s * 0.025 : 0);
+  const sway = now ? Math.sin(now * 5) * s * 0.06 : 0;
+  ctx.strokeStyle = pal.copycat;
+  ctx.lineWidth = Math.max(2, s * 0.1);
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(x + s * 0.2, y + s * 0.3);
+  ctx.quadraticCurveTo(x + s * 0.5, y + s * 0.34, x + s * 0.44 + sway, y + s * 0.02);
+  ctx.stroke();
+  const r = s * 0.36;
+  drawEars(ctx, x, y + s * 0.06, r, pal.copycat);
+  ctx.beginPath();
+  ctx.ellipse(x, y + s * 0.08, r, r * 0.9, 0, 0, Math.PI * 2);
+  ctx.fillStyle = pal.copycat;
+  ctx.fill();
+  // A thin rim in the screen's own colour keeps it apart from blocks of a similar shade.
+  ctx.strokeStyle = pal.glass;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  for (const side of [-1, 1]) {
+    const ex = x + side * s * 0.13;
+    const ey = y + s * 0.04;
+    ctx.beginPath();
+    ctx.ellipse(ex, ey, s * 0.085, s * 0.065, 0, 0, Math.PI * 2);
+    ctx.fillStyle = pal.copycatEyes;
+    ctx.fill();
+    ctx.fillStyle = pal.copycat;
+    ctx.fillRect(ex - s * 0.012, ey - s * 0.055, s * 0.024, s * 0.11);
+  }
+  ctx.save();
+  ctx.strokeStyle = pal.glass;
+  ctx.globalAlpha *= 0.7;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (const side of [-1, 1]) {
+    ctx.moveTo(x + side * s * 0.1, y + s * 0.2);
+    ctx.lineTo(x + side * s * 0.4, y + s * 0.16);
+    ctx.moveTo(x + side * s * 0.1, y + s * 0.23);
+    ctx.lineTo(x + side * s * 0.38, y + s * 0.27);
+  }
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawBlock(ctx: CanvasRenderingContext2D, x: number, y: number, s: number, b: number, pal: Palette) {

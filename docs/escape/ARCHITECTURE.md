@@ -1,6 +1,6 @@
 # Outta Here: how the rebuild works
 
-**Outta Here** is the Any Key rebuild of *Escape* (`ESCAPE.BAS`, author unknown, TRS-80, c. 1980). The original is eleven lines: an asterisk, a plus sign, and blocks that fall whenever you stop pressing keys. Outta Here keeps that idea, *the walls grow while you hesitate*, and turns it into a game with choices in it: three kinds of block, bombs, bonuses, three chasers, the original's bugs as tricks you can use, thirty screens on five old computers, a daily screen, two-player Versus, and a 1980 mode that runs the original address by address. In code, `lib/outta/` holds everything that is plain rules and data (no DOM, so the checks can run it in Node), `components/outta/` holds the screens, and the Any Key kit (`lib/kit/`, `components/kit/`) supplies the shell, the saves, the Keyring and the daily maths.
+**Outta Here** is the Any Key rebuild of *Escape* (`ESCAPE.BAS`, author unknown, TRS-80, c. 1980). The original is eleven lines: an asterisk, a plus sign, and blocks that fall whenever you stop pressing keys. Outta Here keeps that idea, *the walls grow while you hesitate*, and turns it into a game with choices in it: three kinds of block, bombs, a Mega bomb to find, bonuses, four chasers, the original's bugs as tricks you can use, thirty screens on five old computers, a daily screen, two-player Versus, and a 1980 mode that runs the original address by address. In code, `lib/outta/` holds everything that is plain rules and data (no DOM, so the checks can run it in Node), `components/outta/` holds the screens, and the Any Key kit (`lib/kit/`, `components/kit/`) supplies the shell, the saves, the Keyring and the daily maths.
 
 What we kept from the original and what we changed is in [CHANGES-FROM-ORIGINAL.md](CHANGES-FROM-ORIGINAL.md). The original program itself is in [ABOUT.md](ABOUT.md) and [ORIGINAL-ARCHITECTURE.md](ORIGINAL-ARCHITECTURE.md).
 
@@ -32,11 +32,11 @@ flowchart LR
 | File | What it owns |
 |---|---|
 | `app/outta-here/page.tsx` | The route: page metadata, the six chapters (`lib/docs.ts` reads them at build time) and `OuttaHere` |
-| `lib/outta/manifest.ts` | The game's manifest: title, route, the "inspired by" line, palette, accent, emblem, modes, trivia, the Daily's epoch and the twelve keycaps with their tiers |
-| `lib/outta/levels.ts` | Chill, Normal and Hard: every number that shapes a run, in one place |
+| `lib/outta/manifest.ts` | The game's manifest: title, route, the "inspired by" line, palette, accent, emblem, modes, trivia, the Daily's epoch and the fourteen keycaps with their tiers |
+| `lib/outta/levels.ts` | Chill, Normal and Hard: every number that shapes a run, in one place, the Copycat's and the Mega bomb's included |
 | `lib/outta/campaign.ts` | The five computers and their thirty screens: settings ramps, seeds and pars |
 | `lib/outta/daily.ts` | The Daily Escape: the date to a number, a key and a seed; the share text and its ten squares |
-| `lib/outta/engine.ts` | `Game`: the grid, the rain, bombs, bonuses, chasers, tunnels, the keyboard row, stars and score |
+| `lib/outta/engine.ts` | `Game`: the grid, the rain, bombs and the Mega bomb, bonuses, chasers (the Copycat's route planner among them), tunnels, the keyboard row, stars and score; `MinHeap`, the priority queue both route planners use |
 | `lib/outta/bot.ts` | `HumanBot`, the human-like player behind the balance checks and the Hall preview |
 | `lib/outta/original.ts` | `Escape1980`, the 1980 program as addresses |
 | `lib/outta/progress.ts` | The save store, the progress bridge to the Keyring, and `earnedBy` (which keycaps a run earned) |
@@ -52,7 +52,7 @@ flowchart LR
 | `components/outta/Hearts.tsx` | Hearts as icons (one heart and ∞ on Chill) |
 | `components/outta/*.module.css` | Styles; `OuttaHere.module.css` holds the colour tokens for light and dark |
 | `components/previews/OuttaPreview.tsx` | The Hall's live preview |
-| `scripts/check-outta.ts` | Rule, Daily, 1980 and balance checks (`npm run check:outta`) |
+| `scripts/check-outta.ts` | Rule checks (the Mega bomb's and the Copycat's too), Daily, 1980, balance and Screens checks (`npm run check:outta`) |
 
 ## State machines
 
@@ -117,7 +117,7 @@ What the public methods guarantee:
 
 - `new Game(levelOrSettings, seed)` builds the same screen for the same seed, with a way out that bombs can open from the start (see *The way-out rule*).
 - `move(dir)` queues one step; `update` takes it as soon as 0.11 s have passed since the last one. A held key or touch simply calls `move` again every frame.
-- `bomb()` drops a bomb if the rules allow and says whether it did.
+- `bomb()` drops a bomb if the rules allow and says whether it did; `megaBomb()` does the same with the Mega bomb you carry. `bombsLeft()` counts the regular bombs you can still drop: neither a Mega bomb nor the Copycat's bombs use one up.
 - `update(dt)` does nothing once the run is won or lost.
 - `openPath()` says whether a way to the exit still exists through empty cells and glass.
 - `stars()` and `score()` read the run at any time; `drainEvents()` hands the screens what happened since the last frame (steps, bumps, landings, blasts, pick-ups, hits), for sound and effects.
@@ -126,18 +126,20 @@ One frame of `update`:
 
 ```mermaid
 flowchart TD
-    T["Advance the clock, and log one letter a second for the share text"] --> M["Take the queued step, if the star may move"]
+    T["Advance the clock; once a second, log a letter for the share text and place a Mega bomb that found no room"] --> M["Take the queued step, if the star may move"]
     M --> B["Explode bombs whose fuse ran out, and any bomb caught in a blast"]
     B --> L["Land falling blocks whose warning ran out"]
     L --> R["Rain: rain + rainHesitant × hesitation blocks a second"]
     R --> X["Drop a bonus when its time comes"]
-    X --> E["Move each chaser that is due"]
+    X --> E["Move each chaser that is due; the Copycat may finish a push or drop a bomb it wound up"]
     E --> I["Remove faded bonuses"]
 ```
 
 ### Moving
 
 A step into empty space moves the star. A step into wood pushes it one cell if the cell beyond is free (not the exit, an item, a bomb or a chaser, and not the bottom row on Chill). Stone, glass and bombs stop you. Off the left or right edge is a tunnel, except left from the top row and right from the bottom row; wood can't be pushed through one. Off the top row is the keyboard row (`y = -1`), where only left, right and down work, and down only onto an empty cell.
+
+The Copycat pushes with the same `push`, by the same rules, plus one: wood never slides onto your cell. For its pushes the way-out check runs from where you stand rather than from where the pusher will stand, so it can never box you in either. After every push, yours or its, and after every block lands, a Mega bomb you can no longer reach is moved (see *The Mega bomb*).
 
 ### The rain and hesitation
 
@@ -163,6 +165,19 @@ The screen starts as stone **floors**, walls across the screen at even spacing, 
 
 Bonuses fall with the rain at intervals of 0.6 to 1.4 times `bonusEvery` (9 s on Chill, 12 on Normal, 15 on Hard) and fade 8 s after landing; `rushShare` of them are Chain Rush. **Chain ×3** sets your next three bombs to chain (picking up another refills to three; it doesn't stack). **Chain Rush** makes every bomb chain for 30 s; a bomb placed during the rush still chains if it goes off after.
 
+Every bomb has an owner (`owner`: you or the Copycat). A blast hurts you and pops chasers whoever dropped the bomb, but only your bombs count for the score, for Chain Reaction and for Pop!; a hit from the Copycat's bomb is reported as `copycat-bomb`.
+
+### The Mega bomb
+
+On Normal and Hard (`megaBombs: 1`) one Mega bomb waits on the screen as an item of kind `mega`, with no fade time.
+
+- **Where it goes.** `placeMega` picks at random among the cells you can reach on the way-out rule's terms (`stepsFromYou`: a walk through empty cells and glass, the edge tunnels and the keyboard row) that are empty, off the wall rows, not the exit, and free of items, bombs, chasers, warnings and you. The first one goes 40 to 90 steps from the start, so it can be seen before you set off and fetching it is a detour; each later one at least 30 steps from you and never where the last one was. If no cell is that far it settles for nearer, and if there is no room at all, the clock tries again every second.
+- **Taking it.** Walking onto it adds it to `megas`, at most `MEGA_CARRY` (one); with your hands full it stays put. The moment you take it, the next one is placed.
+- **Keeping it in reach.** After every landing and every push, `keepMegasInReach` moves a Mega bomb that is no longer reachable, by the same rules.
+- **The blast.** `megaBomb()` drops a bomb with `mega: true` on your cell. It uses no `bombsOnScreen` slot and never chains. When it goes off it breaks every block in its 3 × 3, wood, glass and stone (`stoneBroken` counts the stone); the glass still counts for the score. Everything else is a bomb's: the fuse, setting off other bombs, popping chasers, hurting you.
+
+The way-out rule doesn't count on Mega bombs: it still treats stone as closed, so a screen can always be finished without one.
+
 The six letters E, S, C, A, P, E sit on the screen from the start. They are optional: all six give the third star.
 
 ### Stars and score
@@ -184,7 +199,8 @@ All the numbers live in `levels.ts`:
 | Hearts | unlimited | 3 | 2 |
 | Bombs on screen | 2 | 1 | 1 |
 | Bonus every (average) | 9 s | 12 s | 15 s |
-| Chasers | none | 3 Bouncers, Eraser | 4 Bouncers, Eraser, Glitch |
+| Chasers | none | 3 Bouncers, Eraser | 4 Bouncers, Eraser, Glitch, Copycat |
+| Mega bombs on the screen | none | 1 | 1 |
 | Par | 18 s | 45 s | 50 s |
 
 ### The Screens
@@ -199,11 +215,13 @@ All the numbers live in `levels.ts`:
 | Pocket LCD | grey-green LCD | sand rain; the Eraser |
 | The Last Machine | magenta and cyan | no exit: get to the bottom-left corner, where the 1980 program crashed. Glitch from screen 3, blocks that land on you from screen 4, five floors from screen 4 |
 
+No screen has a Mega bomb or the Copycat: `settingsFor` in `campaign.ts` turns both off, since the seeds were picked without them. A fingerprint in the check (40 Chill runs and the 300 Screens runs) proves the screens still play exactly as they did when they were picked.
+
 A screen opens when the one before it is cleared (`isOpen` in `ScreensMap.tsx`). Each screen's seed was picked by the bots from a run of candidates: the first one that was winnable enough for its place, and on the Amber Terminal and the Home Micro, one that made the bots use the trick. Its par is the bots' median time plus a tenth, rounded up to five seconds. The seeds and pars are fixed in `PICKS`; changing the engine or the bot means re-running the check and, if a screen falls below five bots in ten, picking again.
 
 ### The Daily Escape
 
-`dailyFor(date)` takes the day number from the kit (`dailyDate` in `lib/kit/daily.ts`, collection epoch 2026-01-01 = #1, on the player's local calendar) and makes the seed `70000 + (day × 7919 mod 99991)`. The rules are Normal's, with the id `daily` (so No Hesitation counts it). `shareText` builds three lines: the title and number, the time (or "caught") with stars and hits, and ten squares from `timelineSquares`. The engine logs one letter a second (`m` moving, `h` hesitating past 0.4, `k` under the keys, `b` a bomb went off, `x` hurt); each square shows the highest-ranked letter in its tenth of the run, in the order `x`, `b`, `k`, `h`, `m`.
+`dailyFor(date)` takes the day number from the kit (`dailyDate` in `lib/kit/daily.ts`, collection epoch 2026-01-01 = #1, on the player's local calendar) and makes the seed `70000 + (day × 7919 mod 99991)`. The rules are Normal's, with the id `daily` (so No Hesitation counts it, and the Mega bomb is there too). `shareText` builds three lines: the title and number, the time (or "caught") with stars and hits, and ten squares from `timelineSquares`. The engine logs one letter a second (`m` moving, `h` hesitating past 0.4, `k` under the keys, `b` a bomb went off, `x` hurt); each square shows the highest-ranked letter in its tenth of the run, in the order `x`, `b`, `k`, `h`, `m`.
 
 ### 1980 mode
 
@@ -225,8 +243,40 @@ A screen opens when the one before it is cleared (`isOpen` in `ScreensMap.tsx`).
 | **Bouncer** | Back and forth along a lane of up to eleven cells (mostly across, sometimes up and down), turning at its ends and at anything in the way | Normal (3), Hard (4), every Screens screen |
 | **Eraser** | Waits a few seconds (`eraser.delay`), then heads for the nearest point of your trail from the middle of the screen and follows the trail step by step, wiping it, through edge tunnels too. When the trail is blocked, or broken where you came down from the keys, it finds it again further on. A catch knocks it 20 steps back | Normal, Hard, Amber Terminal, Pocket LCD, The Last Machine |
 | **Glitch** | Waits, then hunts you by the shortest walk; if there is none, it still edges closer rather than waiting. Under the keys it loses you and goes to where it last saw you | Hard, Home Micro, The Last Machine from screen 3 |
+| **Copycat** | Waits, then sets off from the corner where you started and hunts you with your tools: it pushes wood and bombs glass by your rules, showing each push and each bomb first (see below) | Hard |
 
-Chasers move on their own clocks (`bouncerStep`, `eraser.step`, `glitch.step`, a step every 0.28 to 0.4 s). They never walk through blocks or bombs, never step onto the exit, and never use the keyboard row; the Bouncers and Glitch never use the tunnels. Being caught costs a heart, gives you two seconds of safety, and pauses the chaser for 1.5 s.
+Chasers move on their own clocks (`bouncerStep`, `eraser.step`, `glitch.step`, `copycat.step`: a step every 0.22 to 0.4 s). They never walk through blocks or bombs, never step onto the exit, and never use the keyboard row; the Bouncers, Glitch and the Copycat never use the tunnels. Being caught costs a heart, gives you two seconds of safety, and pauses the chaser for 1.5 s.
+
+### The Copycat
+
+The Copycat (`copycat` in `engine.ts`) is the chaser that plays by your rules. On Hard it waits 7 s (`copycat.delay`), shown as a faint cat in the start corner for the last six of them, then sets off from that corner and takes a step every 0.22 s. Starting behind you is what makes it fair: tried in front of you (low on the screen or in the middle), the bots got out of only 11 to 23% of Hard screens; from behind it punishes dawdling and long waits for a fuse without blocking the way (see NOTES.md).
+
+Each step it decides in this order:
+
+```mermaid
+flowchart TD
+    S["Its step is due (not while it shows a wind-up)"] --> A{"Inside the blast of its own ticking bomb?"}
+    A -- yes --> R["Step towards the nearest cell out of it"]
+    A -- no --> B{"You are in its blast, out of its reach, its bomb is ready, and you can step clear within six steps?"}
+    B -- yes --> W1["Wind up a bomb: arm for 0.75 s"]
+    B -- no --> P["Plan the cheapest way to you (Dijkstra)"]
+    P --> N{"First step?"}
+    N -- "free cell" --> M["Step"]
+    N -- "wood" --> L{"Would the push be allowed?"}
+    L -- yes --> W2["Wind up a push: brace for 0.45 s"]
+    L -- no --> X["Remember the refusal for 3 s and think again"]
+    N -- "glass" --> F{"Could you step clear of that blast?"}
+    F -- yes --> W1
+    F -- no --> H["Wait"]
+    N -- "no way" --> C["Edge closer, as Glitch does"]
+    W1 --> D["Drop the bomb on its cell, then back off"]
+    W2 --> Q["Push the wood one cell and step in"]
+```
+
+- **The plan.** `copycatRoute` costs a free cell 1, wood it could push 2, glass 7 when its bomb is ready, and a cell another chaser stands on 8 (it will most likely have moved on), except as the first step. Stone, bombs, the exit and the blast of its own ticking bomb are off limits. Cheap tools mean it would rather push or bomb than go a long way round.
+- **The wind-up.** A push or a bomb is an `intent` with a start and an end time (`copycat.brace`, `copycat.arm`). While it lasts the Copycat stands still and the screen shows it; when it ends, `copycatAct` checks the rules again and acts. A catch or a pop cancels it.
+- **Its bomb.** Exactly yours: the 2.5 s fuse, the 3 × 3, glass only, no chain. One at a time, and 5 s (`copycat.reload`) before the next. It never picks up a Mega bomb or a bonus.
+- **Your bombs.** Like every chaser it can't walk onto a bomb, but it doesn't see a blast coming, so a bomb in its path can pop it.
 
 ### The human-like bot
 
@@ -234,17 +284,20 @@ Chasers move on their own clocks (`bouncerStep`, `eraser.step`, `glitch.step`, a
 
 - it sees the screen 0.35 s late, and takes a step about every 0.16 s, with a short pause whenever it changes direction;
 - it plans the cheapest walk to the exit on what it saw (Dijkstra): a step costs 1, pushing wood 3, glass 7 (it bombs it when it gets there), and cells near a chaser or a falling block cost more; it knows the edge tunnels and the keyboard row;
-- it gets out of the way of its own bombs first, and remembers for a few seconds the moves that bumped, so it tries something else.
+- it gets out of the way of bombs first: its own at once, the Copycat's (and a Copycat holding a bomb up) once it has seen them, 0.35 s late; and it remembers for a few seconds the moves that bumped, so it tries something else;
+- it fetches a Mega bomb when the detour costs 14 or less (about as many steps), and while it carries one, stone in its way costs 8 instead of being a wall: it drops the Mega bomb against it and backs off.
 
-With 120 runs a level (`npm run check:outta`, 7 October 2026), it gets out of **100%** of Chill screens (median 15.8 s), **80%** of Normal screens (median 58.6 s) and **31%** of Hard screens (median 52.8 s). The check fails if those rates leave their target bands (Chill 90–100%, Normal 55–85%, Hard 25–60%). Every campaign screen is won by at least five of ten bots; at present, by nine or ten. The full numbers are in [NOTES.md](NOTES.md).
+With 120 runs a level (`npm run check:outta`, 10 October 2026), it gets out of **100%** of Chill screens (median 15.8 s), **84%** of Normal screens (median 49.3 s) and **33%** of Hard screens (median 38.3 s). The check fails if those rates leave their target bands (Chill 90–100%, Normal 55–90%, Hard 25–60%; Normal's top was 85% until the Mega bomb). Every campaign screen is won by at least five of ten bots; at present, by nine or ten. The full numbers are in [NOTES.md](NOTES.md).
 
 ## Drawing
 
 Everything is drawn in code: the game on canvas, the menus in CSS and inline SVG.
 
-- **`components/outta/render.ts`** draws one frame. `paint` sizes the canvas to its wrapper at the device's pixel ratio; `layout` picks a cell of at least 14 px, and when the board is wider than the space, the camera follows the star. `draw` paints, back to front: the keyboard strip you can hide under, the screen and its faint grid, the clear-floor tint on Chill, the dashed tunnel seams, your trail (the Eraser's road), the blocks, the exit (or the cracked corner), the warnings (a dashed outline with a growing square in the colour of what is coming), the letters, the bonuses (each with a ring that runs down as it fades), bombs with their fuse, blasts and chain flashes, the chasers and the star, which blinks while it can't be hurt. `drawRoute` draws the results card's map of the way you went.
+- **`components/outta/render.ts`** draws one frame. `paint` sizes the canvas to its wrapper at the device's pixel ratio; `layout` picks a cell of at least 14 px, and when the board is wider than the space, the camera follows the star. `draw` paints, back to front: the keyboard strip you can hide under, the screen and its faint grid, the clear-floor tint on Chill, the dashed tunnel seams, your trail (the Eraser's road), the blocks, the exit (or the cracked corner), the warnings (a dashed outline with a growing square in the colour of what is coming), the letters, the bonuses (each with a ring that runs down as it fades) and the Mega bomb on its slowly turning dashed ring (faded while your hands are full), bombs with their fuse and the square they will reach (`drawBomb`), blasts and chain flashes with pieces of whatever broke, the chasers and the star, which blinks while it can't be hurt and carries a little red bomb on its shoulder while you hold a Mega bomb. `drawRoute` draws the results card's map of the way you went.
 - **Palettes.** `LIGHT` and `DARK` in `render.ts` are the two designed themes; `WORLDS` holds the five computers, which keep their own screens whatever the theme. The theme is read from `data-theme` on `<html>` every frame, so switching is live. The page around the canvas uses the `--oh-*` tokens in `OuttaHere.module.css`, redefined under `:root[data-theme="dark"]`.
-- **The look, "Inside the Glass".** The light theme is a beige computer by a window: cream screen, pastel blocks (peach wood, mint glass, grey stone), a coral star. The dark theme is phosphor at midnight: ink-blue screen, neon blocks, a gold star. Blocks are told apart by shape as well as colour: wood has grain, glass a crack and a glint, stone four rivets. Chasers are a bouncing blue ball, a pink rubber eraser and a jittering RGB blob, so none of them looks like a mouse pointer; the pointer itself hides over the screen while you play.
+- **The look, "Inside the Glass".** The light theme is a beige computer by a window: cream screen, pastel blocks (peach wood, mint glass, grey stone), a coral star. The dark theme is phosphor at midnight: ink-blue screen, neon blocks, a gold star. Blocks are told apart by shape as well as colour: wood has grain, glass a crack and a glint, stone four rivets. Chasers are a bouncing blue ball, a pink rubber eraser, a jittering RGB blob and a cat (black with yellow-green eyes on the light screen, white with blue eyes on the dark, `copycat` and `copycatEyes`), so none of them looks like a mouse pointer; the pointer itself hides over the screen while you play.
+- **The Copycat's wind-ups** (`drawCopycatAndWindUp`). Before a push the cat leans into the wood and two chevrons on the wood point the way it will slide, with a little shake. Before a bomb it holds the bomb over its head, fuse sparking, and its 3 × 3 is outlined with a dash and fills as the moment comes. Its bombs are drawn as yours with two small ears (`drawEars`) and a dashed fuse ring. With reduced motion the shake, the bob and the sway stop, and every wind-up is still drawn.
+- **The Mega bomb** (`drawMegaBall`, `drawMegaPickup`) is a red ball with a crack across it (`mega`, `megaInk` in the palettes; `--oh-mega` in the CSS), and its blast is tinted red, so the stone it will break shows before it goes.
 - **The game menu** (`Lobby.tsx`): the hero's little monitor is a fixed scatter of CSS cells, the star with a face is inline SVG beside the word SCAPE, with the E flying off, and the mode icons are inline SVG. The Screens map draws each computer's monitor the same way from its palette. Hearts and stars come from the kit's icons.
 - **1980 mode** (`Terminal1980.tsx`) draws a 384 × 192 dot grid on a 4:3 canvas, 6 × 12 dots a character, so the cells are three times as tall as they are wide, as on the TRS-80. Codes 128 to 191 are drawn as the 2 × 3 block graphics; the few letters are our own 5 × 7 dot glyphs in `GLYPHS`. The phosphor is one colour (`PHOSPHOR`), the cursor blinks after the prompt, and the crash fills the screen with random blocks and letters after 0.7 s.
 - **Reduced motion.** With reduced motion, the exit's pulse, the bombs' throb, the chasers' wobble and the stars' pop on the results card stop, and the Hall preview shows a still. The canvases read the operating system's setting when a round starts; the CSS follows the Settings sheet's Motion choice too (see *Known limits*).
@@ -261,6 +314,11 @@ Every sound is synthesised in `lib/outta/sfx.ts` with the Web Audio API (oscilla
 | Blast | a thump and a burst of noise, a glass tinkle per broken block (up to 3, or 10 in a chain), and a rising run for a chain |
 | Pick-up | a two-note chime for a letter, three notes for a bonus |
 | Hit | a falling buzz |
+| Mega bomb dropped | a lower, two-note clunk |
+| Mega blast | a deep thump and a rumble of falling stone, over the usual blast |
+| The Copycat leans into wood | a short, low "mrr" |
+| The Copycat holds a bomb up | a rising "mew" and the hiss of a fuse |
+| The Copycat pushes, and drops its bomb | a scrape, and a softer tick |
 | Bump | a soft click |
 | Under the keys, and back | a falling and a rising sweep |
 | Tunnel | a quick blip |
@@ -273,7 +331,7 @@ Run, Screens, the Daily and Versus play sounds only while sound is on (`usePrefs
 
 ### The manifest and the Hall
 
-`lib/outta/manifest.ts` is the game's contract with the collection: id `escape` (the save key, the Keyring's game id and this docs folder), route `/outta-here`, title, tagline and blurb, the "inspired by" line (*Escape*, `ESCAPE.BAS`, unknown author, 1980 with `circa: true`, shown as "c. 1980"), palette and accent, the emblem (an asterisk heading for the way out, as SVG path data), the card's stats, modes and trivia, the five computers as the Orbit hall's moons, `daily: { epoch: COLLECTION_EPOCH }`, and the twelve keycaps. `lib/catalog.ts` lists it with the other games. The Hall's card shows `components/previews/OuttaPreview.tsx`, picked by `ProgramPreview.tsx` for the id `escape`: the same `HumanBot` plays Normal screens one after another from seed 1003 in miniature, with the camera on its star. It only runs while it is on screen and the tab is visible; with reduced motion it shows one still, six seconds into a run.
+`lib/outta/manifest.ts` is the game's contract with the collection: id `escape` (the save key, the Keyring's game id and this docs folder), route `/outta-here`, title, tagline and blurb, the "inspired by" line (*Escape*, `ESCAPE.BAS`, unknown author, 1980 with `circa: true`, shown as "c. 1980"), palette and accent, the emblem (an asterisk heading for the way out, as SVG path data), the card's stats, modes and trivia, the five computers as the Orbit hall's moons, `daily: { epoch: COLLECTION_EPOCH }`, and the fourteen keycaps. `lib/catalog.ts` lists it with the other games. The Hall's card shows `components/previews/OuttaPreview.tsx`, picked by `ProgramPreview.tsx` for the id `escape`: the same `HumanBot` plays Normal screens one after another from seed 1003 in miniature, with the camera on its star. It only runs while it is on screen and the tab is visible; with reduced motion it shows one still, six seconds into a run.
 
 ### The shell
 
@@ -319,7 +377,7 @@ The Keyring (`/keyring`, `lib/kit/keyring.ts`) is the single source of truth for
 
 | Keycaps | Unlocked by |
 |---|---|
-| Under the Keys, Wraparound, Chain Reaction, Rush Hour, Spelled It, Pop!, No Hesitation, Untouched | `earnedBy` in `progress.ts`, when a run ends, out or caught |
+| Under the Keys, Wraparound, Chain Reaction, Rush Hour, Spelled It, Pop!, No Hesitation, Untouched, Not Set in Stone, Copy That | `earnedBy` in `progress.ts`, when a run ends, out or caught. Pop! and Chain Reaction count your bombs only; Copy That counts the Copycat caught in any blast (`copycatPops`), Not Set in Stone any stone broken (`stoneBroken`) |
 | Out of the Machine, Daily Driver | `record` in `OuttaHere.tsx`, after the screens or dailies it counts |
 | \*SCAPE, Crash Test | `Terminal1980.tsx`, when the program ends or crashes |
 
@@ -339,11 +397,13 @@ Tiers decide the Keyring's XP: 10 for common, 30 for rare, 80 for legendary, and
 
 - **`npm run check:outta`** (`scripts/check-outta.ts`, about 35 seconds; an optional argument sets the runs per level, 120 by default):
   - **rules**: a way out exists at the start of 500 Normal screens; a seed replays exactly; tunnels; the keyboard row; wood pushing; plain and chain bomb reach; a push that would box you in is refused; the keyboard row counts as a way round;
+  - **the Mega bomb**: a bomb breaks only glass and a Mega bomb every block in the same 3 × 3; it uses no regular bomb and its glass scores; taking one carries it and places the next elsewhere, and with one in hand the next stays put; one walled in by the rain moves where you can reach it; Chill has none;
+  - **the Copycat**: it braces 0.45 s and pushes wood one cell; it won't lean into a push that would box you in; it arms for 0.75 s, bombs glass, breaks only glass and gets clear; it bombs you behind glass only when you can step clear;
   - **the Daily**: one seed per calendar day; ten squares in the share text;
   - **1980 mode**: `*SCAPE` and the exit at the start; no step right from the first cell; two rows into the keyboard's memory and back; the row wrap; both crashes; 20,000 blocks without one on the bottom row (bar its first cell) or the exit; any key clears a block on you; the exit ends at `READY`;
-  - **balance**: the bots on each difficulty, within their bands;
-  - **screens**: thirty different seeds, and ten bots on each screen, at least half of them getting out, using the computer's trick where it has one.
-- **Unit tests** (`npm test`, Vitest): `dailies.test.ts` (today's Daily seed), `daily.test.ts` (the kit's day numbering), `rng.test.ts` (mulberry32's numbers), `migration.test.ts` (a version 1 save survives the move, the old key stays, the Keyring imports its keycaps and dailies once, forgetting another game leaves Outta Here alone), `manifest.test.ts` (the twelve titles and hints unchanged, unique ids, known tiers), `keyring.test.ts` and `save.test.ts` (the kit underneath).
+  - **balance**: the bots on each difficulty, within their bands, with the Mega bomb's and the Copycat's numbers; and in every bot run, once a second, one Mega bomb on an empty cell you can reach, every Copycat push and bomb shown first, its bombs breaking only glass, and no landing or Copycat push ever shutting the way out;
+  - **screens**: thirty different seeds, and ten bots on each screen, at least half of them getting out, using the computer's trick where it has one; and the fingerprint that proves Chill and the Screens play exactly as before the Mega bomb and the Copycat.
+- **Unit tests** (`npm test`, Vitest): `dailies.test.ts` (today's Daily seed), `daily.test.ts` (the kit's day numbering), `rng.test.ts` (mulberry32's numbers), `migration.test.ts` (a version 1 save survives the move, the old key stays, the Keyring imports its keycaps and dailies once, forgetting another game leaves Outta Here alone), `manifest.test.ts` (the twelve titles and hints from before the kit unchanged and still first, unique ids, known tiers), `keyring.test.ts` and `save.test.ts` (the kit underneath).
 - **End-to-end tests** (Playwright, `npm run e2e`): `navigation.spec.ts` (Back mid-run asks first; `P` opens the pause menu with Resume, Try again, New screen, How to play, Settings, Game menu, Back to the Hall; after a 1980 crash `Esc` goes to the game menu), `keyring.spec.ts` (the Crash Test toast), `story.spec.ts` (every chapter of the Story renders and every Mermaid diagram draws).
 
 What each check locks, and with what tolerance, is listed in [NOTES.md](NOTES.md).
@@ -365,3 +425,5 @@ What each check locks, and with what tolerance, is listed in [NOTES.md](NOTES.md
 - The Daily's "first try" is the first *finished* run: leaving or restarting before the end doesn't use it up.
 - The Daily's share text and the results card still use coloured-square and symbol characters from the emoji range; `shareString` in `lib/kit/daily.ts` has the same layout and could assemble it.
 - Progress, stars, keycaps and Daily results live in this browser only.
+- The Copycat never uses the edge tunnels or the keyboard row, and like every chaser it doesn't see your bombs coming. Both are choices, not oversights: it copies your tools, not your tricks, and a bomb in a corridor is the way to beat it.
+- A Mega bomb walled in by the rain jumps to its new place without a warning on screen.

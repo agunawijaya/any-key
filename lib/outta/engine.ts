@@ -6,10 +6,11 @@ import { LEVELS, type LevelId, type Settings } from "./levels";
  *
  * A star starts in the top-left corner of a 64 × 16 screen and has to reach
  * the exit on the bottom row while blocks rain in. Wood can be pushed, glass
- * can be bombed, stone has to be walked round. Two tricks come from the 1980
- * program's own bugs: walking off the left or right edge comes back in on the
- * row above or below, and walking off the top row hides you under the
- * keyboard (row -1), where nothing can follow.
+ * can be bombed, stone has to be walked round (or blown up with a Mega bomb,
+ * found on the screen). Two tricks come from the 1980 program's own bugs:
+ * walking off the left or right edge comes back in on the row above or
+ * below, and walking off the top row hides you under the keyboard (row -1),
+ * where nothing can follow.
  *
  * Everything random comes from one seeded generator, so a seed replays the
  * same run for the same inputs (the Daily Escape relies on it).
@@ -23,11 +24,15 @@ export type Block = typeof EMPTY | typeof WOOD | typeof GLASS | typeof STONE;
 
 export type Dir = "up" | "down" | "left" | "right";
 export type Pos = { x: number; y: number };
-export type ItemKind = "letter" | "chain3" | "rush";
+export type ItemKind = "letter" | "chain3" | "rush" | "mega";
 export type Item = { id: number; x: number; y: number; kind: ItemKind; letter?: string; until: number };
 export type Falling = { id: number; x: number; y: number; at: number; block?: Block; item?: ItemKind };
-export type Bomb = { id: number; x: number; y: number; at: number; placed: number; chain: boolean };
-export type EnemyKind = "bouncer" | "eraser" | "glitch";
+/** Who dropped a bomb: you, or the Copycat. */
+export type BombOwner = "you" | "copycat";
+export type Bomb = { id: number; x: number; y: number; at: number; placed: number; chain: boolean; mega: boolean; owner: BombOwner };
+export type EnemyKind = "bouncer" | "eraser" | "glitch" | "copycat";
+/** What the Copycat is winding up to do, on screen from `since` until `at`, so it never acts without warning. */
+export type Intent = { kind: "push"; dir: Dir; since: number; at: number } | { kind: "bomb"; since: number; at: number };
 export type Enemy = {
   id: number;
   kind: EnemyKind;
@@ -47,25 +52,48 @@ export type Enemy = {
   max?: number;
   /** Eraser: how far along your trail it has come. */
   trailIndex?: number;
-  /** Glitch: where it last saw you. */
+  /** Glitch and the Copycat: where they last saw you. */
   lastSeen?: Pos;
+  /** Copycat: the push or bomb it is winding up, and when it may drop its next bomb. */
+  intent?: Intent;
+  reloadAt?: number;
+  /** Copycat: a push the rules turned down, not to be tried again for a moment. */
+  refused?: { cell: number; dir: Dir; until: number };
 };
 export type TrailStep = { x: number; y: number; gap: boolean };
+export type HitCause = "rain" | "bomb" | "copycat-bomb" | EnemyKind;
 export type GameEvent =
-  | { kind: "step" | "push" | "bump" | "dive" | "rise" | "tunnel" | "bomb" | "win" | "lose" }
+  | { kind: "step" | "push" | "bump" | "dive" | "rise" | "tunnel" | "win" | "lose" }
+  | { kind: "bomb"; by: BombOwner; mega: boolean }
   | { kind: "land"; x: number; y: number; block: Block }
   | { kind: "shatter"; x: number; y: number }
-  | { kind: "boom"; x: number; y: number; broken: number; chain: boolean; cells: number[] }
+  | { kind: "boom"; x: number; y: number; broken: number; chain: boolean; mega: boolean; by: BombOwner; cells: number[]; blocks: Block[] }
   | { kind: "pickup"; item: ItemKind; letter?: string }
   | { kind: "bonus"; x: number; y: number; item: ItemKind }
-  | { kind: "hit"; by: "rain" | "bomb" | EnemyKind }
-  | { kind: "pop"; enemy: EnemyKind };
+  | { kind: "hit"; by: HitCause }
+  | { kind: "pop"; enemy: EnemyKind; by: BombOwner }
+  | { kind: "copycat"; act: "brace" | "arm" | "push" };
 
 export const LETTERS = ["E", "S", "C", "A", "P", "E"];
 const STEP_GAP = 0.11;
 const ITEM_LIFE = 8;
 const RUSH_TIME = 30;
-const DIRS: Record<Dir, Pos> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+/** Mega bombs you can carry at once. */
+export const MEGA_CARRY = 1;
+/**
+ * The Copycat's route costs, in steps. A push is a step plus its wind-up; a
+ * glass block is the wind-up, the fuse, and backing off and coming back. A
+ * cell another chaser stands on costs a wait, since it will probably move on.
+ * Cheap tools make it use them: it would rather push or bomb than go round.
+ */
+const COPY_PUSH_COST = 2;
+const COPY_GLASS_COST = 7;
+const COPY_CROWD_COST = 8;
+export const DIRS: Record<Dir, Pos> = { up: { x: 0, y: -1 }, down: { x: 0, y: 1 }, left: { x: -1, y: 0 }, right: { x: 1, y: 0 } };
+const DIR_LIST = Object.entries(DIRS) as [Dir, Pos][];
+
+/** Is `p` inside the 3 × 3 blast of a bomb at `b`? */
+export const inBlast = (b: Pos, p: Pos) => Math.abs(b.x - p.x) <= 1 && Math.abs(b.y - p.y) <= 1;
 
 export class Game {
   readonly s: Settings;
@@ -91,7 +119,12 @@ export class Game {
   trail: TrailStep[] = [{ x: 0, y: 0, gap: false }];
   chainCharges = 0;
   rushUntil = 0;
+  /** Mega bombs in your pocket (at most MEGA_CARRY), how many you have dropped, and the stone they broke. */
+  megas = 0;
+  megasDropped = 0;
+  stoneBroken = 0;
   collected: string[] = [];
+  /** Glass broken by your bombs. */
   broken = 0;
   bestChain = 0;
   state: "playing" | "won" | "lost" = "playing";
@@ -102,6 +135,8 @@ export class Game {
   tunnels = 0;
   dives = 0;
   pops = 0;
+  /** Times the Copycat was caught in a blast, whoever's bomb it was. */
+  copycatPops = 0;
   rushes = 0;
   private secondFlags = { hit: false, bomb: false };
 
@@ -132,6 +167,8 @@ export class Game {
     this.prefill();
     this.placeLetters();
     this.placeEnemies();
+    // Out along the first corridor or two: you can see it before you set off, and fetching it is a detour.
+    for (let k = 0; k < this.s.megaBombs; k++) this.placeMega(40, 90);
   }
 
   // ---------- Queries ----------
@@ -178,8 +215,18 @@ export class Game {
     return Math.max(0, this.rushUntil - this.t);
   }
 
+  /** Regular bombs you can still drop: a Mega bomb, or the Copycat's, doesn't use one up. */
+  bombsLeft() {
+    const mine = this.bombs.filter((b) => b.owner === "you" && !b.mega).length;
+    return Math.max(0, this.s.bombsOnScreen - mine);
+  }
+
   canBomb() {
-    return this.state === "playing" && !this.underKeys() && this.bombs.length < this.s.bombsOnScreen && !this.bombAt(this.player.x, this.player.y);
+    return this.canDrop() && this.bombsLeft() > 0;
+  }
+
+  canMegaBomb() {
+    return this.canDrop() && this.megas > 0;
   }
 
   /** Stars earned: escaped, under par, all six letters. */
@@ -211,9 +258,26 @@ export class Game {
     const rush = this.rushLeft() > 0;
     const chain = rush || this.chainCharges > 0;
     if (!rush && this.chainCharges > 0) this.chainCharges--;
-    this.bombs.push({ id: this.nextId++, x: this.player.x, y: this.player.y, at: this.t + this.s.fuse, placed: this.t, chain });
-    this.events.push({ kind: "bomb" });
+    this.dropBomb(this.player, "you", chain, false);
     return true;
+  }
+
+  /** Drops the Mega bomb you carry: the same fuse and reach as a bomb, but it breaks every block, stone too. */
+  megaBomb() {
+    if (!this.canMegaBomb()) return false;
+    this.megas--;
+    this.megasDropped++;
+    this.dropBomb(this.player, "you", false, true);
+    return true;
+  }
+
+  private canDrop() {
+    return this.state === "playing" && !this.underKeys() && !this.bombAt(this.player.x, this.player.y);
+  }
+
+  private dropBomb(at: Pos, owner: BombOwner, chain: boolean, mega: boolean) {
+    this.bombs.push({ id: this.nextId++, x: at.x, y: at.y, at: this.t + this.s.fuse, placed: this.t, chain, mega, owner });
+    this.events.push({ kind: "bomb", by: owner, mega });
   }
 
   // ---------- The clock ----------
@@ -228,6 +292,8 @@ export class Game {
       const f = this.secondFlags;
       this.timeline.push(f.hit ? "x" : this.underKeys() ? "k" : f.bomb ? "b" : this.hesitation() > 0.4 ? "h" : "m");
       this.secondFlags = { hit: false, bomb: false };
+      // A Mega bomb that found no room when it was due tries again.
+      if (this.megasWaiting() < this.s.megaBombs) this.placeMega(12);
     }
 
     if (this.pendingMove && t >= this.stunnedUntil && t - this.lastMoveAt >= STEP_GAP) {
@@ -322,8 +388,9 @@ export class Game {
     if (this.bombAt(x, y)) return this.bump();
     const block = this.at(x, y);
     if (block === WOOD) {
-      if (tunnel || !this.push(x, y, d)) return this.bump();
+      if (tunnel || !this.push(x, y, d, { x, y })) return this.bump();
       this.events.push({ kind: "push" });
+      this.keepMegasInReach();
     } else if (block !== EMPTY) {
       return this.bump();
     }
@@ -336,16 +403,23 @@ export class Game {
     this.arrive();
   }
 
-  private push(x: number, y: number, d: Pos) {
+  /**
+   * Slides the wood at (x, y) one cell along `d`, by your rules (the Copycat
+   * pushes by the same ones). It won't budge if the push would cut your last
+   * way out, measured from `wayFrom`: where you will stand after your own
+   * push, or where you stand when the Copycat pushes.
+   */
+  private push(x: number, y: number, d: Pos, wayFrom: Pos) {
     const bx = x + d.x;
     const by = y + d.y;
     if (!this.inBoard(bx, by) || this.at(bx, by) !== EMPTY || this.isExit(bx, by)) return false;
     if (this.bombAt(bx, by) || this.itemAt(bx, by) || this.enemyAt(bx, by)) return false;
+    if (!this.underKeys() && this.player.x === bx && this.player.y === by) return false;
     if (this.s.floorClear && by === this.rows - 1) return false;
     this.grid[this.idx(x, y)] = EMPTY;
     this.grid[this.idx(bx, by)] = WOOD;
     // Wood won't budge if the push would box you in for good (no way out, even with bombs).
-    if (!this.openPath({ x, y })) {
+    if (!this.openPath(wayFrom)) {
       this.grid[this.idx(x, y)] = WOOD;
       this.grid[this.idx(bx, by)] = EMPTY;
       return false;
@@ -376,19 +450,23 @@ export class Game {
   }
 
   private pickUp(item: Item) {
+    // With your hands full, a Mega bomb stays where it is until you have used yours.
+    if (item.kind === "mega" && this.megas >= MEGA_CARRY) return;
     this.items.splice(this.items.indexOf(item), 1);
     if (item.kind === "letter") this.collected.push(item.letter!);
     else if (item.kind === "chain3") this.chainCharges = 3;
-    else {
+    else if (item.kind === "rush") {
       this.rushUntil = this.t + RUSH_TIME;
       this.rushes++;
-    }
+    } else this.megas++;
     this.events.push({ kind: "pickup", item: item.kind, letter: item.letter });
+    // Another one turns up straight away, somewhere you have to go and get it.
+    if (item.kind === "mega") this.placeMega(30, Infinity, item);
   }
 
   // ---------- Getting hurt ----------
 
-  private hit(by: "rain" | "bomb" | EnemyKind) {
+  private hit(by: HitCause) {
     if (this.t < this.invulnerableUntil) return;
     this.hearts -= 1;
     this.hits++;
@@ -404,6 +482,7 @@ export class Game {
   private caught(enemy: Enemy) {
     if (this.underKeys() || this.t < this.invulnerableUntil) return;
     enemy.pausedUntil = this.t + 1.5;
+    enemy.intent = undefined;
     // The Eraser is knocked back along your trail, so one catch doesn't turn into three.
     if (enemy.kind === "eraser") {
       const back = Math.max(0, enemy.trailIndex! - 20);
@@ -421,20 +500,29 @@ export class Game {
     let broken = 0;
     const flood: number[] = [];
     const cells: number[] = [];
+    const blocks: Block[] = [];
+    const smash = (i: number) => {
+      const block = this.grid[i] as Block;
+      this.grid[i] = EMPTY;
+      cells.push(i);
+      blocks.push(block);
+      if (block === GLASS) broken++;
+      else if (block === STONE) this.stoneBroken++;
+    };
     for (let y = bomb.y - 1; y <= bomb.y + 1; y++) {
       for (let x = bomb.x - 1; x <= bomb.x + 1; x++) {
         if (!this.inBoard(x, y)) continue;
-        if (this.at(x, y) === GLASS) {
-          this.grid[this.idx(x, y)] = EMPTY;
-          broken++;
-          cells.push(this.idx(x, y));
-          if (bomb.chain) flood.push(this.idx(x, y));
+        const block = this.at(x, y);
+        // A bomb breaks glass; a Mega bomb breaks whatever is there.
+        if (block === GLASS || (bomb.mega && block !== EMPTY)) {
+          smash(this.idx(x, y));
+          if (bomb.chain && block === GLASS) flood.push(this.idx(x, y));
         }
         const other = this.bombAt(x, y);
         if (other) other.at = Math.min(other.at, this.t);
         const enemy = this.enemyAt(x, y);
-        if (enemy) this.pop(enemy);
-        if (this.player.x === x && this.player.y === y) this.hit("bomb");
+        if (enemy) this.pop(enemy, bomb.owner);
+        if (this.player.x === x && this.player.y === y) this.hit(bomb.owner === "you" ? "bomb" : "copycat-bomb");
       }
     }
     // A chain runs on through every glass block touching one that broke.
@@ -446,26 +534,107 @@ export class Game {
         const nx = x + d.x;
         const ny = y + d.y;
         if (this.inBoard(nx, ny) && this.at(nx, ny) === GLASS) {
-          this.grid[this.idx(nx, ny)] = EMPTY;
-          broken++;
-          cells.push(this.idx(nx, ny));
+          smash(this.idx(nx, ny));
           flood.push(this.idx(nx, ny));
         }
       }
     }
-    this.broken += broken;
+    // The glass and the chains are your score; the Copycat's bombs earn you nothing.
+    if (bomb.owner === "you") {
+      this.broken += broken;
+      this.bestChain = Math.max(this.bestChain, bomb.chain ? broken : 0);
+    }
     this.secondFlags.bomb = true;
-    this.bestChain = Math.max(this.bestChain, bomb.chain ? broken : 0);
-    this.events.push({ kind: "boom", x: bomb.x, y: bomb.y, broken, chain: bomb.chain, cells });
+    this.events.push({ kind: "boom", x: bomb.x, y: bomb.y, broken, chain: bomb.chain, mega: bomb.mega, by: bomb.owner, cells, blocks });
   }
 
-  private pop(enemy: Enemy) {
+  private pop(enemy: Enemy, by: BombOwner) {
     enemy.awayUntil = this.t + 6;
     this.pops++;
+    if (enemy.kind === "copycat") this.copycatPops++;
     enemy.x = enemy.home.x;
     enemy.y = enemy.home.y;
+    enemy.intent = undefined;
     if (enemy.kind === "eraser") enemy.trailIndex = -1;
-    this.events.push({ kind: "pop", enemy: enemy.kind });
+    this.events.push({ kind: "pop", enemy: enemy.kind, by });
+  }
+
+  // ---------- Mega bombs ----------
+
+  private megasWaiting() {
+    return this.items.filter((i) => i.kind === "mega").length;
+  }
+
+  /**
+   * Puts a Mega bomb on an empty cell you can reach (by the way-out rule's
+   * measure: through empty cells and glass), between `minSteps` and
+   * `maxSteps` steps away, and not where `not` was. If no cell is that far,
+   * it settles for nearer; if there is no room at all, it waits and the
+   * clock tries again every second.
+   */
+  private placeMega(minSteps: number, maxSteps = Infinity, not?: Pos) {
+    const steps = this.stepsFromYou();
+    for (const [lo, hi] of [
+      [minSteps, maxSteps],
+      [minSteps, Infinity],
+      [4, Infinity],
+      [1, Infinity],
+    ]) {
+      const spots: number[] = [];
+      for (let i = 0; i < this.cols * this.rows; i++) {
+        const x = i % this.cols;
+        const y = Math.floor(i / this.cols);
+        if (steps[i] < lo || steps[i] > hi || (not && not.x === x && not.y === y)) continue;
+        if (this.megaSpotFree(x, y)) spots.push(i);
+      }
+      if (!spots.length) continue;
+      const i = spots[Math.floor(this.rng() * spots.length)];
+      const x = i % this.cols;
+      const y = Math.floor(i / this.cols);
+      this.items.push({ id: this.nextId++, x, y, kind: "mega", until: Infinity });
+      this.events.push({ kind: "bonus", x, y, item: "mega" });
+      return true;
+    }
+    return false;
+  }
+
+  /** An empty cell off the walls, with nothing on it or about to land on it, and not you or the exit. */
+  private megaSpotFree(x: number, y: number) {
+    if (this.wallRows.includes(y) || this.at(x, y) !== EMPTY || this.isExit(x, y)) return false;
+    if (this.itemAt(x, y) || this.bombAt(x, y) || this.enemyAt(x, y)) return false;
+    if (this.player.x === x && this.player.y === y) return false;
+    return !this.falling.some((f) => f.x === x && f.y === y);
+  }
+
+  /** A Mega bomb walled off by rain or a push moves somewhere you can reach. */
+  private keepMegasInReach() {
+    if (!this.s.megaBombs) return;
+    const steps = this.stepsFromYou();
+    for (const item of this.items.filter((i) => i.kind === "mega")) {
+      if (steps[this.idx(item.x, item.y)] >= 0) continue;
+      this.items.splice(this.items.indexOf(item), 1);
+      this.placeMega(12, Infinity, item);
+    }
+  }
+
+  /** Steps from you to every cell on the way-out rule's terms (glass counts as open); -1 where you can't get. */
+  private stepsFromYou() {
+    const n = this.cols * this.rows;
+    const steps = new Int32Array(n + this.cols).fill(-1);
+    const start = this.underKeys() ? n + this.player.x : this.idx(this.player.x, this.player.y);
+    steps[start] = 0;
+    const queue = [start];
+    for (let q = 0; q < queue.length; q++) {
+      const i = queue[q];
+      for (const [j, far] of this.links(i)) {
+        if (steps[j] >= 0) continue;
+        const b = j < n ? this.grid[j] : EMPTY;
+        if (b === WOOD || b === STONE || (far && b !== EMPTY)) continue;
+        steps[j] = steps[i] + 1;
+        queue.push(j);
+      }
+    }
+    return steps;
   }
 
   // ---------- The rain ----------
@@ -534,6 +703,7 @@ export class Game {
       }
     }
     this.events.push({ kind: "land", x, y, block });
+    this.keepMegasInReach();
   }
 
   /**
@@ -753,6 +923,23 @@ export class Game {
         pausedUntil: 0,
       });
     }
+    if (this.s.copycat) {
+      // The Copycat starts where you did, a few seconds after you, and comes down the screen your way.
+      const home = { x: 0, y: 0 };
+      this.grid[this.idx(home.x, home.y)] = EMPTY;
+      this.enemies.push({
+        id: this.nextId++,
+        kind: "copycat",
+        x: home.x,
+        y: home.y,
+        home,
+        next: this.s.copycat.delay,
+        every: this.s.copycat.step,
+        awayUntil: this.s.copycat.delay,
+        pausedUntil: 0,
+        reloadAt: 0,
+      });
+    }
   }
 
   // ---------- Chasers ----------
@@ -764,12 +951,18 @@ export class Game {
 
   private enemyTick(e: Enemy) {
     if (e.awayUntil > this.t) return;
+    // While the Copycat shows what it is about to do, it stands still; then it does it.
+    if (e.intent) {
+      if (e.intent.at <= this.t) this.copycatAct(e);
+      return;
+    }
     if (e.next > this.t) return;
     e.next = Math.max(e.next + e.every, this.t);
     if (e.pausedUntil > this.t) return;
     if (e.kind === "bouncer") this.bounce(e);
     else if (e.kind === "eraser") this.erase(e);
-    else this.hunt(e);
+    else if (e.kind === "glitch") this.hunt(e);
+    else this.copycat(e);
     if (!this.underKeys() && e.x === this.player.x && e.y === this.player.y) this.caught(e);
   }
 
@@ -838,6 +1031,219 @@ export class Game {
     }
   }
 
+  /**
+   * The Copycat hunts you like Glitch, but with your tools: it pushes wood
+   * that is in its way and bombs glass, by exactly your rules, and it backs
+   * off from its own bombs as you would. Every push and every bomb is wound
+   * up on screen first (see `intent`), so it never surprises you.
+   */
+  private copycat(e: Enemy) {
+    if (!this.underKeys()) e.lastSeen = { ...this.player };
+    const ticking = this.bombs.filter((b) => b.owner === "copycat");
+    if (ticking.some((b) => inBlast(b, e))) {
+      const out = this.copycatRetreat(e, ticking);
+      if (out) {
+        e.x = out.x;
+        e.y = out.y;
+      }
+      return;
+    }
+    const goal = e.lastSeen;
+    if (!goal) return;
+    if (this.copycatAttacks(e, ticking)) return this.windUp(e, { kind: "bomb" });
+    const step = this.copycatRoute(e, goal, ticking);
+    if (!step) {
+      const near = this.closer(e, goal);
+      if (near && !ticking.some((b) => inBlast(b, near))) {
+        e.x = near.x;
+        e.y = near.y;
+      }
+      return;
+    }
+    const block = this.at(step.x, step.y);
+    if (block === WOOD) {
+      if (this.pushAllowed(step, DIRS[step.dir])) return this.windUp(e, { kind: "push", dir: step.dir });
+      // The rules said no (it would box you in): think again next step.
+      e.refused = { cell: this.idx(e.x, e.y), dir: step.dir, until: this.t + 3 };
+      return;
+    }
+    if (block === GLASS) {
+      // Glass next to you is bombed only if you could step clear of it too.
+      if (this.underKeys() || !inBlast(e, this.player) || this.youCanClear(e, ticking)) this.windUp(e, { kind: "bomb" });
+      return;
+    }
+    e.x = step.x;
+    e.y = step.y;
+  }
+
+  private windUp(e: Enemy, what: { kind: "push"; dir: Dir } | { kind: "bomb" }) {
+    const c = this.s.copycat!;
+    e.intent = { ...what, since: this.t, at: this.t + (what.kind === "push" ? c.brace : c.arm) };
+    this.events.push({ kind: "copycat", act: what.kind === "push" ? "brace" : "arm" });
+  }
+
+  /** The wind-up is over: the push or the bomb happens now, if the rules still allow it. */
+  private copycatAct(e: Enemy) {
+    const intent = e.intent!;
+    e.intent = undefined;
+    e.next = this.t + e.every;
+    if (intent.kind === "push") {
+      const d = DIRS[intent.dir];
+      const x = e.x + d.x;
+      const y = e.y + d.y;
+      if (this.at(x, y) !== WOOD || !this.push(x, y, d, this.player.y < 0 ? { x: this.player.x, y: -1 } : this.player)) return;
+      e.x = x;
+      e.y = y;
+      this.events.push({ kind: "copycat", act: "push" });
+      this.keepMegasInReach();
+      return;
+    }
+    if (this.bombAt(e.x, e.y) || this.bombs.some((b) => b.owner === "copycat")) return;
+    this.dropBomb(e, "copycat", false, false);
+    e.reloadAt = this.t + this.s.copycat!.reload;
+    // It starts backing off at once, as you would.
+    e.next = this.t + 0.12;
+  }
+
+  private copycatCanBomb(e: Enemy, ticking: Bomb[]) {
+    return ticking.length === 0 && this.t >= (e.reloadAt ?? 0) && !this.bombAt(e.x, e.y);
+  }
+
+  /**
+   * It bombs you only when you are in its blast but out of its reach (behind
+   * glass, say), and only when you have room to get clear: a bomb you can't
+   * step away from would be a trap, not a chase.
+   */
+  private copycatAttacks(e: Enemy, ticking: Bomb[]) {
+    if (this.underKeys() || !this.copycatCanBomb(e, ticking) || !inBlast(e, this.player)) return false;
+    const dx = this.player.x - e.x;
+    const dy = this.player.y - e.y;
+    if (Math.abs(dx) + Math.abs(dy) === 1) return false;
+    if (dx && dy && (this.enemyFree(e.x + dx, e.y, e) || this.enemyFree(e.x, e.y + dy, e))) return false;
+    return this.youCanClear(e, ticking);
+  }
+
+  /** Can you reach a cell out of a blast at `bomb` (and out of the bombs already ticking) within six steps? */
+  private youCanClear(bomb: Pos, ticking: Bomb[]) {
+    const safe = (p: Pos) => !inBlast(bomb, p) && !ticking.some((b) => inBlast(b, p));
+    const start = this.player;
+    if (start.y === 0) return true;
+    const seen = new Set([this.idx(start.x, start.y)]);
+    let ring = [start];
+    for (let steps = 0; steps < 6 && ring.length; steps++) {
+      const next: Pos[] = [];
+      for (const p of ring) {
+        for (const [, d] of DIR_LIST) {
+          const q = { x: p.x + d.x, y: p.y + d.y };
+          if (!this.walkable(q.x, q.y) || seen.has(this.idx(q.x, q.y))) continue;
+          if (safe(q) || q.y === 0) return true;
+          seen.add(this.idx(q.x, q.y));
+          next.push(q);
+        }
+      }
+      ring = next;
+    }
+    return false;
+  }
+
+  /** Would sliding the wood at `at` along `d` be allowed right now? Tried and undone. */
+  private pushAllowed(at: Pos, d: Pos) {
+    const you = this.underKeys() ? { x: this.player.x, y: -1 } : this.player;
+    if (!this.push(at.x, at.y, d, you)) return false;
+    this.grid[this.idx(at.x + d.x, at.y + d.y)] = EMPTY;
+    this.grid[this.idx(at.x, at.y)] = WOOD;
+    return true;
+  }
+
+  /**
+   * The first step of the Copycat's cheapest way to `goal` (Dijkstra): a free
+   * cell costs one step, wood it can push three, glass twelve when it has a
+   * bomb ready. Its own ticking bombs' blasts are off limits; so are stone,
+   * bombs, the exit, the tunnels and the keyboard row.
+   */
+  private copycatRoute(e: Enemy, goal: Pos, ticking: Bomb[]): (Pos & { dir: Dir }) | null {
+    const n = this.cols * this.rows;
+    const cost = new Float64Array(n).fill(Infinity);
+    const first = new Int32Array(n).fill(-1);
+    const firstDir: Dir[] = new Array(n);
+    const start = this.idx(e.x, e.y);
+    const target = this.idx(goal.x, goal.y);
+    const you = this.underKeys() ? -1 : this.idx(this.player.x, this.player.y);
+    const canBomb = this.copycatCanBomb(e, ticking);
+    const heap = new MinHeap();
+    cost[start] = 0;
+    heap.push(0, start);
+    while (heap.size) {
+      const [c, i] = heap.pop();
+      if (c > cost[i]) continue;
+      if (i === target) break;
+      const x = i % this.cols;
+      const y = Math.floor(i / this.cols);
+      for (const [dir, d] of DIR_LIST) {
+        const nx = x + d.x;
+        const ny = y + d.y;
+        if (!this.inBoard(nx, ny)) continue;
+        const j = this.idx(nx, ny);
+        if (i === start && e.refused && e.refused.until > this.t && e.refused.cell === start && e.refused.dir === dir) continue;
+        const w = j === you ? 1 : this.copycatStepCost(e, nx, ny, d, canBomb, ticking, i === start);
+        if (!Number.isFinite(w) || c + w >= cost[j]) continue;
+        cost[j] = c + w;
+        first[j] = i === start ? j : first[i];
+        firstDir[j] = i === start ? dir : firstDir[i];
+        heap.push(cost[j], j);
+      }
+    }
+    if (target === start || first[target] < 0) return null;
+    const f = first[target];
+    return { x: f % this.cols, y: Math.floor(f / this.cols), dir: firstDir[target] };
+  }
+
+  private copycatStepCost(e: Enemy, x: number, y: number, d: Pos, canBomb: boolean, ticking: Bomb[], firstStep: boolean) {
+    if (ticking.some((b) => inBlast(b, { x, y }))) return Infinity;
+    const block = this.at(x, y);
+    if (block === EMPTY) {
+      if (this.enemyFree(x, y, e)) return 1;
+      // Another chaser in the way will most likely have moved on by the time it gets there.
+      const chaser = this.enemyAt(x, y);
+      return chaser && chaser !== e && !firstStep && !this.bombAt(x, y) && !this.isExit(x, y) ? COPY_CROWD_COST : Infinity;
+    }
+    if (block === GLASS) return canBomb ? COPY_GLASS_COST : Infinity;
+    if (block !== WOOD) return Infinity;
+    // Wood: only if the cell beyond is free for it, as for you.
+    const bx = x + d.x;
+    const by = y + d.y;
+    if (!this.inBoard(bx, by) || this.at(bx, by) !== EMPTY || this.isExit(bx, by)) return Infinity;
+    if (this.bombAt(bx, by) || this.itemAt(bx, by) || this.enemyAt(bx, by)) return Infinity;
+    if (!this.underKeys() && this.player.x === bx && this.player.y === by) return Infinity;
+    if (this.s.floorClear && by === this.rows - 1) return Infinity;
+    return COPY_PUSH_COST;
+  }
+
+  /** The first step towards the nearest free cell out of every blast of its own bombs. */
+  private copycatRetreat(e: Enemy, ticking: Bomb[]): Pos | null {
+    const start = this.idx(e.x, e.y);
+    const prev = new Map<number, number>([[start, -1]]);
+    const queue = [start];
+    for (let q = 0; q < queue.length; q++) {
+      const i = queue[q];
+      const x = i % this.cols;
+      const y = Math.floor(i / this.cols);
+      if (i !== start && !ticking.some((b) => inBlast(b, { x, y }))) {
+        let j = i;
+        while (prev.get(j) !== start) j = prev.get(j)!;
+        return { x: j % this.cols, y: Math.floor(j / this.cols) };
+      }
+      for (const [, d] of DIR_LIST) {
+        const nx = x + d.x;
+        const ny = y + d.y;
+        if (!this.enemyFree(nx, ny, e) || prev.has(this.idx(nx, ny))) continue;
+        prev.set(this.idx(nx, ny), i);
+        queue.push(this.idx(nx, ny));
+      }
+    }
+    return null;
+  }
+
   /** A free neighbouring cell nearer to `goal` (or any free one, so a chaser never just stands there). */
   private closer(e: Enemy, goal: Pos): Pos | null {
     const options: { p: Pos; d: number }[] = [];
@@ -882,5 +1288,58 @@ export class Game {
       }
     }
     return null;
+  }
+}
+
+/** A binary heap of (cost, cell) pairs, cheapest first, for route planning. */
+export class MinHeap {
+  private keys: number[] = [];
+  private vals: number[] = [];
+  get size() {
+    return this.keys.length;
+  }
+  push(k: number, v: number) {
+    const keys = this.keys;
+    const vals = this.vals;
+    let i = keys.length;
+    keys.push(k);
+    vals.push(v);
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (keys[p] <= k) break;
+      keys[i] = keys[p];
+      vals[i] = vals[p];
+      i = p;
+    }
+    keys[i] = k;
+    vals[i] = v;
+  }
+  pop(): [number, number] {
+    const keys = this.keys;
+    const vals = this.vals;
+    const top: [number, number] = [keys[0], vals[0]];
+    const k = keys.pop()!;
+    const v = vals.pop()!;
+    if (keys.length) {
+      let i = 0;
+      for (;;) {
+        const l = 2 * i + 1;
+        const r = l + 1;
+        let m = i;
+        let mk = k;
+        if (l < keys.length && keys[l] < mk) {
+          m = l;
+          mk = keys[l];
+        }
+        if (r < keys.length && keys[r] < mk) m = r;
+        if (m === i) break;
+        keys[i] = keys[m];
+        vals[i] = vals[m];
+        i = m;
+      }
+      keys[i] = k;
+      vals[i] = v;
+    }
+    return top;
   }
 }

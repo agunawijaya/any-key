@@ -1,11 +1,12 @@
-import { EMPTY, GLASS, STONE, WOOD, type Dir, type Game, type Pos } from "./engine";
+import { EMPTY, GLASS, inBlast, MEGA_CARRY, MinHeap, STONE, WOOD, type Dir, type Game, type Pos } from "./engine";
 
 /*
  * A player that behaves like a person, for balancing and tests. It sees the
  * world 0.35 s late (reaction time), takes about six steps a second, plans the
  * cheapest walk to the exit (bombing glass, pushing wood, keeping away from
- * chasers and from its own bombs) and replans as it goes. It never peeks at
- * anything the screen doesn't show.
+ * chasers and from bombs) and replans as it goes. It picks up a Mega bomb
+ * that is only a short detour away and spends it on stone in its way. It
+ * never peeks at anything the screen doesn't show.
  */
 
 type Snap = {
@@ -13,6 +14,10 @@ type Snap = {
   grid: Uint8Array;
   enemies: Pos[];
   falling: Pos[];
+  /** The Copycat's bombs, and a Copycat holding one up (its warning that a bomb is coming). */
+  theirBombs: Pos[];
+  arming: Pos[];
+  megas: Pos[];
 };
 
 const MOVES: { dir: Dir; dx: number; dy: number }[] = [
@@ -21,6 +26,11 @@ const MOVES: { dir: Dir; dx: number; dy: number }[] = [
   { dir: "left", dx: -1, dy: 0 },
   { dir: "right", dx: 1, dy: 0 },
 ];
+
+/** Breaking through stone costs about as much as bombing glass: drop it, back off, wait, come back. */
+const STONE_COST = 8;
+/** A Mega bomb this cheap to reach is worth the detour. */
+const MEGA_DETOUR = 14;
 
 export type BotStyle = { reaction: number; stepEvery: number; seed: number };
 
@@ -47,6 +57,9 @@ export class HumanBot {
       grid: g.grid.slice(),
       enemies: g.enemies.filter((e) => e.awayUntil <= g.t).map((e) => ({ x: e.x, y: e.y })),
       falling: g.falling.map((f) => ({ x: f.x, y: f.y })),
+      theirBombs: g.bombs.filter((b) => b.owner !== "you").map((b) => ({ x: b.x, y: b.y })),
+      arming: g.enemies.filter((e) => e.awayUntil <= g.t && e.intent?.kind === "bomb").map((e) => ({ x: e.x, y: e.y })),
+      megas: g.items.filter((i) => i.kind === "mega").map((i) => ({ x: i.x, y: i.y })),
     });
     while (this.history.length > 2 && this.history[1].t <= g.t - this.style.reaction) this.history.shift();
     if (g.t < this.nextStepAt || g.state !== "playing") return;
@@ -63,8 +76,9 @@ export class HumanBot {
     }
     const me = g.player;
 
-    // Get out of the way of our own bombs first.
-    const blast = (x: number, y: number) => g.bombs.some((b) => Math.abs(b.x - x) <= 1 && Math.abs(b.y - y) <= 1);
+    // Get out of the way of bombs first: our own, which we know about at once, and the Copycat's, once seen.
+    const blast = (x: number, y: number) =>
+      g.bombs.some((b) => b.owner === "you" && inBlast(b, { x, y })) || [...seen.theirBombs, ...seen.arming].some((b) => inBlast(b, { x, y }));
     if (blast(me.x, me.y)) {
       const out = this.escapeRoute(g, seen, me, blast);
       if (out) g.move(out);
@@ -74,12 +88,17 @@ export class HumanBot {
     if (this.lastTry && this.lastTry.x === me.x && this.lastTry.y === me.y && g.t - this.lastTry.t < 1) {
       this.blocked.set(`${me.x},${me.y},${this.lastTry.dir}`, g.t + 6);
     }
-    const plan = this.plan(g, seen, me, blast);
+    const plan = this.planOrDetour(g, seen, me, blast);
     if (!plan) return;
     const next = plan.first;
     const block = next.y < 0 ? EMPTY : seen.grid[g.idx(next.x, next.y)];
-    if (block === GLASS && Math.abs(next.x - me.x) + Math.abs(next.y - me.y) === 1) {
+    const beside = Math.abs(next.x - me.x) + Math.abs(next.y - me.y) === 1;
+    if (block === GLASS && beside) {
       if (g.canBomb()) g.bomb();
+      return;
+    }
+    if (block === STONE && beside) {
+      if (g.canMegaBomb()) g.megaBomb();
       return;
     }
     if (next.y >= 0 && blast(next.x, next.y)) return;
@@ -90,12 +109,21 @@ export class HumanBot {
     g.move(plan.dir);
   }
 
+  /** The way to the exit, unless a Mega bomb is close enough to be worth fetching first. */
+  private planOrDetour(g: Game, seen: Snap, me: Pos, blast: (x: number, y: number) => boolean) {
+    if (g.megas < MEGA_CARRY && seen.megas.length) {
+      const fetch = this.plan(g, seen, me, blast, seen.megas[0]);
+      if (fetch && fetch.cost <= MEGA_DETOUR) return fetch;
+    }
+    return this.plan(g, seen, me, blast);
+  }
+
   /**
-   * Cheapest walk to the exit on what we saw, with the first step. The row
-   * under the keyboard counts too (cells n to n + cols - 1): a person who has
-   * learnt the trick uses it to get past stone on the top row.
+   * Cheapest walk to the exit (or to `goal`) on what we saw, with the first
+   * step. The row under the keyboard counts too (cells n to n + cols - 1): a
+   * person who has learnt the trick uses it to get past stone on the top row.
    */
-  private plan(g: Game, seen: Snap, me: Pos, blast: (x: number, y: number) => boolean) {
+  private plan(g: Game, seen: Snap, me: Pos, blast: (x: number, y: number) => boolean, goal: Pos = g.exit) {
     const { cols, rows } = g;
     const n = cols * rows;
     const cost = new Float64Array(n + cols).fill(Infinity);
@@ -112,11 +140,12 @@ export class HumanBot {
       }
     }
     for (const f of seen.falling) danger[g.idx(f.x, f.y)] += 4;
+    const breakStone = g.megas > 0;
     const heap = new MinHeap();
     const start = me.y < 0 ? n + me.x : g.idx(me.x, me.y);
     cost[start] = 0;
     heap.push(0, start);
-    const target = g.idx(g.exit.x, g.exit.y);
+    const target = g.idx(goal.x, goal.y);
     const relax = (i: number, j: number, w: number, dir: Dir) => {
       const nc = cost[i] + w;
       if (nc < cost[j]) {
@@ -163,8 +192,11 @@ export class HumanBot {
         const b = seen.grid[j];
         let w = 1;
         if (j === target) w = 1;
-        else if (b === STONE || g.bombAt(nx, ny)) continue;
-        else if (b === GLASS) w = 7;
+        else if (g.bombAt(nx, ny)) continue;
+        else if (b === STONE) {
+          if (!breakStone || tunnel) continue;
+          w = STONE_COST;
+        } else if (b === GLASS) w = 7;
         else if (b === WOOD) {
           const bx = nx + m.dx;
           const by = ny + m.dy;
@@ -177,7 +209,8 @@ export class HumanBot {
     }
     if (!Number.isFinite(cost[target])) return null;
     const f = first[target];
-    return { first: f >= n ? { x: f - n, y: -1 } : { x: f % cols, y: Math.floor(f / cols) }, dir: firstDir[target] };
+    if (f < 0) return null;
+    return { first: f >= n ? { x: f - n, y: -1 } : { x: f % cols, y: Math.floor(f / cols) }, dir: firstDir[target], cost: cost[target] };
   }
 
   /** The first step towards the nearest cell out of every blast, avoiding chasers. */
@@ -209,57 +242,5 @@ export class HumanBot {
     }
     // Nowhere to run on the board: hide under the keys if we're on the top row.
     return me.y === 0 ? "up" : null;
-  }
-}
-
-class MinHeap {
-  private keys: number[] = [];
-  private vals: number[] = [];
-  get size() {
-    return this.keys.length;
-  }
-  push(k: number, v: number) {
-    const keys = this.keys;
-    const vals = this.vals;
-    let i = keys.length;
-    keys.push(k);
-    vals.push(v);
-    while (i > 0) {
-      const p = (i - 1) >> 1;
-      if (keys[p] <= k) break;
-      keys[i] = keys[p];
-      vals[i] = vals[p];
-      i = p;
-    }
-    keys[i] = k;
-    vals[i] = v;
-  }
-  pop(): [number, number] {
-    const keys = this.keys;
-    const vals = this.vals;
-    const top: [number, number] = [keys[0], vals[0]];
-    const k = keys.pop()!;
-    const v = vals.pop()!;
-    if (keys.length) {
-      let i = 0;
-      for (;;) {
-        const l = 2 * i + 1;
-        const r = l + 1;
-        let m = i;
-        let mk = k;
-        if (l < keys.length && keys[l] < mk) {
-          m = l;
-          mk = keys[l];
-        }
-        if (r < keys.length && keys[r] < mk) m = r;
-        if (m === i) break;
-        keys[i] = keys[m];
-        vals[i] = vals[m];
-        i = m;
-      }
-      keys[i] = k;
-      vals[i] = v;
-    }
-    return top;
   }
 }

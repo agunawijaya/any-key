@@ -12,7 +12,7 @@ export const outtaManifest: GameManifest = {
   sessionMinutes: [1, 20],
   tagline: "The walls grow while you hesitate.",
   blurb:
-    "A tiny 1980 TRS-80 game about an asterisk trying to reach the exit, rebuilt with wood to push, glass to bomb, three chasers, thirty screens on five old computers and a daily escape.",
+    "A tiny 1980 TRS-80 game about an asterisk trying to reach the exit, rebuilt with wood to push, glass to bomb, a Mega bomb for stone, four chasers, thirty screens on five old computers and a daily escape.",
   inspiredBy: { originalTitle: "Escape", file: "ESCAPE.BAS", publisher: "Unknown author", year: 1980, circa: true },
   palette: ["#ff6b4a", "#2ef2a0", "#151b3d"],
   accent: "#25d98f",
@@ -21,8 +21,8 @@ export const outtaManifest: GameManifest = {
     "M7.8 6h2.4v12H7.8zM13.6 7.96l1.2 2.08-10.4 6-1.2-2.08zM14.8 13.96l-1.2 2.08-10.4-6 1.2-2.08zM16.6 6.4 22 12l-5.4 5.6-1.7-1.6 3.8-4-3.8-4z",
   stats: [
     { value: "30", label: "screens" },
-    { value: "3", label: "chasers" },
-    { value: "12", label: "badges" },
+    { value: "4", label: "chasers" },
+    { value: "14", label: "badges" },
   ],
   modes: ["Run", "Screens", "Daily Escape", "Versus", "1980 mode", "Chill", "Normal", "Hard"],
   moonsName: "computers",
@@ -47,5 +47,7 @@ export const outtaManifest: GameManifest = {
     { id: "crash-test", title: "Crash Test", hint: "Crash the computer in 1980 mode", tier: "common", secret: true },
     { id: "daily-driver", title: "Daily Driver", hint: "Get out of five Daily Escapes", tier: "rare" },
     { id: "out-of-the-machine", title: "Out of the Machine", hint: "Clear all thirty Screens", tier: "legendary" },
+    { id: "not-set-in-stone", title: "Not Set in Stone", hint: "Break stone with a Mega bomb", tier: "common" },
+    { id: "copy-that", title: "Copy That", hint: "Catch the Copycat in a bomb blast", tier: "rare" },
   ],
 };

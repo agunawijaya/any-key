@@ -39,19 +39,21 @@ Every fact below comes from reading `escape.bas` (kept read-only, outside the re
 
 ## Simulations
 
-All numbers below come from one run of the check on 7 October 2026:
+All numbers below come from one run of the check on 10 October 2026, after the Mega bomb and the Copycat were added (backlog items BL-006 and BL-002):
 
 ```text
 npm run check:outta
 ```
 
-It runs `tsx scripts/check-outta.ts` (an optional argument sets the runs per difficulty; the default is 120) and took 33 seconds. Every check passed.
+It runs `tsx scripts/check-outta.ts` (an optional argument sets the runs per difficulty; the default is 120) and took about a minute. Every check passed.
 
-### Rules, Daily and 1980 mode
+### Rules, Daily, 1980 mode, the Mega bomb and the Copycat
 
 - A way out exists at the start of all 500 Normal screens tried (seeds 1 to 500).
 - Two Hard games with seed 42, each played by a bot with the same seed, end 40 seconds later with the same grid, the same star position and the same state.
 - Edge tunnels, the keyboard row, wood pushing, bomb reach (a plain bomb breaks 1 block of a row of 10 glass, a chain bomb all 10), the refused push and the keyboard row as a way round all behave as specified.
+- The Mega bomb: around a star with wood, glass and stone on all sides, a bomb breaks the 2 glass blocks and leaves 3 wood and 3 stone; a Mega bomb breaks all of them, the 2 stone included, and not the stone one cell further out. It uses no regular bomb, and its glass counts for the score. Taking one carries it and places the next somewhere else at once; with one in hand the next stays put. One walled in by a landing block moves where you can reach it. Chill has none.
+- The Copycat: it braces for 0.45 s and then pushes wood one cell; it doesn't even brace for a push that would box you in; it arms for 0.75 s, drops its bomb against a glass wall, breaks only glass and is out of the blast when it goes off; it bombs you through glass when you can step clear, and not when you are in a pocket with no free cell.
 - The Daily gives one seed per calendar day: #274 on 1 October 2026 at 8:00 and 23:00, #275 the day after. The share text has ten squares.
 - 1980 mode: `*SCAPE` and the `+` at the start; no step right from the first cell; two rows into the keyboard's memory and back; the row wrap; the crash from both corners; 20,000 blocks with none on the bottom row (bar its first cell) or the exit; any key clears a buried star; the exit ends at `READY`.
 
@@ -62,12 +64,28 @@ It runs `tsx scripts/check-outta.ts` (an optional argument sets the runs per dif
 | Difficulty | Got out | Median time | Hits a run | Bombs a run | Hits by cause, all runs |
 |---|---|---|---|---|---|
 | Chill | 100% | 15.8 s | 0.00 | 0.0 | none |
-| Normal | 80% | 58.6 s | 1.45 | 6.5 | Eraser 86, Bouncer 63, own bomb 25 |
-| Hard | 31% | 52.8 s | 1.60 | 5.3 | Eraser 75, Bouncer 63, own bomb 20, rain 19, Glitch 15 |
+| Normal | 84% | 49.3 s | 1.24 | 6.2 | Eraser 85, Bouncer 46, own bomb 18 |
+| Hard | 33% | 38.3 s | 1.55 | 4.2 | Eraser 77, Bouncer 47, Copycat 21, own bomb 16, Glitch 14, rain 11 |
 
-One Normal run was still going at 240 s. On Chill the bot never needs a bomb. Normal's median (58.6 s) is above its par (45 s), and Hard's (52.8 s) just above its par (50 s): the second star is meant to be earned. Hard's median is lower than Normal's, probably because on Hard the long runs are the ones that end in a catch.
+"Bombs a run" counts your regular bombs and Mega bombs, not the Copycat's. On Chill the bot never needs a bomb. Normal's median (49.3 s) is just above its par (45 s), and Hard's (38.3 s) below its par (50 s), because on Hard the long runs are the ones that end in a catch. Before the Mega bomb and the Copycat (7 October 2026) the same runs gave Normal 80% (median 58.6 s) and Hard 31% (median 52.8 s); Chill is unchanged to the last digit.
+
+In the same runs:
+
+| | Normal | Hard |
+|---|---|---|
+| Mega bombs taken a run | 1.34 | 0.82 |
+| Mega bombs dropped a run | 1.23 | 0.72 |
+| Stone broken a run | 4.04 | 2.48 |
+| Copycat pushes a run | | 2.26 |
+| Copycat bombs a run | | 0.22 |
+| Hits from the Copycat's bombs | | 0 |
+| Copycat caught in a blast | | 3 times in 120 runs |
+
+And checked once a second in every one of the 360 runs: there is always exactly one Mega bomb on the screen (on Normal and Hard), always on an empty cell off the walls that you can reach; every Copycat push came at least 0.45 s after its brace and every Copycat bomb at least 0.75 s after it was raised; every Copycat blast broke glass only, without a chain; and no landing block and no Copycat push ever left you without a way out. No misses.
 
 ### Ten bots on each Screens screen
+
+The table below is from 7 October 2026 and still holds exactly: the check folds the result of every one of these 300 runs, and of 40 Chill runs, into a fingerprint (`5d9572d`), taken with the engine and bot as they were before the Mega bomb and the Copycat. The new engine and bot give the same fingerprint, so Chill and every Screens screen play exactly as before, step for step.
 
 Bot seeds 1 to 10 on each screen's fixed seed. Dives and tunnels are totals over the ten bots.
 
@@ -106,6 +124,55 @@ Bot seeds 1 to 10 on each screen's fixed seed. Dives and tunnels are totals over
 
 Every screen's median is under its par, as it should be: the pars were set at the bots' median plus a tenth, rounded up to five seconds. On every Home Micro screen the ten bots dived under the keys ten times between them; on every Amber Terminal screen they took 30 to 40 tunnels between them.
 
+## Designing the Copycat and the Mega bomb
+
+Both came from the owner's backlog on 9 and 10 October 2026: a chaser that plays by your rules (BL-002) and a bomb you have to go and fetch that breaks stone (BL-006). These are the trials behind the numbers in `levels.ts` and `engine.ts`, all with the human-like bot, 120 runs unless the line says otherwise. They are kept here because each one was a real choice.
+
+### Where the Mega bomb waits
+
+The brief warned that the Mega bomb must stay "a treat, not a trivializer". On Normal (no Copycat), with the bot fetching a Mega bomb whenever the detour costs 14 or less:
+
+| First one, next ones | Got out | Median |
+|---|---|---|
+| No Mega bomb at all | 80% | 58.6 s (identical to before) |
+| 24 to 70 steps away, then at least 18 | 95% | 50.7 s |
+| The same, but the bot never makes a detour for it | 85% | 58.7 s |
+| 40 to 90 steps away, then at least 30 (chosen) | 84%, and 87% over 300 runs | 49.3 s |
+| 50 to 110 steps away, then at least 36 (300 runs) | 87% | 47.1 s |
+
+Close by, it took Normal to 95%: a hole through a wall saves a whole corridor, and a human goes for anything shiny that is near. Placed a good walk away it lifts Normal by about seven points, and putting it further still changed nothing. The check's band for Normal was 55 to 85%; it is now 55 to 90%, a choice made here and reported to the owner. On Hard alone (no Copycat) the Mega bomb lifted the bots from 31% to 46%, which is where the Copycat comes in.
+
+### Where the Copycat starts, and how fast it is
+
+On Hard, with the Mega bomb:
+
+| The Copycat | Got out | Its catches |
+|---|---|---|
+| None | 46% | |
+| Low on the screen, above the last wall, a step every 0.34 s | 23% | 61 |
+| The same, slowed to 0.45 s and 0.55 s a step | 23% and 28% | 54 and 46 |
+| The middle corridor, 0.34 s | 11% | 102 |
+| The second corridor, 0.34 s | 20% | 85 |
+| The start corner, 0.34 s | 37% | 2 |
+| The start corner, 0.26 s | 34 to 40% | 10 to 15 |
+| The start corner, 0.22 s, setting off at 8 s (200 runs) | 36% | 33 |
+| The start corner, 0.2 s, setting off at 6 s (200 runs) | 31% | 45 |
+| The start corner, 0.22 s, setting off at 7 s (chosen) | 33% | 21 |
+
+In front of you it is a goalkeeper you have to get past, and even slowed down it caught the bots four to ten times as often as Glitch. Behind you it is the right kind of threat for a copycat: it starts where you started and comes down your way, and it only catches a player who dawdles or waits too long for a fuse. Hard ends up where it was before both features (31 to 33%), so the Mega bomb's help and the Copycat's threat about cancel out.
+
+### Making it use its tools
+
+With its first route costs (a push 3, glass 12) the Copycat pushed wood only 0.4 times and bombed 0.17 times a run, mostly walking the path you had already cleared. Cheaper tools (a push 2, glass 7) and the change below brought it to about 2.3 pushes and 0.2 bombs a run without changing the escape rate. It still bombs rarely, because from behind most glass on its way has already been broken by you; it bombs when the rain drops glass in its path or when a glass shortcut saves it a long way round.
+
+A trace of one run found the Copycat standing still for 30 seconds: the Eraser was stuck in a one-cell hole in a wall (its trail blocked by wood below), and the Copycat's planner counted the Eraser as a wall, so the only way down was closed. Other chasers now cost a wait (8) instead of being walls, except on the very first step.
+
+### Fairness
+
+- Bombing a glass wall next to a player in a pocket would leave them nowhere to go, so a glass bomb whose blast would reach you needs the same test as an attack: a free cell out of the blast within six of your steps (or the keyboard row above you).
+- The bots never took a hit from a Copycat bomb in 360 runs: the 0.75 s with the bomb held up, plus the 2.5 s fuse, are enough for a player who reacts 0.35 s late.
+- Copy That (the Copycat caught in a blast) came up in 3 of 120 Hard runs for bots that weren't trying: rare, as its tier says. Once it was the Copycat's own bomb, when it had nowhere to back off to; twice the bot's.
+
 ## Regression checks
 
 | Check | What it locks | Tolerance |
@@ -113,7 +180,11 @@ Every screen's median is under its par, as it should be: the pars were set at th
 | `npm run check:outta`, rules | A way out at the start of 500 Normal screens; seed replay; tunnels; keyboard row; wood; bomb reach; refused push | Exact: all 500, and every rule as specified |
 | `npm run check:outta`, Daily | One seed per calendar day, the next day's number one higher; ten squares | Exact |
 | `npm run check:outta`, 1980 mode | The quirks and endings listed under *Simulations* | Exact |
-| `npm run check:outta`, balance | Bot escape rate on each difficulty | Chill 90–100%, Normal 55–85%, Hard 25–60% |
+| `npm run check:outta`, balance | Bot escape rate on each difficulty | Chill 90–100%, Normal 55–90% (85% until the Mega bomb), Hard 25–60% |
+| `npm run check:outta`, Mega bomb | Reach and blast of a bomb and a Mega bomb; carrying, the next one appearing elsewhere, hands full; moving one that is walled in; none on Chill | Exact |
+| `npm run check:outta`, Copycat | The brace before a push; no push that would box you in; the bomb held up, glass only, getting clear; bombing you only when you can step clear | Exact |
+| `npm run check:outta`, every bot run | One Mega bomb at all times on a reachable empty cell; every Copycat push and bomb shown first; its blasts glass only; the way out never shut | No misses |
+| `npm run check:outta`, fingerprint | Chill (40 runs) and the 300 Screens runs play exactly as before the Mega bomb and the Copycat | Exact: `5d9572d` |
 | `npm run check:outta`, Screens | Thirty different seeds; at least 5 of 10 bots out on every screen; on the Amber Terminal at least one tunnel, on the Home Micro at least one dive | At least 5 of 10 |
 | `tests/unit/dailies.test.ts` | The Daily for 7 October 2026 at noon: #280, key `2026-10-07`, seed 79599 | Exact |
 | `tests/unit/daily.test.ts` | The kit's numbering: 1 January 2026 is #1, 7 October 2026 is #280 at any hour, and the old formula matches on every day of two years at four hours each | Exact |
@@ -124,9 +195,11 @@ Every screen's median is under its par, as it should be: the pars were set at th
 | `tests/e2e/keyring.spec.ts` | Stepping off the bottom-left corner in 1980 mode unlocks Crash Test | Exact |
 | `tests/e2e/story.spec.ts` | Every Story chapter renders and every Mermaid diagram in it draws | Exact |
 
-The bot medians and the Screens' exact win counts are reported but not locked; a change to the engine or the bot that moves a Screens screen below five bots in ten fails the check.
+The bot medians are reported but not locked. The Screens are locked twice: a change that moves a screen below five bots in ten fails, and any change at all to how Chill or a screen plays fails the fingerprint. If that change is meant, re-pick the screens' seeds and take a new fingerprint.
 
 ## Open questions
+
+- **The Copycat beyond Hard.** It is on Hard only (and so in Versus on Hard). Putting it on Normal would change the Daily, and putting it in the Screens would mean picking their seeds again. Whether the owner wants it elsewhere is open.
 
 - **How fast did the loop really run?** We estimate 50 to 70 times a second and use 60. Timing the program in a TRS-80 emulator with an accurate clock (or on a real Model I) would settle it.
 - **The `ELSE` pairing.** We read each `ELSE` on lines 50 to 80 as belonging to the inner `IF`, the only reading under which the program works. Running the program in an emulator would confirm it.

@@ -48,6 +48,7 @@ type Hud = {
   t: number;
   hearts: number;
   bombs: number;
+  mega: number;
   chain: number;
   rush: number;
   letters: string[];
@@ -61,7 +62,8 @@ type Hud = {
 const hudOf = (g: Game, waiting: boolean, cause: string): Hud => ({
   t: g.t,
   hearts: g.hearts,
-  bombs: Math.max(0, g.s.bombsOnScreen - g.bombs.length),
+  bombs: g.bombsLeft(),
+  mega: g.megas,
   chain: g.chainCharges,
   rush: g.rushLeft(),
   letters: [...g.collected],
@@ -121,10 +123,11 @@ export function Play({ session, sound, onExit, onScreens, onNewScreen, onNext, o
         game.update(dt);
         for (const e of game.drainEvents()) {
           if (e.kind === "boom") {
-            booms.push({ x: e.x, y: e.y, at: now / 1000, cells: e.cells, chain: e.chain });
-            if (e.chain) finish.chainBest = Math.max(finish.chainBest, e.broken);
+            booms.push({ x: e.x, y: e.y, at: now / 1000, cells: e.cells, chain: e.chain, mega: e.mega, blocks: e.blocks });
+            if (e.chain && e.by === "you") finish.chainBest = Math.max(finish.chainBest, e.broken);
           }
-          if (e.kind === "pop") finish.popped = true;
+          // Pop! is for your own bombs; a chaser caught in the Copycat's blast doesn't count.
+          if (e.kind === "pop" && e.by === "you") finish.popped = true;
           if (e.kind === "hit") cause = CAUSES[e.by] ?? "";
           if (soundRef.current) playSound(e);
         }
@@ -159,6 +162,10 @@ export function Play({ session, sound, onExit, onScreens, onNewScreen, onNext, o
     startedRef.current = true;
     gameRef.current?.bomb();
   }, []);
+  const megaBomb = useCallback(() => {
+    startedRef.current = true;
+    gameRef.current?.megaBomb();
+  }, []);
   const press = useCallback((dir: Dir) => {
     startedRef.current = true;
     gameRef.current?.move(dir);
@@ -172,7 +179,6 @@ export function Play({ session, sound, onExit, onScreens, onNewScreen, onNext, o
     const down = (e: KeyboardEvent) => {
       if (hasModifier(e) || isTypingTarget(e.target)) return;
       const key = keyOf(e);
-      // While the pause menu is open its own keys apply; P still resumes.
       // While the pause menu is open only its shortcuts work: P resumes, R and N start over.
       if (pausedRef.current) {
         if (key === "p") setPaused(false);
@@ -189,6 +195,9 @@ export function Play({ session, sound, onExit, onScreens, onNewScreen, onNext, o
       if (key === " " || key === "b") {
         e.preventDefault();
         if (!e.repeat) bomb();
+      } else if ((key === "m" || key === "e") && session.settings.megaBombs > 0) {
+        e.preventDefault();
+        if (!e.repeat) megaBomb();
       } else if (key === "r") {
         e.preventDefault();
         restart();
@@ -211,7 +220,7 @@ export function Play({ session, sound, onExit, onScreens, onNewScreen, onNext, o
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, [bomb, onNewScreen, onNext, over, press, release, restart, shell]);
+  }, [bomb, megaBomb, onNewScreen, onNext, over, press, release, restart, session.settings.megaBombs, shell]);
 
   usePlayScreen({
     screen: over ? "results" : "play",
@@ -265,6 +274,11 @@ export function Play({ session, sound, onExit, onScreens, onNewScreen, onNext, o
         <span className={styles.stat}>
           Bomb <b>{hud?.bombs ?? s.bombsOnScreen}</b>
         </span>
+        {s.megaBombs > 0 && (
+          <span className={styles.stat} data-kind="mega" data-on={(hud?.mega ?? 0) > 0} aria-label={`Mega bombs carried: ${hud?.mega ?? 0}`}>
+            Mega <b>{hud?.mega ?? 0}</b>
+          </span>
+        )}
         <span className={styles.stat} data-on={(hud?.chain ?? 0) > 0}>
           Chain <b>×{hud?.chain ?? 0}</b>
         </span>
@@ -320,7 +334,7 @@ export function Play({ session, sound, onExit, onScreens, onNewScreen, onNext, o
                 ))}
               </div>
               <p className={styles.result}>
-                {fmt(over.t)} s · {over.steps} steps · {over.broken} glass broken · score {over.score()}
+                {fmt(over.t)} s · {over.steps} steps · {over.broken} glass broken{over.stoneBroken > 0 ? ` · ${over.stoneBroken} stone` : ""} · score {over.score()}
               </p>
               <Route game={over} world={session.world} />
               {session.daily && today && (
@@ -383,9 +397,16 @@ export function Play({ session, sound, onExit, onScreens, onNewScreen, onNext, o
             </button>
           ))}
         </div>
-        <button type="button" className={styles.bombKey} onPointerDown={bomb}>
-          Bomb
-        </button>
+        <div className={styles.bombKeys}>
+          {s.megaBombs > 0 && (
+            <button type="button" className={styles.megaKey} onPointerDown={megaBomb} disabled={(hud?.mega ?? 0) === 0}>
+              Mega
+            </button>
+          )}
+          <button type="button" className={styles.bombKey} onPointerDown={bomb}>
+            Bomb
+          </button>
+        </div>
       </div>
 
       <Legend fuse={s.fuse} />
@@ -442,6 +463,10 @@ function Legend({ fuse }: { fuse: number }) {
         <p>
           <i data-b="rush" /> <b>Chain Rush</b>: every bomb chains for 30 s. Bonuses fade 8 s after they land.
         </p>
+        <p>
+          <i data-b="mega" /> <b>Mega bomb</b> (Normal and Hard) waits on a dashed ring. Walk over it to carry it, one at a time, and press <kbd>M</kbd>:
+          it breaks every block round it, stone too. Another turns up somewhere else.
+        </p>
       </div>
       <div>
         <h3>Chasers</h3>
@@ -453,6 +478,10 @@ function Legend({ fuse }: { fuse: number }) {
         </p>
         <p>
           <i data-e="glitch" /> <b>Glitch</b> hunts you by the shortest way.
+        </p>
+        <p>
+          <i data-e="copycat" /> <b>Copycat</b> (Hard) starts where you did and comes after you, pushing wood and bombing glass like you. A bomb over
+          its head means its own is coming.
         </p>
         <p>A bomb pops a chaser for a few seconds.</p>
       </div>

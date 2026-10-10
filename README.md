@@ -81,8 +81,9 @@ PC. The docs are in `docs/23mtch/`.
 
 The walls grow while you hesitate. A tiny TRS-80 game from around 1980, in which an asterisk has to
 reach the exit while blocks fall whenever you stop pressing keys, rebuilt with wood to push, glass
-to bomb, chain bonuses and three chasers (a Bouncer, an Eraser that follows your trail and a
-Glitch that hunts you). The original's bugs became tricks: the edge tunnels and the hiding place
+to bomb, a Mega bomb to find that breaks stone, chain bonuses and four chasers (a Bouncer, an
+Eraser that follows your trail, a Glitch that hunts you and, on Hard, a Copycat that comes after
+you with your own tools). The original's bugs became tricks: the edge tunnels and the hiding place
 under the keyboard. Play a Run on Chill, Normal or Hard, thirty Screens on five old computers, a
 shareable Daily Escape, two-player Versus on one keyboard, or the 1980 mode, which runs the original
 address by address, crash included. The docs are in `docs/escape/`.

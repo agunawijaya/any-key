@@ -58,6 +58,15 @@ export type Settings = {
   /** Eraser: seconds before it sets off, seconds per step (null: none). */
   eraser: { delay: number; step: number } | null;
   glitch: { delay: number; step: number } | null;
+  /**
+   * The Copycat, who pushes and bombs by your rules: seconds before it sets
+   * off, seconds per step, seconds after dropping a bomb before it may drop
+   * another, and how long it shows what it is about to do before a push and
+   * before a bomb (null: none).
+   */
+  copycat: { delay: number; step: number; reload: number; brace: number; arm: number } | null;
+  /** Mega bombs waiting on the screen at once (0: none). You carry one at a time. */
+  megaBombs: number;
   /** Seconds for the second star. */
   par: number;
 };
@@ -94,13 +103,15 @@ export const LEVELS: Record<LevelId, Settings> = {
     bouncerStep: 0.4,
     eraser: null,
     glitch: null,
+    copycat: null,
+    megaBombs: 0,
     par: 18,
   },
   normal: {
     ...base,
     id: "normal",
     name: "Normal",
-    blurb: "The Eraser follows your trail, Bouncers guard their lanes.",
+    blurb: "The Eraser follows your trail, Bouncers guard their lanes, and a Mega bomb waits to be found.",
     floors: 4,
     gaps: 1,
     prefill: 0.05,
@@ -120,13 +131,15 @@ export const LEVELS: Record<LevelId, Settings> = {
     bouncerStep: 0.34,
     eraser: { delay: 6, step: 0.3 },
     glitch: null,
+    copycat: null,
+    megaBombs: 1,
     par: 45,
   },
   hard: {
     ...base,
     id: "hard",
     name: "Hard",
-    blurb: "All three chasers, a heavy rain, and it can land on you.",
+    blurb: "All four chasers, the Copycat too, a heavy rain, and it can land on you.",
     floors: 4,
     gaps: 1,
     prefill: 0.07,
@@ -146,6 +159,8 @@ export const LEVELS: Record<LevelId, Settings> = {
     bouncerStep: 0.3,
     eraser: { delay: 4, step: 0.28 },
     glitch: { delay: 6, step: 0.34 },
+    copycat: { delay: 7, step: 0.22, reload: 5, brace: 0.45, arm: 0.75 },
+    megaBombs: 1,
     par: 50,
   },
 };

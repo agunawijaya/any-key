@@ -7,7 +7,7 @@ This file is excluded from formatters (`.prettierignore`) so parallel sessions d
 |---|---|---|---|---|---|---|
 | Bop Box | `music` | Playable | 6 of 6 | 8 (4 common, 3 rare, 1 legendary) | None | 00 retrofit (2026-10-07) |
 | Stickler | `23mtch` | Playable | 6 of 6 | 14 (7 common, 4 rare, 3 legendary) | Daily puzzle, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
-| Outta Here | `escape` | Playable | 6 of 6 | 12 (6 common, 4 rare, 2 legendary) | Daily Escape, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
+| Outta Here | `escape` | Playable | 6 of 6 | 14 (7 common, 5 rare, 2 legendary) | Daily Escape, numbered from 2026-01-01 | Backlog BL-002 Copycat, BL-006 Mega bomb (2026-10-10) |
 | Don't Crater | `lander` | Playable | 6 of 6 | 15 (7 common, 5 rare, 3 legendary) | Daily Drop, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
 | Two Humps | `two-humps` | Playable | 6 of 6 | 15 (5 common, 7 rare, 3 legendary) | Daily Crossing, numbered from 2026-10-09 | 03 two-humps (2026-10-09) |
 | Same Trick Twice | `long-memory` | Playable | 6 of 6 | 11 (5 common, 4 rare, 2 legendary) | Daily Endgame, numbered from 2026-10-09 | 09 long-memory (2026-10-09) |
@@ -77,8 +77,11 @@ prompts. Items it did fix are not listed.
 - The warning squares for falling blocks differ by colour only; they could borrow the landed blocks' shapes.
 - The Screens map has no address of its own: browser Back from it leaves for the Hall.
 - The No Hesitation hint says "Normal or Hard", but the Daily counts too and Screens don't.
-- Small tidies: a duplicate comment in `Play.tsx`; Versus shows "Bomb 1" for a moment on Chill; Versus and 1980 mode
-  don't skip keys typed into text fields; `stunnedUntil` and `resetProgress` are unused.
+- Small tidies: Versus and 1980 mode don't skip keys typed into text fields; `stunnedUntil` and `resetProgress` are
+  unused. (The duplicate comment in `Play.tsx` and Versus's "Bomb 1" on Chill were fixed with BL-002 and BL-006.)
+- The Copycat is on Hard only (and Versus on Hard); whether it should reach Normal, the Daily or the Screens is the
+  owner's call.
+- Normal's bot band was raised from 55–85% to 55–90%: the Mega bomb lifts Normal from 80% to about 84–87%.
 
 ### Don't Crater
 

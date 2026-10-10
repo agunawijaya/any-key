@@ -4,7 +4,7 @@ Outta Here is the game where the walls grow while you hesitate: you are a little
 
 ## The game
 
-A run starts with the screen frozen: stone walls zigzagging down, six letters scattered about, a few chasers waiting. Make your first move and everything starts at once. Blocks fall out of dashed warnings: wood you can shove, glass you can bomb, stone you can only go round. Keep moving and the rain is a drizzle. Stop to think and the hesitation meter fills, the drizzle turns into a downpour, and the cells around you start to close.
+A run starts with the screen frozen: stone walls zigzagging down, six letters scattered about, a few chasers waiting. Make your first move and everything starts at once. Blocks fall out of dashed warnings: wood you can shove, glass you can bomb, stone you can only go round, unless you have found the Mega bomb, which breaks the lot. Keep moving and the rain is a drizzle. Stop to think and the hesitation meter fills, the drizzle turns into a downpour, and the cells around you start to close.
 
 Then come the tricks. Walk off the right edge of the screen and you pop in on the left of the next row. Walk off the top and you hide under the keyboard, where nothing can catch you. Both are bugs from a tiny 1980 program, turned into the moves good players use.
 
@@ -12,8 +12,8 @@ The moment people talk about afterwards is usually the last few seconds: one pan
 
 ## What's new
 
-- **Wood, glass and stone**, with bombs and chain bonuses, so every wall is a choice: push it, bomb it or go round.
-- **Three chasers**: a Bouncer on patrol, an Eraser that follows your trail, and Glitch, who simply hunts you.
+- **Wood, glass and stone**, with bombs and chain bonuses, so every wall is a choice: push it, bomb it or go round. Somewhere on the screen waits a **Mega bomb** that breaks stone too, and the moment you take it another turns up elsewhere.
+- **Four chasers**: a Bouncer on patrol, an Eraser that follows your trail, Glitch, who simply hunts you, and on Hard the Copycat, a cat that comes after you with your own tools, pushing wood and bombing glass by your rules.
 - **Thirty screens on five old computers**, from a green-phosphor terminal to a pocket LCD where the rain falls like sand, ending on a machine with no exit at all.
 - **A Daily Escape**, the same screen for everyone, with a share card of coloured squares, and **Versus** for two players on one keyboard.
 - **1980 mode**: the original program, run the way it ran, bugs and crash included.

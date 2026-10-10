@@ -3,7 +3,9 @@ import { effectsBus } from "@/lib/kit/sound";
 /*
  * Outta Here sounds, all synthesised: a tick for placing a bomb, a thump and
  * a glass shatter for the blast, a rising run for a chain, chimes for pickups,
- * a buzz when something gets you and a little fanfare on the way out.
+ * a buzz when something gets you and a little fanfare on the way out. The
+ * Mega bomb clunks and rumbles; the Copycat chirps before every push and
+ * every bomb, so you can hear it coming as well as see it.
  */
 
 let ctx: AudioContext | null = null;
@@ -54,6 +56,24 @@ function noise(dur: number, vol: number, cutoff: number, when = 0) {
 
 export const sfx = {
   bomb: () => tone(660, 0.06, "square", 0.08),
+  megaBomb: () => {
+    tone(330, 0.09, "square", 0.09);
+    tone(220, 0.12, "square", 0.07, 0.06);
+  },
+  megaBoom: () => {
+    tone(80, 0.6, "sine", 0.6, 0, 32);
+    noise(0.55, 0.45, 1400);
+    for (let i = 0; i < 4; i++) noise(0.12, 0.12, 500, 0.12 + i * 0.07);
+  },
+  /** The Copycat leaning into wood: a short, low "mrr". */
+  copycatBrace: () => tone(300, 0.14, "triangle", 0.07, 0, 240),
+  /** The Copycat holding a bomb up: a rising "mew" and the hiss of a fuse. */
+  copycatArm: () => {
+    tone(520, 0.18, "triangle", 0.08, 0, 880);
+    noise(0.3, 0.05, 6000, 0.05);
+  },
+  copycatPush: () => noise(0.08, 0.08, 900),
+  copycatBomb: () => tone(500, 0.06, "square", 0.06),
   boom: (broken: number, chain: boolean) => {
     tone(120, 0.35, "sine", 0.5, 0, 45);
     noise(0.3, 0.35, 2400);

@@ -66,6 +66,8 @@ export function earnedBy(g: Game, events: { chainBest: number; popped: boolean }
   if (g.rushes > 0) ids.push("rush-hour");
   if (g.collected.length === 6) ids.push("spelled-it");
   if (events.popped) ids.push("pop");
+  if (g.stoneBroken > 0) ids.push("not-set-in-stone");
+  if (g.copycatPops > 0) ids.push("copy-that");
   const level = g.s.id;
   if (g.state === "won" && (level === "normal" || level === "hard" || level === "daily") && g.maxHesitation <= 0.5) ids.push("no-hesitation");
   if (g.state === "won" && level === "hard" && g.hits === 0) ids.push("untouched");

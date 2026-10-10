@@ -10,7 +10,7 @@ The soul we kept is the one idea in *Escape*'s eleven lines: **the walls grow wh
 | An asterisk starts in the top-left corner | The star, an asterisk with a face, starts there too |
 | The exit is a `+` on the bottom row | The exit is a `+` on the bottom row |
 | Blocks fill the screen when you stop pressing keys | Blocks pile up fastest when you stand still |
-| You can't walk through a block | You can't walk through stone, or through glass until a bomb breaks it |
+| You can't walk through a block | You can't walk through stone (until a Mega bomb breaks it), or through glass until a bomb breaks it |
 | Rows wrap at the edges (a bug) | **Edge tunnels**: off the right edge onto the next row's left, off the left edge onto the right end of the row above |
 | Walking up off the top row makes the star vanish (a bug) | **Under the keys**: walk off the top row and you hide under a keyboard drawn above the screen |
 | Walking off the bottom-left corner crashes the computer (a bug) | The Last Machine's screens have no exit: the way out is that corner |
@@ -44,15 +44,16 @@ The soul we kept is the one idea in *Escape*'s eleven lines: **the walls grow wh
 
 - **Modes.** Run on three difficulties (Chill, Normal, Hard); Screens, thirty fixed screens on five old computers, each teaching one trick; the Daily Escape, one screen a day for everyone; Versus, two players on one keyboard; and 1980 mode.
 - **Bombs.** One on the screen at a time (two on Chill); after 2.5 seconds they break the glass around them, set off other bombs, pop chasers and hurt you if you're too close.
+- **The Mega bomb** (Normal and Hard). One waits on the screen at a time, never falling and never fading; you carry one at a time, and as soon as you pick it up another appears somewhere else. It goes off like a bomb but breaks every block in its blast, stone included.
 - **Bonuses.** Chain ×3 and Chain Rush fall with the rain and turn bombs into chain bombs, whose blast runs on through touching glass.
-- **Chasers.** The Bouncer patrols a lane, the Eraser follows and wipes your trail, Glitch hunts you by the shortest way.
+- **Chasers.** The Bouncer patrols a lane, the Eraser follows and wipes your trail, Glitch hunts you by the shortest way, and on Hard the Copycat sets off from where you started and comes after you with your own tools: it pushes wood and bombs glass by exactly your rules, and shows every push and every bomb on screen before it happens.
 - **The hesitation meter**, shown above the screen.
 - **Letters, stars, par and score.** E S C A P E to collect, three stars per run, a par time for each difficulty and each screen, and a route map on the results card.
 - **Computer tricks.** Gaps at the ends of the walls on the Amber Terminal, stone pillars on the Home Micro, sand rain on the Pocket LCD, and no exit on The Last Machine.
-- **Keycaps and the Keyring.** Twelve achievements in three tiers, collected on the Any Key Keyring with every other game's; the Daily counts towards the collection's daily streak.
+- **Keycaps and the Keyring.** Fourteen achievements in three tiers, collected on the Any Key Keyring with every other game's; the Daily counts towards the collection's daily streak.
 - **The Daily's share text**: the time, the stars, the hits and ten coloured squares that sum up the run.
 - **The navigation standard**: a pause menu with How to play and Settings, results with the same three actions as every Any Key game, and browser Back that asks before throwing away a run.
-- **Touch controls**: an arrow pad and a Bomb button on touch screens, and touch keys in 1980 mode.
+- **Touch controls**: an arrow pad, a Bomb button and (on Normal and Hard) a Mega button on touch screens, and touch keys in 1980 mode.
 - **A live Hall preview**: the human-like bot that tests the balance plays Normal screens in miniature on the game's card.
 
 ## Left out

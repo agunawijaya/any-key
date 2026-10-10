@@ -26,6 +26,7 @@ On the Screens map, click a screen to play it. `Esc` or the Game menu button tak
 | Arrow keys, or `W` `A` `S` `D` | the arrow pad (on touch screens) | Move one cell. Hold to keep moving |
 | `,` and `.` | | Left and right, as in 1980 |
 | `Space` or `B` | the Bomb button (on touch screens) | Drop a bomb where you stand |
+| `M` or `E` | the Mega button (on touch screens) | Drop the Mega bomb you carry (Normal and Hard) |
 | `P` | the Pause button in the top bar | Pause. `P` again resumes |
 | `R` | Again | Start this screen over, straight away |
 | `N` | New screen | A fresh screen (Run only) |
@@ -55,8 +56,10 @@ Leaving a run that has started always asks first, with **Keep playing** and **Le
 |---|---|---|
 | `W` `A` `S` `D` | | Player 1 moves. Hold to keep moving |
 | `Space` or `F` | | Player 1 drops a bomb |
+| `E` | | Player 1 drops a Mega bomb (Normal and Hard) |
 | Arrow keys | | Player 2 moves. Hold to keep moving |
 | `Enter`, `/` or `0` | | Player 2 drops a bomb |
+| right `Shift` or `.` | | Player 2 drops a Mega bomb (Normal and Hard) |
 | `R` | Rematch | The same screen again (after a race, or while paused) |
 | `N` | New screen | Another screen (the button works any time; the key after a race, or while paused) |
 | `H` | Back to the Hall | After a race |
@@ -98,7 +101,7 @@ The screen starts with stone walls running across it, each with a gap, so the wa
 
 - **Wood** slides one cell when you walk into it, if the cell beyond is empty. It won't slide onto the exit, a letter, a bonus, a bomb or a chaser, or through an edge tunnel, and on Chill it won't slide onto the bottom row.
 - **Glass** breaks when a bomb goes off next to it.
-- **Stone** stays put. Go round.
+- **Stone** stays put. Go round, or break it with a Mega bomb (see below).
 
 ### The way out is never shut
 
@@ -119,6 +122,15 @@ A chain bomb's blast doesn't stop at its 3 × 3 square: it runs on through every
 - **Chain ×3** makes your next three bombs chain bombs. Picking up another refills it to three; it doesn't stack.
 - **Chain Rush** makes every bomb a chain bomb for 30 seconds. A bomb dropped during the rush still chains if it goes off after.
 
+### The Mega bomb
+
+On Normal and Hard (and so in the Daily Escape) one **Mega bomb** waits somewhere on the screen: a red bomb with a crack across it, sitting on a dashed ring. It never falls and never fades. You can always reach it: if the rain or a push walls it in, it moves somewhere you can get to.
+
+- Walk onto it to pick it up. You carry one at a time: with one in hand, the next one stays where it is, drawn faded, until you have used yours. While you carry it, a little red bomb rides on your star's shoulder and the **Mega** counter reads 1.
+- The moment you take it, another one appears somewhere else, a good walk away.
+- `M` (or `E`) drops it where you stand. It goes off like a bomb, 2.5 seconds later, over the same 3 × 3 square, and it hurts you the same if you are in it. But it breaks **every** block there: wood, glass and stone, the stone walls included. It never chains.
+- It doesn't use up your regular bomb: you can have both ticking at once.
+
 ### Letters
 
 The letters **E S C A P E** sit on the screen from the start, spread from left to right. Walk over them to collect them, in any order. They are optional: all six earn the third star.
@@ -130,14 +142,17 @@ The letters **E S C A P E** sit on the screen from the start, spread from left t
 | **Bouncer** | a bouncing blue ball | Patrols its own short lane, back and forth, turning at the ends and at anything in its way. Time your crossing |
 | **Eraser** | a pink rubber eraser | Waits a few seconds, then comes for your trail and follows it step by step, wiping it, even through an edge tunnel. If a block cuts the trail, it finds it again further on |
 | **Glitch** | a jittering colour blob | Hunts you by the shortest way. When you hide under the keys it loses you and heads for where it last saw you |
+| **Copycat** | a cat: black on the light screen, white on the dark | Hard only. It sets off a few seconds after you, from the corner where you started, and comes after you with your own tools: it pushes wood that is in its way and bombs glass, by exactly your rules. It is quick, so don't dawdle |
 
-Chasers never walk through blocks, and none of them can follow you under the keys. Bouncers and Glitch never take an edge tunnel.
+Chasers never walk through blocks, and none of them can follow you under the keys. Bouncers, Glitch and the Copycat never take an edge tunnel.
+
+The Copycat never acts without warning. Before a push it leans into the wood for a moment, and two arrows on the wood show which way it will slide. Before a bomb it holds the bomb up over its head for three quarters of a second while its blast is marked out round it; then it drops it and backs off. Its bombs are yours with two little ears on, and a dashed ring for a fuse. It bombs you only when you are in its blast but out of its reach, behind glass say, and only when you have room to step clear. Like the other chasers it doesn't see your bombs coming, and it can't walk through one: a bomb dropped in a corridor stops it in its tracks.
 
 When a chaser catches you, you lose a heart, your star blinks for two seconds while nothing can hurt it, and the chaser stops for a moment. The Eraser is also knocked back along your trail.
 
 ### Hearts
 
-Chill has unlimited hearts, Normal 3, Hard 2, and every Screens screen 3. A catch, a block landing on you (Hard only) and your own bomb each cost one. Lose the last and the run is over: the card says **Out of hearts** and what got you.
+Chill has unlimited hearts, Normal 3, Hard 2, and every Screens screen 3. A catch, a block landing on you (Hard only), your own bomb and the Copycat's each cost one. Lose the last and the run is over: the card says **Out of hearts** and what got you.
 
 ### Tricks from 1980
 
@@ -161,7 +176,8 @@ One screen on the difficulty you pick on the game menu. **Again** (`R`) replays 
 | Bottom row | stays clear | can close | can close |
 | Hearts | unlimited | 3 | 2 |
 | Bombs on screen | 2 | 1 | 1 |
-| Chasers | none | 3 Bouncers and the Eraser | 4 Bouncers, the Eraser and Glitch |
+| Chasers | none | 3 Bouncers and the Eraser | 4 Bouncers, the Eraser, Glitch and the Copycat |
+| Mega bomb | none | one on the screen | one on the screen |
 | Par | 18 s | 45 s | 50 s |
 
 ### Screens
@@ -176,7 +192,7 @@ Thirty fixed screens on five old computers, six each, the same for everyone. Eac
 | **Pocket LCD** | grey-green LCD | Sand: every block slides down its column, through gaps too, and piles up. Stay high and move fast |
 | **The Last Machine** | magenta and cyan | No exit. Get to the bottom-left corner, where the 1980 program crashed the computer. Glitch from screen 3, blocks that can land on you from screen 4 |
 
-The map shows your stars on every screen, out of 90 in all.
+The map shows your stars on every screen, out of 90 in all. The Screens have no Mega bomb and no Copycat: each one plays exactly as it did when it was picked.
 
 ### Daily Escape
 
@@ -221,11 +237,11 @@ The results card adds up:
 - 1,000 for getting out,
 - 20 for every second under twice the par,
 - 100 for each letter,
-- 5 for each glass block broken,
+- 5 for each glass block your bombs broke (the Copycat's don't count),
 - 10 for each glass block your best chain blast broke,
 - and takes away 150 for each hit.
 
-A run that ends in a catch scores only its letters and its glass. The card also shows your time, your steps and a little map of the way you went.
+A run that ends in a catch scores only its letters and its glass. The card also shows your time, your steps, the stone you broke (if any) and a little map of the way you went.
 
 ### What the game remembers
 
@@ -234,7 +250,7 @@ On this browser, Outta Here keeps your number of runs and escapes, your best tim
 ## Daily
 
 - A new Daily Escape starts at your own midnight. They are numbered from 1 January 2026, which was #1, so 7 October 2026 is #280.
-- Everyone gets the same screen on the same day, with Normal rules: 3 hearts, one bomb at a time, three Bouncers and the Eraser, par 45 s.
+- Everyone gets the same screen on the same day, with Normal rules: 3 hearts, one bomb at a time, a Mega bomb to find, three Bouncers and the Eraser, par 45 s.
 - The first run you finish each day is the one that counts. After that you can keep playing it as practice, and the card says so.
 - The game menu shows today's number and how it went: not tried yet, out in so many seconds, or caught.
 - Finishing the Daily, out or caught, marks today as done on the Keyring and keeps your daily streak going.
@@ -243,7 +259,7 @@ The share text is three lines: the game and the Daily's number; your time (or "c
 
 ## Achievements
 
-Outta Here has twelve keycaps for your Keyring. The game menu lists them all, with the ones you have lit up.
+Outta Here has fourteen keycaps for your Keyring. The game menu lists them all, with the ones you have lit up.
 
 | Keycap | Tier | How to earn it |
 |---|---|---|
@@ -251,9 +267,11 @@ Outta Here has twelve keycaps for your Keyring. The game menu lists them all, wi
 | Under the Keys | Common | Hide under the keyboard |
 | Wraparound | Common | Take an edge tunnel |
 | Rush Hour | Common | Pick up a Chain Rush |
-| Pop! | Common | Catch a chaser in a bomb blast |
+| Pop! | Common | Catch a chaser in the blast of one of your bombs |
+| Not Set in Stone | Common | Break stone with a Mega bomb |
 | Secret | Common | In 1980 mode, take the program somewhere it was never meant to go |
 | Chain Reaction | Rare | Break 15 glass blocks with a single chain blast |
+| Copy That | Rare | Catch the Copycat in a bomb blast, yours or its own (Hard) |
 | Spelled It | Rare | Collect all six letters in one run, whether or not you get out |
 | No Hesitation | Rare | Get out of a Normal or Hard Run, or a Daily Escape, without the hesitation meter ever passing half |
 | Daily Driver | Rare | Get out of five Daily Escapes (first tries only) |
@@ -271,3 +289,5 @@ Keycaps from Run, Screens and the Daily are handed out when the run ends, out or
 5. **Hide under the keys.** No chaser can follow you there. It's the way past Glitch, and past the pillars on the Home Micro.
 6. **Turn the Eraser round.** It only follows your trail: lead it into a bomb blast and it's gone for six seconds.
 7. **Save Chain ×3 for a big patch of glass.** One chain blast through fifteen glass blocks earns Chain Reaction, and every block is worth points.
+8. **Spend the Mega bomb on a wall.** Standing just above a stone wall, it blows a three-wide hole straight down: a whole corridor saved. Fetch it when it is near your way; the next one is always a walk off.
+9. **Plug a corridor for the Copycat.** It can't walk through a bomb and doesn't see the blast coming: drop one where it will come down after you, step clear, and it may walk right up to it.

@@ -118,6 +118,11 @@
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--oh-chain) 35%, transparent);
 }
 
+.stat[data-kind="mega"][data-on="true"] {
+  border-color: var(--oh-mega);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--oh-mega) 35%, transparent);
+}
+
 .letters {
   display: flex;
   gap: 4px;
@@ -389,6 +394,14 @@
   grid-row: 3;
 }
 
+/* The Mega key sits above the Bomb key, so the row still fits a phone. */
+.bombKeys {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
 .bombKey {
   width: 110px;
   height: 110px;
@@ -400,6 +413,28 @@
   font-size: 20px;
   font-weight: 800;
   touch-action: none;
+}
+
+.megaKey {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 0;
+  background: var(--oh-mega);
+  color: #fff4e6;
+  font: inherit;
+  font-size: 17px;
+  font-weight: 800;
+  touch-action: none;
+}
+
+.megaKey:disabled {
+  opacity: 0.35;
+}
+
+.megaKey:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .legend {
@@ -494,4 +529,18 @@
 .legend i[data-e="glitch"] {
   border-radius: 50%;
   background: var(--oh-glitch);
+}
+
+.legend i[data-e="copycat"] {
+  border-radius: 3px 3px 7px 7px;
+  background: var(--oh-copycat);
+  clip-path: polygon(0 0, 30% 30%, 70% 30%, 100% 0, 100% 100%, 0 100%);
+}
+
+.legend i[data-b="mega"] {
+  margin: 0 3px;
+  border-radius: 50%;
+  background: var(--oh-mega);
+  outline: 2px dashed var(--oh-mega);
+  outline-offset: 2px;
 }

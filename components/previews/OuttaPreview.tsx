@@ -41,7 +41,7 @@ export function OuttaPreview() {
       }
       bot.tick(game);
       game.update(dt);
-      for (const e of game.drainEvents()) if (e.kind === "boom") booms.push({ x: e.x, y: e.y, at: now, cells: e.cells, chain: e.chain });
+      for (const e of game.drainEvents()) if (e.kind === "boom") booms.push({ x: e.x, y: e.y, at: now, cells: e.cells, chain: e.chain, mega: e.mega, blocks: e.blocks });
       while (booms.length && now - booms[0].at > 0.5) booms.shift();
     };
 
