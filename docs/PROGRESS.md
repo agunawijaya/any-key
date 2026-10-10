@@ -5,7 +5,7 @@ This file is excluded from formatters (`.prettierignore`) so parallel sessions d
 
 | Game | id | Status | Docs | Achievements | Daily | Last prompt |
 |---|---|---|---|---|---|---|
-| Bop Box | `music` | Playable | 6 of 6 | 8 (4 common, 3 rare, 1 legendary) | None | 00 retrofit (2026-10-07) |
+| Bop Box | `music` | Playable | 6 of 6 | 8 (4 common, 3 rare, 1 legendary) | None | Backlog BL-001 Live view (2026-10-10) |
 | Stickler | `23mtch` | Playable | 6 of 6 | 14 (7 common, 4 rare, 3 legendary) | Daily puzzle, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
 | Outta Here | `escape` | Playable | 6 of 6 | 14 (7 common, 5 rare, 2 legendary) | Daily Escape, numbered from 2026-01-01 | Backlog BL-002 Copycat, BL-006 Mega bomb (2026-10-10) |
 | Don't Crater | `lander` | Playable | 6 of 6 | 15 (7 common, 5 rare, 3 legendary) | Daily Drop, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
@@ -49,6 +49,8 @@ prompts. Items it did fix are not listed.
 - Leftover "soon" and "No full version yet" labels: every tune has a full version now.
 - The Long Version keycap can be earned by jumping to the last bar.
 - Play counts are recorded but shown nowhere; the last tune and style aren't remembered between visits.
+- Live view: woodwind fingers close more holes for lower notes instead of each instrument's real fingering; guitar
+  chords show the fret of their lowest note.
 - Owner question: bring PC Speaker ’81 closer to the 1981 timing (Humoresque, Blue Danube, Sakura and the Mozart
   excerpt differ in length by 12–38 %).
 

@@ -40,6 +40,7 @@ flowchart LR
         FALL["Falling notes: Canvas"]
         ANGKA["Not angka: DOM"]
         STAGE["Stage: DOM buttons"]
+        LIVE["Live: Canvas performers"]
         KEYS["Keyboard: SVG"]
     end
 ```
@@ -76,6 +77,8 @@ Everything musical happens *before* audio. A style never touches sound directly:
 | `components/bopbox/Transport.tsx` | Play, position, bar counter, back to start, loop, speed, MIDI and WAV |
 | `components/bopbox/Keyboard.tsx` | The lit, playable keyboard, with the 1981 look and its "off the edge" signs |
 | `components/bopbox/views/` | Sheet music, falling notes, numbers (*not angka*) and the stage |
+| `lib/music/perform/` | The Live view's motion, worked out from the arrangement with no drawing: lanes of hits in seconds, strikes, who plays what (`cast.ts`), drum limbs and bowing (`hands.ts`), hand positions on a keyboard (`fingering.ts`), wind fingerings (`winds.ts`), bar plans for the DJ and the breaker (`plans.ts`) |
+| `components/bopbox/live/` | The Live view: the canvas and its click targets (`LiveView.tsx`), painting and figures (`paint.ts`, `figure.ts`, `lens.ts`), the shared scene parts (`stage.ts`, `players.ts`, `looks.ts`), the instruments (`instruments/`), who plays each track (`roster.ts`), the shows (`shows/`) and which show belongs to which style (`lineup.ts`) |
 | `components/bopbox/icons.tsx` | The SVG pictures for instrument families and styles |
 | `components/previews/MusicPreview.tsx` | The animated card in the Hall |
 | `scripts/` | Checks and the sound bank builder (see *Tests* below) |
@@ -314,11 +317,72 @@ Everything on the page is drawn in code: SVG, Canvas 2D and CSS. There are no im
   - *Falling notes* (`FallingView.tsx`): a Canvas where every track's notes rain down onto the keyboard in the track's colour.
   - *Numbers* (`AngkaView.tsx`): *not angka*, the numbered notation taught in Indonesian schools, as plain DOM text; a long piece is split into runs of bars that share a key and meter.
   - *Stage* (`StageView.tsx`): one button per musician, with its instrument icon and the note it is playing; pressing one mutes or unmutes that track.
+  - *Live* (`live/LiveView.tsx`): performers drawn on a Canvas for every style, moving with the notes; see *The Live view* below.
 - **Keyboard** (`Keyboard.tsx`): an SVG sized to each arrangement's range (`keyboardRange` in `timeline.ts`: whole octaves, at least three), lit per frame in each sounding track's colour. It plays a grand piano (or the square wave in PC Speaker ’81) when pressed.
 - **Icons** (`icons.tsx`): `InstrumentIcon` draws one 24×24 stroke picture per `InstrumentFamily` (keys, bowed, brass, woodwind, drums, speaker and so on). Every `Patch` in `patches.ts` names its family, so the mixer, the stage and the Solo list pick the right picture without a table of their own. `StyleIcon` uses a family picture for styles best told by their lead instrument (Orchestra is a bowed string, Jazz a sax) and a picture of its own for the rest (House, Koplo, Lo-fi, Hip-hop, AI Remix, Original Score).
 - **Colours.** Each style sets `--accent` and `--accent-2` on the root (`.app[data-style="…"]` in `BopBox.module.css`). The two are registered CSS properties (`@property` in `app/globals.css`), so the whole page, the shell's top bar included, glides from one style's colours to the next. The tunes keep their own colour from `songs.ts`; tracks get role colours from `patches.ts`.
 - **Light and dark.** The centre stage follows the theme through a small set of stage colour tokens (`--stage-ink`, `--stage-well`, `--stage-accent`…). Bright role colours are darkened a little on the light stage so they read on white keys. PC Speaker ’81 stays CGA blue in both themes, as the 1981 screen did.
 - **Motion.** The colour glides and other CSS transitions follow the collection's motion setting through `app/globals.css`. The scrolling score, the falling notes and the lit keys are the music's own timing and keep moving.
+
+## The Live view
+
+The fifth view puts performers on stage for every style, and every move they make comes from a note in the arrangement the engine is playing. Nothing loops on its own: if a track is silent, its player is still.
+
+```mermaid
+flowchart LR
+    ARR[("Arrangement")] --> PERF["Performance in perform/cues.ts: lanes of hits in seconds, bars, sections"]
+    PERF --> CUES["perform/: strike, splitKit, bowStrokes, planHand, fingerings, dancePlan, djPlan"]
+    PERF --> CAST["perform/cast.ts: track to role"]
+    CAST --> ROSTER["live/roster.ts: role to player"]
+    LINEUP["live/lineup.ts: style to show"] --> SHOW["A show in live/shows/"]
+    ROSTER --> SHOW
+    CUES --> PLAYERS["Players in live/instruments/"]
+    SHOW --> PLAYERS
+    PLAYERS --> FIG["figure.ts: skeleton, IK, body parts"]
+    FIG --> PAINT["paint.ts: fill, shade, rim light, ink"]
+    CLOCK(("Engine clock")) --> VIEW["LiveView.tsx: one canvas, one frame loop"]
+    VIEW --> SHOW
+```
+
+### From notes to motion
+
+`Performance` (`lib/music/perform/cues.ts`) turns each track into a `Lane` of hits with their start and end in **seconds**, so a stick's bounce or a bow's turn takes the same time at any tempo while staying locked to the beat the engine reports. The primitives:
+
+- **`strike(lane, t)`**: where a stick, mallet, hammer or hand is between two hits. It is on its target exactly at each onset, bounces up, travels towards the next target and drops onto it; the lift grows with the gap and the next note's loudness. Drums, timpani, mallets, piano fingers, kendang, guitar strums, the robot's taps and the DJ's pads all use it.
+- **`splitKit`** shares a drum track between four limbs: kick to the right foot, hi-hat pedal to the left, time-keeping (hats, ride, cymbals) to the right hand, backbeat to the left, toms to whichever hand is free, and any stream faster than a tenth of a second alternated hand to hand.
+- **`splitMallets`** and **`splitKeys`** share notes between two hands by register; **`planHand`** (`fingering.ts`) keeps a hand still while the notes fall under its five fingers and shifts it only when one doesn't, giving each note of a chord its own finger.
+- **`bowStrokes`** bows a string part: a down-bow at each phrase, a change of direction at every note, a longer stroke for a longer note, the bow lifted between phrases. A section bows together.
+- **`winds.ts`**: real trumpet valve combinations, trombone slide positions from the B-flat harmonic series, and how many tone holes a woodwind closes.
+- **`plans.ts`**: `barMap` finds the intro, the drop (the first bar of the tune), the build before it, fills (bars with more drum hits than usual) and phrases of four bars. `djPlan` gives the DJ one move per bar (cue, filter, raise, faders, jog, knobs, pump, fade out); `dancePlan` gives the breaker toprock, a drop, a freeze on the drop's downbeat, six-step footwork and a freeze on the clap that ends each phrase.
+
+### Players and shows
+
+A **player** (`players.ts`) is a figure with an instrument, drawn in its own model space (pelvis at the origin, a standing adult about 113 units tall, `floor` where its feet are) and placed on a `Seat` (position, scale, which way it turns, a phase so a section doesn't move like one puppet, and `mirror` for a grand piano on the left of a stage).
+
+- **The figure** (`figure.ts`) is a 2D skeleton with two-bone IK for arms and legs. `face` turns it from the audience towards one side: the shoulder and hip joints close up while the torso keeps its depth, features slide round the head, knees bend the way the body faces and foreshorten when they point at us. A player calls its parts in the order its instrument needs (a violin goes over the left forearm and under the chin; the bow goes under the right hand's fingers).
+- **Painting** (`paint.ts`): every part is a filled path with a crescent of shade away from the key light, a thin rim of back light on the lit edge and an ink line tinted from the fill. `lens.ts` is a small pinhole camera for the scenes that need real perspective (the piano seen from above, the DJ's decks, the robot's desk).
+- **Instruments** (`instruments/`): bowed strings, cello, harp, winds and brass (one `WindPlayer` for flute to tuba, suling and shakuhachi), percussion (drum kit, timpani, mallets, triangle and wood block), keyboards (a grand seen from the audience's left, a stage keyboard facing the audience, an organ), guitars and their cousins, singers, kendang and tambourine, and the solo oddities (accordion, koto, kalimba, music box, metronome).
+- **Who plays a track** (`roster.ts`): `cast()` reads the program number and name (a plural name or a section sound seats two or three players; "pizzicato" means plucked), and `playerFor()` picks the player for the venue: seated in a concert hall, standing in a band, a grand in a jazz club.
+- **Shows** (`shows/`): `Concert` (orchestra rows by role on three risers; a row too wide gives up players per section rather than shrinking everyone), `BandStage` with `PopStage`, `JazzClub` and `DangdutStage`, `Recital` for Solo, `PianoCam` for solo piano, `DjBooth` (House and Koplo), `Cypher` (Hip-hop), `Pc5150` (PC Speaker ’81), `RobotLab` (AI Remix) and `Rooftop` (Lo-fi). `lineup.ts` maps every style to its show.
+- **Scenes** (`stage.ts`): a `Camera` fits the important part of a scene into whatever shape the view has (a wide laptop letterbox or a near-square phone) and shows more around it; a `BackdropCache` paints the room once per size and theme; `paintSky` covers what changes under it (the lo-fi sky darkening over the tune).
+
+### Light, dark and motion
+
+Each show has a light (matinee) and a dark (evening) design, chosen from `data-theme` every frame, so switching appearance is live. `frame.reduced` (the collection's motion setting) stops lasers and beams sweeping, keeps lamps from flashing on the kick and slows rain and dust; the performers still play.
+
+### Clicks and keys
+
+`LiveView.tsx` asks the show for each performer's box after a resize and lays an invisible button over each part (a section's players share one), with "Mute …" or "Unmute …" as its label. The buttons call the same `toggleMute` as the Band list and the Stage, so all three agree, and a keyboard user can Tab to any performer.
+
+### Without a graphics card
+
+Some browsers paint canvases on the processor (SwiftShader, llvmpipe, a remote desktop). There, the shading and rim passes would halve a big orchestra's frame rate, so `LiveView` detects a software renderer once from the WebGL renderer name and draws flat fills and ink only (`frame.software`). On a real GPU nothing is ever lowered. The canvas carries the level it chose in `data-detail` (`full` or `light`). Measurements are in [NOTES.md](NOTES.md).
+
+### Adding a performer
+
+1. If the instrument needs its own motion, add it to `lib/music/perform/` and test it in `tests/unit/bopbox-perform.test.ts`.
+2. Write a `Player` in `components/bopbox/live/instruments/`: build a `Pose` from the cues each frame, set it on a `Figure`, and draw the parts and the instrument in the order the instrument needs. Give it a `box` for its click target and the right `floor`.
+3. Teach `cast()` the track's role if it is new, and `playerFor()` which player draws it; give the role a place in the show that seats it (`PLACES` in `concert.ts`, `slot()` in a band venue) and a width in `widthOf()`.
 
 ## Sound
 
@@ -392,12 +456,17 @@ On the first load with nothing under the new key, the store reads the legacy key
 | `npx tsx scripts/render-check.mts 8` | Renders the first 8 seconds of every style but PC Speaker ’81, on both versions, offline with the real sound bank, and flags silence (peak below 0.02), clipping (peak above 0.99) or missing presets |
 | `npm run check:music` | The first three, in order |
 | `npm run check:audio` | The render check, 8 seconds per arrangement |
-| `npm test` | Unit tests. `tests/unit/migration.test.ts` loads a version-1 save from `anykey.bopbox.v1` and expects the length switch kept and the lists empty; `tests/unit/manifest.test.ts` checks Bop Box has six to eight achievements with unique ids and known tiers |
+| `npm test` | Unit tests. `tests/unit/migration.test.ts` loads a version-1 save from `anykey.bopbox.v1` and expects the length switch kept and the lists empty; `tests/unit/manifest.test.ts` checks Bop Box has six to eight achievements with unique ids and known tiers; `tests/unit/bopbox-perform.test.ts` checks the Live view's motion: strikes land on their notes, the kit's limbs, bowing, hand plans, trumpet valves and trombone positions, casting, the drop, the breaker's freezes and the DJ's moves |
+| `npx playwright test --config playwright.bopbox.config.ts` | The Live view in a browser (port 3222, after `npx next build`; or set `BOPBOX_E2E_URL` to test a running server): performers are drawn and mute their part, V reaches the view and the show follows the style, Esc still goes back to the Hall |
 | `npm run e2e` | Browser tests after a production build. `keyring.spec.ts`: pressing 9 and Play unlocks First Note and Beep Beep with their toasts. `navigation.spec.ts`: K picks a tune and stays on `/music`, `?` opens the shortcuts. `first-visit.spec.ts`: the hint says Esc goes back to the Hall. `story.spec.ts`: every Story chapter renders and every Mermaid diagram draws |
 
 The latest results and what they measured are in [NOTES.md](NOTES.md).
 
 ## Known limits
+
+- The Live view's performers move the way their part is played, but they are not a fingering chart: woodwind fingers close more holes for lower notes rather than following each instrument's real fingering, and guitar chords show the fret of their lowest note.
+- On a stage keyboard the player faces the audience, so low notes are on our right, as they would be.
+- PC Speaker ’81's performer is the machine; its screen shows the keyboard and the marker, not the 1981 menu text.
 
 - Kendang and suling are General MIDI approximations (see *The styles*).
 - The sheet music shows the tune and its chords, not every part of the arrangement, even in the Original Score.

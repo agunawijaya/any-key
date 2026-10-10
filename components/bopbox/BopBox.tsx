@@ -25,15 +25,17 @@ import { AngkaView } from "./views/AngkaView";
 import { FallingView } from "./views/FallingView";
 import { SheetView } from "./views/SheetView";
 import { StageView } from "./views/StageView";
+import { LiveView } from "./live/LiveView";
 import styles from "./BopBox.module.css";
 
-type ViewId = "sheet" | "falling" | "angka" | "stage";
+type ViewId = "sheet" | "falling" | "angka" | "stage" | "live";
 
 const VIEWS: { id: ViewId; label: string; hint: string }[] = [
   { id: "sheet", label: "Sheet music", hint: "Not balok" },
   { id: "falling", label: "Falling notes", hint: "Like a piano tutorial" },
   { id: "angka", label: "Numbers", hint: "Not angka" },
   { id: "stage", label: "Stage", hint: "Who plays what" },
+  { id: "live", label: "Live", hint: "Watch it played" },
 ];
 
 export type Clock = {
@@ -380,6 +382,7 @@ function Studio({ styleId, setStyleId }: { styleId: StyleId; setStyleId: (id: St
                 {view === "falling" && <FallingView arrangement={arrangement} clock={clock} range={range} muted={muted} />}
                 {view === "angka" && <AngkaView song={song} clock={clock} />}
                 {view === "stage" && <StageView arrangement={arrangement} clock={clock} muted={muted} onToggle={toggleMute} />}
+                {view === "live" && <LiveView arrangement={arrangement} clock={clock} muted={muted} onToggle={toggleMute} instrument={instrument} playing={playing} />}
               </div>
 
               <Keyboard arrangement={arrangement} clock={clock} range={range} muted={muted} engine={engineRef} vintage={styleId === "pc81"} />

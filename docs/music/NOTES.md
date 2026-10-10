@@ -118,6 +118,36 @@ all 319 1981 arrangements unchanged
 
 Every render sits between the silence threshold (peak 0.02) and the clipping threshold (peak 0.99).
 
+## The Live view
+
+### Facts the performers rely on
+
+1. **The 1981 screen** that PC Speaker ’81's computer shows is drawn from the layout read in the listing (see [ORIGINAL-ARCHITECTURE.md](ORIGINAL-ARCHITECTURE.md)): the red frame on rows 4 and 13 from column 4 to 37, sixteen white keys two columns wide from column 5, black keys a cell and a half wide on the seams, the marker on row 11 (black on grey) for a white key and on row 7 (white on black) for a black key, the title white on red on row 23. The marker stays on its key through the one-tick gap after each note, as the program's did. *Read.* The title shown is our own tune title, not the 1981 one.
+2. **The 1981 PC's keyboard had no indicator lights**: the 83-key keyboard of the first PC showed no Caps Lock or Num Lock lamps (they came with the 1984 PC AT keyboard). So the brief's "keyboard lights" became the screen's marker and a cut-away of the speaker cone instead. *Hardware reference.*
+3. **Trumpet valves** follow the standard chart for a B-flat trumpet (open, 2, 1, 1-2, 2-3, 1-3, 1-2-3 down each harmonic); the trombone's seven slide positions count down a semitone at a time from the nearest harmonic of B-flat (34, 46, 53, 58, 62, 65, 68, 70…). Low E2 is in seventh position, F3 in first, E3 in second. *Calculated*, checked in the unit test.
+4. **Orchestra seating**: first violins on the audience's left, violas and cellos towards the right, basses behind the cellos, winds in the middle behind the strings, horns, brass and timpani at the back, harp on the left. The timpani's largest kettle is on the player's left. *Common practice.*
+5. **The harp's strings**: every C red and every F dark, as concert harps are marked; bass strings by the column, treble by the player's shoulder. *Common practice.*
+6. **The kendang's "dhut"**: struck on the big head with the palm, the heel of the hand pressing into the skin to bend the pitch down; the arrangement bends every dhut the same way (`sagDrum` in `styles.ts`), so the hand stays on the head for as long as the bend lasts. The ketipung's open "tung" bounces off; the damped "tak" stays on the skin. *Common practice.*
+7. **A koto** has thirteen strings over movable bridges, plucked near the right end by the right hand; **a kalimba**'s lowest tine is in the middle, each step up alternating sides; **a steel pan**'s notes go round in a circle of fifths, octaves inside. *Common practice.*
+
+### Frame rates
+
+Measured on the lab page at the size the view has in the studio at 1920×1080 (912×452), 3 s per scene, with the clock running.
+
+| Scene | RTX 4060 (GPU) | Without a GPU (SwiftShader), full detail | Without a GPU, as shipped (`data-detail="light"`) |
+|---|---|---|---|
+| Original Score, Sousa (14 tracks, about 25 players) | 60 | 26–29 | 59–60 |
+| Original Score, Mozart | 60 | 21–24 | 57–59 |
+| Pop | 60 | 58 | 58+ |
+| Dangdut | 60 | 46–56 | 60 |
+| Solo piano, Lo-fi, House | 60 | 60 | 60 |
+
+The shading and rim passes (a clip per painted part) are what a software renderer pays for; dropping them on software only brings every scene to about 60 frames a second. On a GPU nothing is lowered.
+
+### How the scenes were judged
+
+Every scene was drawn in the lab at the studio's size in both themes and critiqued round by round before it reached the studio. Stage one (the hero frames, approved by the owner on 10 October 2026) settled the look: the solo piano seen from above with the lid off (the only angle where both hands and the right keys show), seated players turned in towards a conductor, the violin's bow below the chin, a freeze with the head near the floor rather than floating, a DJ framed by the LED wall, a robot close enough to read, the rooftop's awning above the sitter's head. Stage two filled every band and found the rest: back rows hidden behind front rows (higher risers, staggered and wider back lines), a front row too wide in the big orchestras (sections give up players), flutists' and trumpeters' arms across their faces (they turn towards their instrument), a ukulele-sized guitar, a saxophone hidden by the forearms (instruments are now drawn over the arms and under the hands), three identical "Mute" buttons for one section (one per part now), and an E2 that had crept into the trombone's harmonic series.
+
 ## Regression checks
 
 | Check | What it locks | Tolerance | Fails the run? |
@@ -133,6 +163,8 @@ Every render sits between the silence threshold (peak 0.02) and the clipping thr
 | `tests/e2e/navigation.spec.ts` | K picks a tune and stays on `/music`; `?` opens and Esc closes the shortcuts | | Yes |
 | `tests/e2e/first-visit.spec.ts` | The first-visit hint says Esc goes back to the Hall | | Yes |
 | `tests/e2e/story.spec.ts` | At least six Story chapters, every Mermaid diagram drawn | 15 s per chapter | Yes |
+| `tests/unit/bopbox-perform.test.ts` | The Live view's motion: a stick touches down on each note, the kit's limbs, a fast roll shared between hands, bowing directions and the bow kept on its length, a hand's steps and fingers, trumpet valves, trombone positions, tone holes, casting, the drop, the breaker's drop and freeze, the DJ's cue and raise | Exact, strikes within 1e-5 | Yes |
+| `tests/e2e/bopbox-live.spec.ts` | The Live view draws; one button per part mutes it, and the Band list agrees; V reaches it; the show follows the style; Esc goes back to the Hall | | Yes |
 
 Not locked by anything: the 1981 Hip-hop and Original Score arrangements, every full-version arrangement, and the PC Speaker ’81 timing figures above.
 

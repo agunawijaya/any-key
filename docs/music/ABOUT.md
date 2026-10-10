@@ -13,7 +13,7 @@ There is nothing to win. You poke at it: mute the violins and play the melody yo
 - **Twelve styles** for every tune, from Orchestra and Jazz to Dangdut, Koplo and Hip-hop, plus an AI Remix with a genre of its own for each tune.
 - **The Original Score:** Gounod's orchestra, Sousa's band and Mozart's symphony orchestra, every part read from free editions of the full scores (the editions are listed in [ARCHITECTURE.md](ARCHITECTURE.md)).
 - **Every tune twice:** the excerpt the 1981 program played, and the whole piece, up to the Blue Danube's thirteen and three-quarter minutes.
-- **Four ways to watch:** live sheet music, falling notes, Indonesian numbered notation (*not angka*) and a stage full of musicians.
+- **Five ways to watch:** live sheet music, falling notes, Indonesian numbered notation (*not angka*), a stage full of musicians, and **Live**: someone performing every note, drawn for each style. An orchestra bowing together, a dangdut band round its gendang player, a DJ at the decks, a breaker freezing on the clap, a robot producing the remix, the 1981 computer beeping it out, and a rooftop at dusk where the city's windows light up with the tune.
 - **A band you can mix and a piano you can play,** with MIDI and WAV downloads of whatever you make.
 - **PC Speaker ’81,** the original beep rebuilt from the program's own pitch maths and timing.
 

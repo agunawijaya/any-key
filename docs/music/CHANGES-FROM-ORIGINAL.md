@@ -35,8 +35,8 @@ The soul we kept is the 1981 program's whole idea: press a letter, hear a tune, 
 
 - **Twelve styles:** Orchestra, Pop, Jazz, House, Dangdut, Koplo, Lo-fi, Hip-hop, Solo (on any of 18 instruments), PC Speaker ’81, an AI Remix with a different genre for every tune, and the Original Score, which plays every part of Gounod's, Sousa's and Mozart's own scores and our setting for the instruments of the other eight tunes.
 - **Full versions** of all eleven tunes, most of them read from public-domain editions, from about a minute long to nearly fourteen minutes.
-- **Four views:** sheet music with chord symbols, falling notes, *not angka* (Indonesian numbered notation) and a stage with the whole band.
-- **A band you can mix:** mute any player from the Band list or the Stage.
+- **Five views:** sheet music with chord symbols, falling notes, *not angka* (Indonesian numbered notation), a stage with the whole band, and Live, where every style has performers drawn playing exactly what you hear (an orchestra, a pop band, a jazz quartet, a dangdut orkes, a DJ, a breaker, a robot producer, a soloist, the 1981 computer and a lo-fi rooftop). The 1981 program's own "performer" was its text-mode keyboard with a marker on the sounding key; the PC Speaker ’81 performer shows that idea on the machine's screen.
+- **A band you can mix:** mute any player from the Band list, the Stage or the Live view.
 - **A keyboard you can play**, while the music runs or on its own.
 - **A transport:** a position bar, a jump of one bar either way, back to start, loop, and speeds from 0.5× to 1.5×.
 - **Downloads:** any arrangement as a MIDI file or a WAV recording.

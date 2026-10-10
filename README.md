@@ -66,8 +66,10 @@ Eleven tunes from the 1981 PC, as the 1981 program played them or complete, each
 styles: Orchestra, Pop, Jazz, House, Dangdut, Koplo, Lo-fi, Hip-hop, Solo (18 instruments), PC Speaker
 ’81 (the 1981 beeps, recreated), an AI Remix composed by Claude in a different genre for
 every tune, and the Original Score: Gounod, Sousa and Mozart played part by part from their own full
-scores. Watch it as sheet music, falling notes, Indonesian numbered notation (*not angka*) or a stage
-full of musicians, and download any arrangement as MIDI or WAV. The docs in `docs/music/` explain the
+scores. Watch it as sheet music, falling notes, Indonesian numbered notation (*not angka*), a stage
+full of musicians, or Live: performers drawn for every style (an orchestra, a dangdut orkes, a DJ, a
+breaker, a robot producer, the 1981 computer, a lo-fi rooftop) playing every note you hear. Download
+any arrangement as MIDI or WAV. The docs in `docs/music/` explain the
 original and the rebuild.
 
 ### Stickler

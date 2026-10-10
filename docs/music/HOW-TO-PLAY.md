@@ -10,12 +10,12 @@ Bop Box is a music box, not a race: there is nothing to win and no way to lose. 
 | A to K | A tune in the *Tunes* list | Pick a tune. The letters are the ones the 1981 menu used, in either case |
 | 1 to 9, 0, =, - | A style card | Pick a style (see *Modes*). The music keeps its place in the tune |
 | L | *1981* or *Full*, above the view | Switch between the 1981 excerpt and the whole piece, keeping your place |
-| V | The view tabs | Next view: Sheet music, Falling notes, Numbers, Stage |
+| V | The view tabs | Next view: Sheet music, Falling notes, Numbers, Stage, Live |
 | ← → | The position bar | One bar back or forward |
 | Home, on the position bar | The back-to-start button | Back to the first beat |
 | | The loop button | Play the tune round and round |
 | | The speed menu | Half speed to one and a half times (0.5× to 1.5×) |
-| | A player on the Stage, or a name under *Band* | Mute that player; press again to bring them back |
+| | A player on the Stage or in the Live view, or a name under *Band* | Mute that player; press again to bring them back |
 | | The piano keys | Play a note yourself |
 | | *MIDI* or *WAV* | Download what you are hearing |
 | Esc | *Back to the Hall* | Back to the Hall. If the Story tab or a sheet is open, Esc closes that first |
@@ -62,13 +62,34 @@ The **Original Score** style is special. For three tunes (Gounod's march, Sousa'
 | Falling notes | Every player's notes falling onto the keyboard, like a piano tutorial video |
 | Numbers | *Not angka*, the numbered notation taught in Indonesian schools: 1 is *do*, dots above or below change the octave, underlines halve a note and each dash holds it a beat longer |
 | Stage | The whole band, each player lighting up as they play and showing the note they are on |
+| Live | Someone performing what you hear, drawn for the style you picked (see below) |
+
+### The Live view
+
+Every style has its own performers, and every move they make is a note you can hear: a stick lands on the drum exactly as it sounds, a bow turns with every new note and travels further on a long one, a finger holds its key down for as long as the note rings, a horn player breathes in the rests. Click a performer (or Tab to them and press Enter) to mute their part; a muted player rests and fades.
+
+| Style | Who performs |
+|---|---|
+| Orchestra, Original Score | The orchestra seated as orchestras sit: strings in front, winds behind, brass and timpani at the back. Every part has its players, two or three to a section |
+| Pop | A band on a big stage: lead synth, pianist and bass in front, drums and keyboards on the riser |
+| Jazz | A quartet in a club: the horn, the grand piano, the walking bass and a drummer with brushes |
+| Dangdut | The whole orkes: the gendang player in the middle (the big kendang's deep *dhut* and the ketipung's *tak* and *tung*), suling, mandolin, guitar, bass, keyboard and tambourine |
+| House | A DJ at the decks: cueing on the headphones in the intro, a hand in the air when the tune drops, the filter on every fill |
+| Koplo | The same booth, with a pad controller: the DJ finger-drums every kendang stroke on it |
+| Lo-fi | A rooftop at dusk in the rain: someone in headphones at a café table, a walkman, a lamp, a cup still steaming and a sleeping cat. The windows across the street light up with the melody, higher notes on higher floors |
+| Hip-hop | A breaker: toprock while the beat builds, down to the floor when the tune comes in, a freeze on the clap that ends each phrase |
+| Solo | The player of the instrument you picked, alone on a stage. The piano is seen from above, so you can watch each finger on its key |
+| PC Speaker ’81 | The 1981 computer itself: its screen marks the key that is sounding, and a cut-away shows the little speaker's cone moving |
+| AI Remix | A robot producer at a laptop, tapping out the lead, with the whole remix floating above as a piano roll |
+
+Light and dark are two different shows: light is the matinee (daylight, a festival, a wedding tent), dark is the evening (spotlights, lasers, coloured lamps). With *Less motion*, lasers and beams stop sweeping and nothing flashes; the performers still play, because their movements are the music's own timing.
 
 ## Settings
 
 Bop Box has no pause menu, so its settings live in three places:
 
 - **The top bar:** sound on or off, and the appearance (Light, Dark, or System to follow your device).
-- **The Keyring page, under Settings:** the same sound switch and appearance, the volume, and motion (Follow my device, Less motion or Full motion). Less motion stops the colour glides between styles; the score and the falling notes still move, because they are the music's own timing.
+- **The Keyring page, under Settings:** the same sound switch and appearance, the volume, and motion (Follow my device, Less motion or Full motion). Less motion stops the colour glides between styles and calms the Live view's lights; the score, the falling notes and the performers still move, because they are the music's own timing.
 - **The studio itself:** the length (remembered in this browser for your next visit), the speed, Loop, the Solo instrument and the mutes (these last four reset when you leave).
 
 ## Scoring
