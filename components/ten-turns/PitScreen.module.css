@@ -1,0 +1,432 @@
+/* The play screen's paper scraps over the pit: the turn page, the odds card, the pockets and the status line. */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--tt-book), Georgia, serif;
+}
+
+/* The results card sits in this click-through layer; it takes clicks again. */
+.ending {
+  display: contents;
+  pointer-events: auto;
+}
+
+.surface {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.surface[data-phase="drop"] {
+  cursor: crosshair;
+}
+
+.surface[data-phase="busy"] {
+  cursor: progress;
+}
+
+.surface:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: -6px;
+}
+
+/* ---------- The compass of pads round the kid ---------- */
+
+.pad {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--line-strong);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
+}
+
+.pad:hover {
+  transform: scale(1.12);
+  background: var(--surface);
+}
+
+.pad:active {
+  transform: scale(0.94);
+  box-shadow: 0 1px 0 var(--line-strong);
+}
+
+.pad[data-kind="pull"] {
+  background: color-mix(in srgb, #ef8a2c 22%, var(--surface));
+}
+
+.pad:focus-visible,
+.tool:focus-visible,
+.planButton:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* ---------- The turn page ---------- */
+
+.page {
+  position: absolute;
+  top: 20px;
+  left: 24px;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: end;
+  column-gap: 10px;
+  max-width: 300px;
+  padding: 14px 20px 16px 18px;
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 6px 14px 8px 12px;
+  box-shadow:
+    0 1px 0 var(--line-strong),
+    0 10px 24px -12px rgb(40 20 10 / 0.45);
+  transform: rotate(-1.4deg);
+}
+
+.pageLabel {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.pageHint {
+  grid-column: 1 / -1;
+  margin-top: 6px;
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+
+.turnNumber {
+  font-size: 54px;
+  line-height: 0.9;
+  font-weight: 800;
+  font-variation-settings:
+    "SOFT" 100,
+    "WONK" 1,
+    "opsz" 144;
+  color: var(--accent);
+}
+
+.turnOf {
+  font-size: 19px;
+  font-style: italic;
+  color: var(--ink-2);
+  padding-bottom: 4px;
+}
+
+.steps {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 10px;
+  color: var(--ink-2);
+}
+
+/* ---------- The odds of another pounce ---------- */
+
+.odds {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  display: grid;
+  gap: 8px;
+  padding: 14px 18px;
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 12px 6px 14px 8px;
+  box-shadow:
+    0 1px 0 var(--line-strong),
+    0 10px 24px -12px rgb(40 20 10 / 0.45);
+  transform: rotate(1.2deg);
+}
+
+.oddsLabel {
+  font-size: 16px;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.pipRow {
+  display: flex;
+  gap: 6px;
+}
+
+.pipGroup {
+  padding: 4px 8px;
+  border-radius: 7px;
+  border: 2px solid var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  font-variation-settings: "SOFT" 100;
+  white-space: nowrap;
+}
+
+.pipGroup[data-state="waiting"] {
+  background: transparent;
+}
+
+.pipGroup[data-state="again"] {
+  background: var(--tt-hot);
+  color: #fff8f0;
+  border-color: var(--tt-hot);
+  animation: pop 0.3s ease-out;
+}
+
+.pipGroup[data-state="stop"] {
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+.pipGroup[data-state="never"] {
+  opacity: 0.5;
+}
+
+@keyframes pop {
+  from {
+    transform: scale(1.35);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* ---------- Your pockets ---------- */
+
+.tray {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--surface);
+  color: var(--ink);
+  border-radius: 14px;
+  box-shadow:
+    0 1px 0 var(--line-strong),
+    0 12px 26px -14px rgb(40 20 10 / 0.5);
+  pointer-events: auto;
+}
+
+.tool {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 6px 12px 6px 8px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tool[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.tool:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.toolCount {
+  font-size: 16px;
+}
+
+.tool kbd,
+.planButton kbd,
+.status kbd {
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 12px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--ink-2);
+}
+
+.hat {
+  display: grid;
+  justify-items: center;
+  padding: 0 6px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.planButton {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 2px dashed var(--ink-3);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+}
+
+.planButton[aria-pressed="true"] {
+  border-style: solid;
+  color: var(--ink);
+}
+
+/* ---------- Status ---------- */
+
+.status {
+  position: absolute;
+  left: 24px;
+  bottom: 26px;
+  max-width: min(420px, 34vw);
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  color: var(--ink-2);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.status:empty {
+  display: none;
+}
+
+.refusal {
+  display: inline-block;
+  color: var(--ink);
+  font-weight: 600;
+  animation: shake 0.4s ease-out;
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px);
+  }
+  40% {
+    transform: translateX(5px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .refusal,
+  .pipGroup[data-state="again"] {
+    animation: none;
+  }
+  .pad {
+    transition: none;
+  }
+}
+
+:global(html[data-motion="reduce"]) .refusal,
+:global(html[data-motion="reduce"]) .pipGroup {
+  animation: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- Results ---------- */
+
+.resultLine {
+  margin: 0 0 10px;
+  font-family: var(--tt-book), Georgia, serif;
+  font-size: 18px;
+  font-style: italic;
+}
+
+.medals {
+  display: flex;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.medal {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  font-size: 13px;
+  opacity: 0.55;
+}
+
+.medal[data-won="true"] {
+  opacity: 1;
+  font-weight: 700;
+}
+
+/* Small screens: the cards shrink and the status moves above the pockets. */
+@media (max-width: 760px) {
+  .page {
+    top: 10px;
+    left: 10px;
+    padding: 8px 12px;
+  }
+  .turnNumber {
+    font-size: 36px;
+  }
+  .odds {
+    top: 10px;
+    right: 10px;
+    padding: 8px 10px;
+  }
+  .oddsLabel {
+    font-size: 13px;
+  }
+  .status {
+    left: 10px;
+    right: 10px;
+    bottom: 92px;
+    max-width: none;
+    font-size: 13px;
+  }
+  .tray {
+    bottom: 10px;
+    gap: 6px;
+    padding: 8px;
+  }
+  .tool kbd {
+    display: none;
+  }
+}

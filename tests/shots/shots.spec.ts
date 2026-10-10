@@ -5,6 +5,7 @@ import { crashTenSecond, keyringSeed, seed, winClassic } from "../e2e/helpers";
 import { LESSON, playToTheEnd as playSameTrickTwice, returningSave, withSave } from "../e2e/long-memory-helpers";
 import { fireAt, formulaElevation, playClassicByFormula, waitForGun } from "../e2e/over-short-helpers";
 import { playToTheEnd, settled, takeTheTutorial, tutorialToTheReins } from "../e2e/two-humps-helpers";
+import { dropByClick, stepPads } from "../e2e/ten-turns-helpers";
 
 /*
  * Every route and key screen, light and dark, at a laptop and a desktop size,
@@ -247,7 +248,67 @@ const SCREENS: Screen[] = [
       await playClassicByFormula(page, "keys");
     },
   },
+  { name: "ten-turns-menu", path: "/ten-turns", go: (page) => page.waitForTimeout(2500) },
+  { name: "ten-turns-chapters", path: "/ten-turns", go: openChapters },
+  {
+    name: "ten-turns-turn",
+    path: "/ten-turns",
+    go: async (page) => {
+      await openChapters(page);
+      await page.getByRole("button", { name: /^First Drop/ }).click();
+      await dropByClick(page);
+      await stepPads(page).first().waitFor();
+      await page.waitForTimeout(800);
+    },
+  },
+  {
+    // Caught in the slow-motion fall, just before the rabbit is flattened.
+    name: "ten-turns-squish",
+    path: "/ten-turns",
+    go: async (page) => {
+      await openChapters(page);
+      await page.getByRole("button", { name: /^First Drop/ }).click();
+      await dropOnFirstRabbit(page);
+      await page.waitForTimeout(2300);
+    },
+  },
+  {
+    name: "ten-turns-results",
+    path: "/ten-turns",
+    go: async (page) => {
+      await openChapters(page);
+      await page.getByRole("button", { name: /^First Drop/ }).click();
+      await dropOnFirstRabbit(page);
+      await page.getByRole("dialog", { name: "Results" }).waitFor({ timeout: 20_000 });
+      await page.waitForTimeout(800);
+    },
+  },
+  {
+    name: "ten-turns-1970s",
+    path: "/ten-turns",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^1970s mode/ }).click();
+      for (const line of ["3,4", "90", "90", "0"]) {
+        await page.keyboard.type(line);
+        await page.keyboard.press("Enter");
+      }
+    },
+  },
+  { name: "ten-turns-settings", path: "/ten-turns", go: (page) => page.getByRole("button", { name: /^Game settings$/ }).click() },
 ];
+
+/** Ten Turns: choose Tactics on the game menu and open the chapter map. */
+async function openChapters(page: Page) {
+  await page.locator("label", { has: page.getByRole("radio", { name: /^Tactics/ }) }).click();
+  await page.getByRole("button", { name: /^Play Tactics/ }).click();
+}
+
+/** Ten Turns: First Drop's rabbit hides at (6, 6) and the drop cursor starts at (0, -6). */
+async function dropOnFirstRabbit(page: Page) {
+  for (let i = 0; i < 6; i++) await page.keyboard.press("d");
+  for (let i = 0; i < 12; i++) await page.keyboard.press("w");
+  await page.keyboard.press("Enter");
+}
 
 for (const screen of SCREENS) {
   for (const theme of THEMES) {

@@ -1,0 +1,220 @@
+/* Paper panels laid over the pit: the menu, the chapter map, the records and the settings. */
+
+.panel {
+  position: absolute;
+  top: 28px;
+  left: clamp(16px, 4vw, 64px);
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100% - 56px);
+  overflow: auto;
+  padding: 28px 30px 26px;
+  background: color-mix(in srgb, var(--surface) 96%, transparent);
+  color: var(--ink);
+  border-radius: 8px 18px 10px 16px;
+  box-shadow:
+    0 1px 0 var(--line-strong),
+    0 22px 48px -22px rgb(40 20 10 / 0.55);
+  font-family: var(--tt-book), Georgia, serif;
+}
+
+.wide {
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(980px, calc(100% - 32px));
+}
+
+/*
+ * Wider panels for the records and the settings. Widths live here, after
+ * .panel in the same file: a rule in another module could load before it.
+ */
+.roomy {
+  width: min(560px, calc(100% - 32px));
+}
+
+@media (min-width: 1100px) {
+  .spread {
+    width: min(900px, calc(100% - 32px));
+  }
+}
+
+.kicker {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.title {
+  margin: 0 0 10px;
+  font-size: clamp(30px, 3.4vw, 46px);
+  line-height: 1;
+  font-weight: 800;
+  font-variation-settings:
+    "SOFT" 100,
+    "WONK" 1,
+    "opsz" 144;
+  color: var(--ink);
+}
+
+.lede {
+  margin: 0 0 18px;
+  font-size: 17px;
+  line-height: 1.45;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+.primary,
+.secondary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 2px solid var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+.primary {
+  background: var(--accent);
+  color: #fff8ee;
+  box-shadow: 0 4px 0 color-mix(in srgb, var(--accent) 60%, #000);
+}
+
+.secondary {
+  background: var(--surface-2);
+  color: var(--ink);
+  box-shadow: 0 3px 0 var(--line-strong);
+}
+
+.primary:hover,
+.secondary:hover {
+  transform: translateY(-1px);
+}
+
+.primary:active,
+.secondary:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.label {
+  display: grid;
+  gap: 2px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.label small {
+  font-size: 14px;
+  font-weight: 400;
+  font-style: italic;
+  opacity: 0.85;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.quiet {
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.quiet:hover {
+  color: var(--ink);
+  border-color: var(--ink-3);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.quiet:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.back {
+  margin-bottom: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primary,
+  .secondary {
+    transition: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .panel {
+    top: 12px;
+    left: 12px;
+    width: calc(100% - 24px);
+    padding: 18px;
+  }
+  .wide {
+    left: 12px;
+    transform: none;
+  }
+}
+
+/* On short screens (1280×720 and the like) the panels tighten up so the menu fits without scrolling. */
+@media (max-height: 820px) and (min-width: 761px) {
+  .panel {
+    top: 16px;
+    max-height: calc(100% - 32px);
+    padding: 20px 24px 20px;
+  }
+  .title {
+    font-size: clamp(28px, 3vw, 38px);
+    margin-bottom: 6px;
+  }
+  .lede {
+    margin-bottom: 12px;
+    font-size: 15px;
+    line-height: 1.35;
+  }
+  .actions {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .primary {
+    grid-column: 1 / -1;
+  }
+  .primary,
+  .secondary {
+    min-height: 48px;
+    padding: 8px 14px;
+  }
+  .label {
+    font-size: 16px;
+  }
+  .label small {
+    font-size: 13px;
+  }
+  .row {
+    margin-top: 12px;
+  }
+}

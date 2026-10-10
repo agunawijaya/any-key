@@ -1,0 +1,92 @@
+.settings {
+  z-index: 2;
+}
+
+/* One column on most screens; two on wide ones, so it all fits without scrolling. */
+.columns {
+  display: grid;
+  column-gap: 32px;
+}
+
+@media (min-width: 1100px) {
+  .columns {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.setting {
+  margin: 0 0 14px;
+  padding: 0;
+  border: 0;
+}
+
+.legend {
+  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.hint {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line-strong);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.option[data-checked="true"] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-weight: 700;
+}
+
+.option[data-disabled="true"] {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.option input {
+  accent-color: var(--accent);
+}
+
+.option:has(input:focus-visible) {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.forget {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-height: 820px) and (min-width: 761px) {
+  .setting {
+    margin-bottom: 10px;
+  }
+  .hint {
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+  .option {
+    min-height: 36px;
+    padding: 4px 10px;
+  }
+}

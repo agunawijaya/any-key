@@ -35,6 +35,7 @@ Decisions behind these choices are in `docs/adr/`.
 | `/two-humps` | `app/two-humps/page.tsx` | Two Humps |
 | `/long-memory` | `app/long-memory/page.tsx` | Same Trick Twice |
 | `/over-short` | `app/over-short/page.tsx` | Over / Short |
+| `/ten-turns` | `app/ten-turns/page.tsx` | Ten Turns in the Pit |
 
 Inside a game the hash says where you are: no hash is the game menu, `#play` is a round, `#story` is the Story
 tab. `docs/NAVIGATION.md` is the standard every game follows.
@@ -226,6 +227,7 @@ All saved data goes through `lib/kit/save.ts`.
 | Two Humps | `anykey.two-humps.save` | 1 | None yet: born on the kit |
 | Same Trick Twice | `anykey.long-memory.save` | 1 | None yet: born on the kit |
 | Over / Short | `anykey.over-short.save` | 1 | None yet: born on the kit |
+| Ten Turns in the Pit | `anykey.ten-turns.save` | 1 | None yet: born on the kit |
 
 `tests/unit/migration.test.ts` runs real version-1 saves (`tests/fixtures/*.v1.json`) through every migration.
 
@@ -259,7 +261,7 @@ new code and offers `float`, `int`, `pick`, `shuffle` and `fork`.
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run test` | Vitest: the kit (RNG, dailies, storage, migrations, Keyring, manifests) |
 | `npm run check:guardrails` | `scripts/guardrails.ts`: no raster art outside `docs/` and the sound bank, no emoji in `app/` or `components/`, no network URLs in shipped code |
-| `npm run check:music`, `check:audio`, `check:stickler`, `check:outta`, `check:lander`, `check:two-humps`, `check:long-memory`, `check:over-short` | Each game's own simulations and fixtures |
+| `npm run check:music`, `check:audio`, `check:stickler`, `check:outta`, `check:lander`, `check:two-humps`, `check:long-memory`, `check:over-short`, `check:ten-turns` | Each game's own simulations and fixtures |
 | `npm run e2e` | `next build`, then Playwright on port 3211 (`tests/e2e/`) |
 | `npm run shots` | `next build`, then screenshots of every key screen into `docs/media/shots/` |
 
@@ -280,6 +282,7 @@ The first four games predate that rule and keep their folders.
 | `two-humps` | `/two-humps` | `lib/two-humps` | `components/two-humps` | `docs/two-humps` | `components/previews/TwoHumpsPreview.tsx` |
 | `long-memory` | `/long-memory` | `lib/long-memory` | `components/long-memory` | `docs/long-memory` | `components/previews/LongMemoryPreview.tsx` |
 | `over-short` | `/over-short` | `lib/over-short` | `components/over-short` | `docs/over-short` | `components/previews/OverShortPreview.tsx` |
+| `ten-turns` | `/ten-turns` | `lib/ten-turns` | `components/ten-turns` | `docs/ten-turns` | `components/previews/TenTurnsPreview.tsx` |
 
 The rest of the tree:
 

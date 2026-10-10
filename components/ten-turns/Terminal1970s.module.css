@@ -1,0 +1,161 @@
+/* A green-phosphor terminal on a desk, with a little plotter beside it. */
+
+.wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 14px;
+  padding: 20px clamp(16px, 4vw, 48px) 24px;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.back {
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.back:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.note {
+  margin: 0;
+  max-width: 760px;
+  font-family: var(--tt-book), Georgia, serif;
+  font-size: 16px;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.desk {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  min-height: 0;
+}
+
+.crt {
+  position: relative;
+  min-height: 0;
+  padding: 26px 30px;
+  border-radius: 26px;
+  border: 14px solid #3b3a35;
+  background: radial-gradient(ellipse at center, #0c2414 0%, #06140b 75%, #030a05 100%);
+  box-shadow:
+    inset 0 0 60px rgb(0 0 0 / 0.75),
+    0 20px 50px -20px rgb(0 0 0 / 0.6);
+  color: #7dff9b;
+  text-shadow: 0 0 6px rgb(110 255 150 / 0.55);
+  font-size: clamp(18px, 1.5vw, 24px);
+  line-height: 1.15;
+  overflow: hidden;
+  cursor: text;
+}
+
+.crt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.22) 0 2px, transparent 2px 4px);
+  border-radius: 12px;
+}
+
+.screen {
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+
+.line {
+  white-space: pre;
+}
+
+.prompt {
+  display: flex;
+  white-space: pre;
+}
+
+.input {
+  min-width: 0.2ch;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-shadow: inherit;
+  text-transform: uppercase;
+  outline: none;
+  caret-color: transparent;
+}
+
+.cursor {
+  animation: blink 1s steps(2) infinite;
+}
+
+@keyframes blink {
+  to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor {
+    animation: none;
+  }
+}
+
+.plotter {
+  align-self: start;
+  padding: 16px 18px;
+  border-radius: 14px;
+  background: #f2ead6;
+  color: #2f3a2c;
+  box-shadow: 0 16px 34px -18px rgb(0 0 0 / 0.55);
+}
+
+.plotTitle {
+  margin: 0 0 6px;
+  font-size: 20px;
+  letter-spacing: 0.2em;
+}
+
+.plot {
+  margin: 0;
+  font: inherit;
+  font-size: 19px;
+  line-height: 1;
+  letter-spacing: 0.42em;
+  color: #23301f;
+}
+
+.legend {
+  margin: 8px 0 0;
+  font-family: var(--tt-book), Georgia, serif;
+  font-size: 13px;
+  font-style: italic;
+}
+
+@media (max-width: 900px) {
+  .desk {
+    grid-template-columns: 1fr;
+  }
+  .plotter {
+    display: none;
+  }
+}

@@ -33,4 +33,9 @@ describe("manifests", () => {
     expect(byId["long-memory"]).toMatchObject({ status: "playable", title: "Same Trick Twice", route: "/long-memory" });
     expect(byId["long-memory"].inspiredBy).toMatchObject({ originalTitle: "Awari", file: "AWARI.BAS", year: 1978 });
   });
+
+  it("lists Ten Turns in the Pit, the rebuild of Man-Eating Rabbit, as playable", () => {
+    expect(byId["ten-turns"]).toMatchObject({ status: "playable", title: "Ten Turns in the Pit", route: "/ten-turns" });
+    expect(byId["ten-turns"].inspiredBy).toMatchObject({ originalTitle: "Man-Eating Rabbit", file: "RABBIT.BAS", year: 1979 });
+  });
 });

@@ -58,6 +58,7 @@ Every game works the same way (`docs/NAVIGATION.md`):
 | **Two Humps** (`/two-humps`) | `DESERT.BAS`, IPCO Personal Computer Owners Group (IBM PC), 1982 | Playable |
 | **Same Trick Twice** (`/long-memory`) | `AWARI.BAS`, Geoff Wyvill / Creative Computing, 1978 | Playable |
 | **Over / Short** (`/over-short`) | `GUNNER.BAS`, Tom Kloos / Creative Computing, 1973, and its IBM PC remake `CANNON.BAS` | Playable |
+| **Ten Turns in the Pit** (`/ten-turns`) | `RABBIT.BAS` (Man-Eating Rabbit), Philip Stanway / Creative Computing, 1979 | Playable |
 
 ### Bop Box
 
@@ -138,6 +139,17 @@ the textbook formula one chapter at a time: an observer who gives only over or s
 gales, real air, a moving convoy, a clock, and an enemy battery walking its rounds onto your gun until you move it.
 The docs are in `docs/over-short/`.
 
+### Ten Turns in the Pit
+
+You, a round pit and one very hungry rabbit. Take a step; it pounces, and maybe pounces again, one chance in two,
+then one in three, then one in four; last ten turns and a rope ladder comes down. Play Classic, the 1970s game with
+its bugs fixed and its luck made fair, or twenty Tactics pits in five chapters, where an arc shows where the rabbit's
+next pounce will land and you have rocks, burrows, tunnels, carrots, stones and a bobble hat that saves you once.
+There is a shareable Daily Pit, proved fair before it is offered, and a 1970s mode that runs the original turn for
+turn on a green terminal, the bug that drags you to the middle row included. It is all drawn as a picture book in
+Canvas 2D: a sunny meadow in the light theme, a moonlit pit with fireflies in the dark. The docs are in
+`docs/ten-turns/`.
+
 ## Project layout
 
 ```
@@ -163,6 +175,8 @@ lib/long-memory/     Same Trick Twice: three rule sets, the 1978 program, the Le
 components/long-memory/ Same Trick Twice menu, WebGL2 board and seed physics, Memory Book, match screen, 1970s terminal
 lib/over-short/      Over / Short: ballistic models, engagements, Classic, Campaign missions, bots, the 1973 rules, progress
 components/over-short/ Over / Short menus, firing screen, Canvas 2D battlefield and observer's view, eras, sound
+lib/ten-turns/       Ten Turns in the Pit: the 1970s program, Classic, the Tactics engine, 20 pits, solvers, Daily Pit, progress
+components/ten-turns/ Ten Turns in the Pit menu, pit screen, choreography, the style layer and the Storybook, 1970s terminal
 docs/ARCHITECTURE.md How the app is built, and the folder map of every game
 docs/NAVIGATION.md   The navigation standard
 docs/adr/            Architecture decisions
@@ -202,6 +216,7 @@ npm run check:lander     # 1979 maths; every world, mission, Daily Drop and Free
 npm run check:two-humps  # Two Humps' balance against its targets, every Expedition leg, the Daily, and the 1982 program's numbers
 npm run check:long-memory # Same Trick Twice's rule sets, the 1978 program against PC-BASIC recordings, the Learner, the Scholar, every Daily Endgame
 npm run check:over-short # Over / Short's models against the 1973 formula, the drill under five kinds of player, every Campaign mission winnable
+npm run check:ten-turns  # Ten Turns' 1970s module against the program, the survival tables, every pit and Daily Pit survivable
 npm run build:soundfont -- path/to/MuseScore_General.sf3   # rebuild public/soundfont/bopbox.sf3
 ```
 

@@ -4,7 +4,7 @@ import type { Page } from "@playwright/test";
 
 export type Seed = Record<string, unknown>;
 
-const GAMES = ["music", "23mtch", "escape", "lander", "two-humps", "long-memory"];
+const GAMES = ["music", "23mtch", "escape", "lander", "two-humps", "long-memory", "ten-turns"];
 
 /** A keyring where every game's first-visit hint was already dismissed, so the bar stays tidy in tests. */
 export const quietKeyring = { "anykey.keyring.save": { version: 1, data: { unlocked: {}, dailies: {}, levelSeen: 1, hintsDismissed: GAMES } } };

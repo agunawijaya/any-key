@@ -1,0 +1,70 @@
+/* Ten Turns in the Pit: picture-book paper and sepia ink by day, deep blue and moonlight by night. */
+.app {
+  --bg: #efe4cc;
+  --bg-2: #e4d6b8;
+  --surface: #fbf4e3;
+  --surface-2: #f3e8cf;
+  --ink: #3a271d;
+  --ink-2: #5e4434;
+  --ink-3: #7a5e4a;
+  --line: rgb(70 45 25 / 0.16);
+  --line-strong: rgb(70 45 25 / 0.32);
+  --accent: #b84b26;
+  --tt-hot: #c72f27;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .app {
+  --bg: #0b1022;
+  --bg-2: #121a33;
+  --surface: #141c35;
+  --surface-2: #1b2442;
+  --ink: #f1e8cf;
+  --ink-2: #cbbf9f;
+  --ink-3: #a2977d;
+  --line: rgb(240 230 200 / 0.12);
+  --line-strong: rgb(240 230 200 / 0.26);
+  --accent: #f08a5d;
+  --tt-hot: #ff5a44;
+}
+
+.stage {
+  position: relative;
+  height: calc(100dvh - var(--shell-bar-h, 72px));
+  min-height: 540px;
+  overflow: hidden;
+  background: var(--bg-2);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.veil {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg) 70%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.digging {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: 16px 24px;
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--tt-book), Georgia, serif;
+  font-size: 20px;
+  font-style: italic;
+  box-shadow: 0 16px 36px -18px rgb(40 20 10 / 0.5);
+}

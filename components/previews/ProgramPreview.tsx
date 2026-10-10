@@ -6,6 +6,7 @@ import { MusicPreview } from "./MusicPreview";
 import { OuttaPreview } from "./OuttaPreview";
 import { OverShortPreview } from "./OverShortPreview";
 import { SticklerPreview } from "./SticklerPreview";
+import { TenTurnsPreview } from "./TenTurnsPreview";
 import { TwoHumpsPreview } from "./TwoHumpsPreview";
 
 /** Each program brings its own living preview; the halls just place it. */
@@ -25,6 +26,8 @@ export function ProgramPreview({ id }: { id: string }) {
       return <LongMemoryPreview />;
     case "over-short":
       return <OverShortPreview />;
+    case "ten-turns":
+      return <TenTurnsPreview />;
     default: {
       const game = gameById(id);
       return game ? <ComingSoonPreview game={game} /> : null;

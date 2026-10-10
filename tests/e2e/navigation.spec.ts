@@ -10,6 +10,7 @@ const GAMES = [
   { route: "/dont-crater", title: "Don't Crater" },
   { route: "/two-humps", title: "Two Humps" },
   { route: "/long-memory", title: "Same Trick Twice" },
+  { route: "/ten-turns", title: "Ten Turns in the Pit" },
 ];
 
 test.beforeEach(async ({ page }) => seed(page));

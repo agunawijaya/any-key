@@ -12,6 +12,7 @@ This file is excluded from formatters (`.prettierignore`) so parallel sessions d
 | Two Humps | `two-humps` | Playable | 6 of 6 | 15 (5 common, 7 rare, 3 legendary) | Daily Crossing, numbered from 2026-10-09 | 03 two-humps (2026-10-09) |
 | Same Trick Twice | `long-memory` | Playable | 6 of 6 | 11 (5 common, 4 rare, 2 legendary) | Daily Endgame, numbered from 2026-10-09 | 09 long-memory (2026-10-09) |
 | Over / Short | `over-short` | Playable | 6 of 6 | 12 (3 common, 7 rare, 2 legendary) | None yet (Daily Barrage in 07b) | 07a over-short (2026-10-10) |
+| Ten Turns in the Pit | `ten-turns` | Playable | 6 of 6 | 13 (4 common, 7 rare, 2 legendary) | Daily Pit, numbered from 2026-10-10 | 10a ten-turns (2026-10-10) |
 
 ## Polish candidates
 
@@ -126,3 +127,16 @@ prompts. Items it did fix are not listed.
 - Hills and valleys are stated on the target card; the side view does not raise or sink the target.
 - Without a graphics card the night battlefield runs at 21–30 frames a second (painted at 0.6 of the pixel ratio).
 - Field Artillery, the duel, the Daily Barrage and the 1970s terminals are prompt 07b; three more eras are 07c.
+
+### Ten Turns in the Pit
+
+- The Daily Pit is generated in the browser, 1 to 3 seconds in a Web Worker; a browser without module workers can't
+  open it.
+- The Tactics solver leaves out tools, carrots and second rabbits, so every pit's proof is by a policy that looks one
+  turn ahead with them: a lower bound on good play.
+- Without a graphics card the squish runs at 32 to 37 frames a second while its zoomed backdrop is repainted.
+- The release scene (surviving a pit) is not in `npm run shots`: reaching it takes a whole game; the hero frames in
+  `docs/ten-turns/media/hero/` show it.
+- The Arena play style (real time) is prompt 10b; three more looks are prompt 10c.
+- Owner question: the Hall card and the inspired-by line credit Philip Stanway from the book's notes as reproduced on
+  the Internet Archive; the printed page has not been read yet.

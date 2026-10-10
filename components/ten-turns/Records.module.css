@@ -1,0 +1,56 @@
+.records {
+  z-index: 2;
+}
+
+.heading {
+  margin: 18px 0 8px;
+  font-size: 18px;
+  font-weight: 800;
+  font-variation-settings: "SOFT" 100, "WONK" 1;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.fact {
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+
+.fact dt {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.fact dd {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.line {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.chapters {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chapters li {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-2);
+}
