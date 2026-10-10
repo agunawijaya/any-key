@@ -1,0 +1,71 @@
+.settings {
+  width: min(940px, 100%);
+  gap: 14px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 36px;
+}
+
+@media (max-width: 820px) {
+  .columns {
+    grid-template-columns: 1fr;
+  }
+}
+
+.setting {
+  margin: 0;
+  padding: 0 0 14px;
+  border: 0;
+  border-bottom: 1px solid var(--os-line);
+}
+
+.legend {
+  padding: 0;
+  margin-bottom: 6px;
+  font: 400 20px/1.2 var(--font-instrument), Georgia, serif;
+}
+
+.hint {
+  margin: 0 0 10px;
+  color: var(--os-ink-2);
+  font: 450 13.5px/1.45 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--os-line-strong);
+  background: var(--os-paper);
+  font: 600 13.5px/1.1 var(--font-geist-sans), system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.option[data-checked="true"] {
+  border-color: var(--os-accent);
+  background: var(--os-accent);
+  color: var(--os-on-accent);
+}
+
+.option:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}

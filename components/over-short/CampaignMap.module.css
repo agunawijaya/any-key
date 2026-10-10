@@ -1,0 +1,140 @@
+.map {
+  width: min(860px, 100%);
+  gap: 12px;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.chapters {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chapter {
+  display: grid;
+  grid-template-columns: minmax(170px, 0.9fr) 3fr;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  border: 1px solid var(--os-line);
+  background: color-mix(in srgb, var(--os-paper) 60%, transparent);
+}
+
+.chapter[data-open="false"] {
+  opacity: 0.62;
+}
+
+.chapterHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chapterHead strong {
+  display: block;
+  font: 600 15px/1.2 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.chapterHead small {
+  display: block;
+  color: var(--os-ink-3);
+  font: 450 12px/1.35 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.number {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--os-accent);
+  color: var(--os-accent-ink);
+  font: 400 19px/1 var(--font-instrument), Georgia, serif;
+}
+
+.missions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.mission {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: 2px 6px;
+  min-height: 50px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--os-line-strong);
+  background: var(--os-paper);
+  color: var(--os-ink);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--os-line-strong);
+  transition: transform 120ms ease;
+}
+
+.mission:hover:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.mission:disabled {
+  cursor: default;
+  box-shadow: none;
+}
+
+.mission:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.mission[data-won="true"] {
+  border-color: color-mix(in srgb, var(--os-accent) 60%, transparent);
+}
+
+.missionId {
+  color: var(--os-ink-3);
+  font: 600 11px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.06em;
+}
+
+.missionTitle {
+  grid-column: 1;
+  font: 600 13.5px/1.2 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.missionMedal {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  display: grid;
+  place-items: center;
+}
+
+.empty {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--os-line-strong);
+}
+
+@media (max-width: 760px) {
+  .chapter {
+    grid-template-columns: 1fr;
+  }
+
+  .missions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.map .heading {
+  font-size: 34px;
+}

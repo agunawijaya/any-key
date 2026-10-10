@@ -1,0 +1,96 @@
+.map {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.map svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.paper {
+  fill: var(--os-slip);
+}
+
+.grid {
+  stroke: rgb(90 110 140 / 0.22);
+  stroke-width: 1;
+}
+
+.gridMain {
+  stroke: rgb(90 110 140 / 0.45);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.gridLabel,
+.edge {
+  fill: #5a4b35;
+  font: 600 9.5px/1 var(--font-geist-mono), monospace;
+}
+
+.radius {
+  fill: rgb(60 107 56 / 0.12);
+  stroke: rgb(60 107 56 / 0.6);
+  stroke-dasharray: 2 2;
+}
+
+.target {
+  fill: #2a2318;
+}
+
+.textbook line {
+  stroke: #8a6a3c;
+  stroke-dasharray: 5 4;
+  stroke-width: 1.4;
+}
+
+.textbook text {
+  fill: #6b4f28;
+  font: 600 9px/1 var(--font-geist-mono), monospace;
+}
+
+.fall circle {
+  stroke: #fffaf0;
+  stroke-width: 1.5;
+}
+
+.fall text {
+  fill: #fffaf0;
+  font: 700 10px/1 var(--font-geist-mono), monospace;
+}
+
+.fall[data-call="over"] circle {
+  fill: #9c3d2a;
+}
+
+.fall[data-call="short"] circle {
+  fill: #2f5d7a;
+}
+
+.fall[data-call="hit"] circle {
+  fill: #3c6b38;
+}
+
+.calls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font: 600 12px/1 var(--font-geist-mono), monospace;
+}
+
+.calls span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #fffaf0;
+}
+
+.calls span[data-call="over"] {
+  background: #9c3d2a;
+}
+
+.calls span[data-call="short"] {
+  background: #2f5d7a;
+}

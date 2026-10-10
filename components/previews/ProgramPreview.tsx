@@ -4,6 +4,7 @@ import { DontCraterPreview } from "./DontCraterPreview";
 import { LongMemoryPreview } from "./LongMemoryPreview";
 import { MusicPreview } from "./MusicPreview";
 import { OuttaPreview } from "./OuttaPreview";
+import { OverShortPreview } from "./OverShortPreview";
 import { SticklerPreview } from "./SticklerPreview";
 import { TwoHumpsPreview } from "./TwoHumpsPreview";
 
@@ -22,6 +23,8 @@ export function ProgramPreview({ id }: { id: string }) {
       return <TwoHumpsPreview />;
     case "long-memory":
       return <LongMemoryPreview />;
+    case "over-short":
+      return <OverShortPreview />;
     default: {
       const game = gameById(id);
       return game ? <ComingSoonPreview game={game} /> : null;

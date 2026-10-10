@@ -1,0 +1,126 @@
+.control {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.dial {
+  width: 168px;
+  height: 168px;
+  flex: none;
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
+}
+
+.dial[aria-disabled="true"] {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.face {
+  fill: color-mix(in srgb, var(--os-paper-2) 85%, transparent);
+  stroke: var(--os-line-strong);
+  stroke-width: 1;
+}
+
+.blocked {
+  fill: color-mix(in srgb, var(--os-ink) 14%, transparent);
+}
+
+.fortyFive {
+  stroke: var(--os-accent);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+}
+
+.tick {
+  stroke: var(--os-ink-3);
+  stroke-width: 1;
+}
+
+.tickLong {
+  stroke: var(--os-ink-2);
+  stroke-width: 1.6;
+}
+
+.tickLabel {
+  fill: var(--os-ink-3);
+  font: 600 10px/1 var(--font-geist-mono), monospace;
+}
+
+.needle {
+  stroke: var(--os-ink);
+  stroke-width: 5;
+  stroke-linecap: round;
+}
+
+.handle {
+  fill: var(--os-accent);
+  stroke: var(--os-paper);
+  stroke-width: 2;
+}
+
+.pivot {
+  fill: var(--os-ink);
+}
+
+.side {
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+  min-width: 132px;
+}
+
+.figure {
+  display: grid;
+  gap: 2px;
+}
+
+.entry {
+  display: flex;
+  align-items: baseline;
+  font: 400 44px/1 var(--font-instrument), Georgia, serif;
+}
+
+.entry input {
+  width: 3.4ch;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid var(--os-line-strong);
+  background: transparent;
+  color: var(--os-ink);
+  font: inherit;
+  letter-spacing: -0.01em;
+}
+
+.entry input:focus-visible {
+  outline: none;
+  border-bottom-color: var(--os-accent);
+}
+
+.entry span {
+  color: var(--os-ink-2);
+  font-size: 0.6em;
+}
+
+.nudges {
+  display: flex;
+  gap: 6px;
+}
+
+.nudges button {
+  flex: 1;
+  justify-content: center;
+  min-height: 36px;
+  padding: 0;
+  font-size: 13px;
+}
+
+.fire {
+  justify-content: space-between;
+  min-height: 52px;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}

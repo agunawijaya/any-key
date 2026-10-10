@@ -1,0 +1,24 @@
+.menu {
+  width: min(470px, 100%);
+  margin-top: clamp(0px, 4vh, 48px);
+}
+
+.wordmark {
+  margin: -4px 0 0;
+  font: 400 clamp(52px, 6.4vw, 76px) / 0.95 var(--font-instrument), Georgia, serif;
+  letter-spacing: -0.015em;
+}
+
+.wordmark span[aria-hidden] {
+  color: var(--os-accent);
+  font-style: italic;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+.actions button {
+  min-height: 64px;
+}

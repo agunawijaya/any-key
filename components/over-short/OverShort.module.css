@@ -1,0 +1,46 @@
+.main {
+  position: relative;
+  height: calc(100dvh - var(--shell-bar-h, 72px));
+  min-height: 560px;
+  overflow: hidden;
+  background: var(--os-bg);
+}
+
+/* The live battlefield behind the menus, softened so the cards read over it. */
+.backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.over {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  padding: clamp(16px, 3.2vh, 40px) clamp(16px, 3vw, 56px);
+  overflow-y: auto;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgb(233 227 214 / 0.55), rgb(233 227 214 / 0) 46%);
+}
+
+:root[data-theme="dark"] .over {
+  background: linear-gradient(90deg, rgb(10 12 17 / 0.62), rgb(10 12 17 / 0) 50%);
+}
+
+.over > * {
+  pointer-events: auto;
+}
+
+@media (max-width: 720px) {
+  .over {
+    padding: 12px;
+    background: rgb(233 227 214 / 0.45);
+  }
+
+  :root[data-theme="dark"] .over {
+    background: rgb(10 12 17 / 0.55);
+  }
+}

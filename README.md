@@ -57,6 +57,7 @@ Every game works the same way (`docs/NAVIGATION.md`):
 | **Don't Crater** (`/dont-crater`) | `LANDER.BAS`, Simutek (TRS-80), 1979 | Playable |
 | **Two Humps** (`/two-humps`) | `DESERT.BAS`, IPCO Personal Computer Owners Group (IBM PC), 1982 | Playable |
 | **Same Trick Twice** (`/long-memory`) | `AWARI.BAS`, Geoff Wyvill / Creative Computing, 1978 | Playable |
+| **Over / Short** (`/over-short`) | `GUNNER.BAS`, Tom Kloos / Creative Computing, 1973, and its IBM PC remake `CANNON.BAS` | Playable |
 
 ### Bop Box
 
@@ -127,6 +128,16 @@ mode, which runs the original program turn for turn, its never-cleared score and
 51st lesson included. The board is drawn in WebGL2: a sunlit courtyard in the light theme, a lamplit table
 in the dark. The docs are in `docs/long-memory/`.
 
+### Over / Short
+
+Call an elevation, fire, and wait for the forward observer on the field telephone: over, short, or on target.
+One of the first artillery games, from 1973, rebuilt as a painted Great War: the camera rides the shell along its
+arc over the fields, the view cuts to the observer's field glasses for the fall of shot, and the report comes in on
+a message slip. Play Classic, the 1973 drill of five targets in 18 rounds, or a twenty-mission Campaign that breaks
+the textbook formula one chapter at a time: an observer who gives only over or short, an unknown gun, hills and
+gales, real air, a moving convoy, a clock, and an enemy battery walking its rounds onto your gun until you move it.
+The docs are in `docs/over-short/`.
+
 ## Project layout
 
 ```
@@ -150,6 +161,8 @@ lib/two-humps/       Two Humps: trek engine, pursuers, 1982 program, bots, Exped
 components/two-humps/ Two Humps menu, pursuer pick, trek screen, Canvas 2D diorama, map, 1982 terminal
 lib/long-memory/     Same Trick Twice: three rule sets, the 1978 program, the Learner, the Scholar, solver, Daily Endgame
 components/long-memory/ Same Trick Twice menu, WebGL2 board and seed physics, Memory Book, match screen, 1970s terminal
+lib/over-short/      Over / Short: ballistic models, engagements, Classic, Campaign missions, bots, the 1973 rules, progress
+components/over-short/ Over / Short menus, firing screen, Canvas 2D battlefield and observer's view, eras, sound
 docs/ARCHITECTURE.md How the app is built, and the folder map of every game
 docs/NAVIGATION.md   The navigation standard
 docs/adr/            Architecture decisions
@@ -188,6 +201,7 @@ npm run check:outta      # Outta Here's rules, the 1980 simulation, and human-li
 npm run check:lander     # 1979 maths; every world, mission, Daily Drop and Free Flight site can be landed by human-like pilots
 npm run check:two-humps  # Two Humps' balance against its targets, every Expedition leg, the Daily, and the 1982 program's numbers
 npm run check:long-memory # Same Trick Twice's rule sets, the 1978 program against PC-BASIC recordings, the Learner, the Scholar, every Daily Endgame
+npm run check:over-short # Over / Short's models against the 1973 formula, the drill under five kinds of player, every Campaign mission winnable
 npm run build:soundfont -- path/to/MuseScore_General.sf3   # rebuild public/soundfont/bopbox.sf3
 ```
 

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { test, type Page } from "@playwright/test";
 import { crashTenSecond, keyringSeed, seed, winClassic } from "../e2e/helpers";
 import { LESSON, playToTheEnd as playSameTrickTwice, returningSave, withSave } from "../e2e/long-memory-helpers";
+import { fireAt, formulaElevation, playClassicByFormula, waitForGun } from "../e2e/over-short-helpers";
 import { playToTheEnd, settled, takeTheTutorial, tutorialToTheReins } from "../e2e/two-humps-helpers";
 
 /*
@@ -200,6 +201,50 @@ const SCREENS: Screen[] = [
         await page.keyboard.type(pit);
         await page.keyboard.press("Enter");
       }
+    },
+  },
+  { name: "over-short-menu", path: "/over-short", go: (page) => page.waitForTimeout(2500) },
+  { name: "over-short-campaign", path: "/over-short", go: (page) => page.getByRole("button", { name: /^Campaign/ }).click() },
+  {
+    name: "over-short-firing",
+    path: "/over-short",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^Classic/ }).click();
+      await page.getByRole("button", { name: /Take the gun/ }).click();
+      await page.waitForTimeout(1500);
+    },
+  },
+  {
+    // Caught as the observer's report comes in, the glasses filling the screen.
+    name: "over-short-fall",
+    path: "/over-short",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^Classic/ }).click();
+      await page.getByRole("button", { name: /Take the gun/ }).click();
+      await fireAt(page, String(Number(await formulaElevation(page)) + 3), "keys");
+      await page.waitForTimeout(400);
+    },
+  },
+  {
+    name: "over-short-map",
+    path: "/over-short",
+    go: async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.getByRole("button", { name: /^Classic/ }).click();
+      await page.getByRole("button", { name: /Take the gun/ }).click();
+      await fireAt(page, String(Number(await formulaElevation(page)) + 3), "keys");
+      await waitForGun(page);
+      await page.keyboard.press("m");
+    },
+  },
+  {
+    name: "over-short-results",
+    path: "/over-short",
+    go: async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await page.getByRole("button", { name: /^Classic/ }).click();
+      await page.getByRole("button", { name: /Take the gun/ }).click();
+      await playClassicByFormula(page, "keys");
     },
   },
 ];

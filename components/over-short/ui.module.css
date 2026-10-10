@@ -1,0 +1,242 @@
+/*
+ * Over / Short's paper and ink, shared by every screen: a field notebook's
+ * cream and khaki by day, blackout and brass by night. Panels are cards of
+ * that paper laid over the live battlefield.
+ */
+
+.app {
+  --os-bg: #e9e3d6;
+  --os-paper: #f6f1e5;
+  --os-paper-2: #ece4d3;
+  --os-glass: rgb(246 241 229 / 0.9);
+  --os-ink: #26221b;
+  --os-ink-2: #4f4738;
+  --os-ink-3: #6b6150;
+  --os-line: rgb(60 48 30 / 0.16);
+  --os-line-strong: rgb(60 48 30 / 0.32);
+  --os-accent: #8a6a3c;
+  --os-accent-ink: #6b4f28;
+  --os-on-accent: #fffaf0;
+  --os-over: #9c3d2a;
+  --os-short: #2f5d7a;
+  --os-hit: #3c6b38;
+  --os-shadow: 0 24px 60px -30px rgb(40 30 14 / 0.55), 0 2px 0 rgb(255 255 255 / 0.5) inset;
+  --os-slip: #efe6d0;
+  --os-slip-ink: #2a2318;
+  --os-stamp: #a3271b;
+  /* The shell colours the game's title with --accent. */
+  --accent: var(--os-accent);
+  min-height: 100dvh;
+  background: var(--os-bg);
+  color: var(--os-ink);
+}
+
+:root[data-theme="dark"] .app {
+  --os-bg: #0c0e13;
+  --os-paper: #191c23;
+  --os-paper-2: #20242c;
+  --os-glass: rgb(20 23 30 / 0.88);
+  --os-ink: #ece5d6;
+  --os-ink-2: #c6bca8;
+  --os-ink-3: #9d9482;
+  --os-line: rgb(235 220 190 / 0.13);
+  --os-line-strong: rgb(235 220 190 / 0.28);
+  --os-accent: #d6a65e;
+  --os-accent-ink: #e2b878;
+  --os-on-accent: #1a1408;
+  --os-over: #e08a6c;
+  --os-short: #86b6d6;
+  --os-hit: #9ccc8a;
+  --os-shadow: 0 24px 60px -24px rgb(0 0 0 / 0.75), 0 1px 0 rgb(255 240 210 / 0.06) inset;
+  --os-slip: #d9cfb8;
+  --os-slip-ink: #1f1a12;
+  --os-stamp: #a3271b;
+}
+
+/* ---------- Panels and buttons ---------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px 30px 26px;
+  border-radius: 22px;
+  border: 1px solid var(--os-line);
+  background: var(--os-glass);
+  backdrop-filter: blur(12px) saturate(1.15);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  box-shadow: var(--os-shadow);
+  color: var(--os-ink);
+}
+
+.kicker {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--os-accent-ink);
+  font: 600 11.5px/1.3 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.heading {
+  margin: 0;
+  font: 400 40px/1.02 var(--font-instrument), Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+.lede {
+  margin: 0;
+  color: var(--os-ink-2);
+  font: 450 15.5px/1.55 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.primary,
+.secondary,
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  padding: 0 16px 0 18px;
+  border-radius: 14px;
+  font: 600 15px/1.2 var(--font-geist-sans), system-ui, sans-serif;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background-color 160ms ease;
+}
+
+.primary {
+  border: 1px solid color-mix(in srgb, var(--os-accent) 70%, black 12%);
+  background: var(--os-accent);
+  color: var(--os-on-accent);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--os-accent) 55%, black 45%);
+}
+
+.secondary {
+  border: 1px solid var(--os-line-strong);
+  background: var(--os-paper);
+  color: var(--os-ink);
+  box-shadow: 0 3px 0 var(--os-line-strong);
+}
+
+.quiet {
+  min-height: 40px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--os-ink-2);
+}
+
+.primary:hover,
+.secondary:hover {
+  transform: translateY(1px);
+}
+
+.primary:active,
+.secondary:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
+.primary:disabled,
+.secondary:disabled {
+  opacity: 0.5;
+  cursor: default;
+  transform: none;
+}
+
+.quiet:hover {
+  background: color-mix(in srgb, var(--os-ink) 6%, transparent);
+  color: var(--os-ink);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.quiet:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.label {
+  display: grid;
+  gap: 2px;
+}
+
+.label small {
+  color: inherit;
+  opacity: 0.8;
+  font: 500 12.5px/1.3 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.key {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+  opacity: 0.75;
+  font: 600 11px/1 var(--font-geist-mono), monospace;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.back {
+  align-self: flex-start;
+}
+
+/* A message form torn from the observer's pad: ruled paper, typed in a hurry. */
+.slip {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 16px 20px 18px;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 25px, rgb(90 110 140 / 0.16) 25px 26px),
+    var(--os-slip);
+  color: var(--os-slip-ink);
+  border-radius: 4px;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.5) inset,
+    0 22px 44px -24px rgb(0 0 0 / 0.75);
+}
+
+.slip .kicker {
+  color: #7a5426;
+}
+
+.stamp {
+  justify-self: end;
+  margin: 6px 4px 0 0;
+  padding: 4px 10px;
+  border: 2.5px solid var(--os-stamp);
+  border-radius: 4px;
+  color: var(--os-stamp);
+  font: 800 15px/1.1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transform: rotate(-6deg);
+  opacity: 0.88;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

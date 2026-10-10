@@ -1,0 +1,85 @@
+.field {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #1b1d22;
+}
+
+.side {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/*
+ * The observer's glasses are always painted at full size; in their corner
+ * they are only shown smaller, so going full screen costs no repainting.
+ */
+.observer {
+  --inset: 0.22;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 64px;
+  outline: 6px solid rgb(30 26 20 / 0.6);
+  box-shadow: 0 40px 90px -30px rgb(0 0 0 / 0.8);
+  transform-origin: top right;
+  transform: translate(calc(-1 * clamp(16px, 2vw, 32px)), clamp(16px, 2.4vh, 28px)) scale(var(--inset));
+  transition:
+    transform 380ms cubic-bezier(0.3, 0.7, 0.2, 1),
+    border-radius 380ms ease,
+    outline-color 380ms ease;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.observer[data-full="true"] {
+  transform: none;
+  border-radius: 0;
+  outline-color: transparent;
+}
+
+.front {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* The caption under the glasses in their corner, sized up to undo the corner's scale. */
+.label {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 26px 0 30px;
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.6));
+  color: #f2ead8;
+  font: 600 calc(12.5px / var(--inset)) / 1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+  transition: opacity 200ms ease;
+}
+
+.observer[data-full="true"] .label {
+  opacity: 0;
+}
+
+@media (max-width: 900px) {
+  .observer {
+    --inset: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) .observer {
+    transition: none;
+  }
+}
+
+:root[data-motion="reduce"] .observer {
+  transition: none;
+}

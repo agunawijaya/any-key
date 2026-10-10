@@ -9,7 +9,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run lint && npm run test && npm run check:guardrails && npm run check:music && npm run check:audio && npm run check:stickler && npm run check:outta && npm run check:lander && npm run check:two-humps && npm run check:long-memory",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run check:guardrails && npm run check:music && npm run check:audio && npm run check:stickler && npm run check:outta && npm run check:lander && npm run check:two-humps && npm run check:long-memory && npm run check:over-short",
     "check:guardrails": "tsx scripts/guardrails.ts",
     "check:music": "tsx scripts/check-songs.ts && tsx scripts/check-arrangements.mts && tsx scripts/check-1981.mts",
     "check:audio": "tsx scripts/render-check.mts 8",
@@ -18,6 +18,7 @@
     "check:lander": "tsx scripts/check-lander.ts",
     "check:two-humps": "tsx scripts/check-two-humps.ts",
     "check:long-memory": "tsx scripts/check-long-memory.ts",
+    "check:over-short": "tsx scripts/check-over-short.ts",
     "e2e": "next build && playwright test",
     "shots": "next build && playwright test --config playwright.shots.config.ts",
     "build:soundfont": "tsx scripts/build-soundfont.mts"

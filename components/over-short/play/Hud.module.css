@@ -1,0 +1,103 @@
+.target {
+  position: absolute;
+  top: clamp(12px, 2.2vh, 24px);
+  left: clamp(12px, 1.8vw, 28px);
+  width: min(360px, calc(100% - 24px));
+  gap: 4px;
+  padding: 16px 20px 16px;
+}
+
+.distance {
+  margin: 0;
+  font: 400 44px/1 var(--font-instrument), Georgia, serif;
+  letter-spacing: -0.01em;
+}
+
+.line {
+  margin: 0;
+  color: var(--os-ink-2);
+  font: 450 13px/1.4 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.status {
+  position: absolute;
+  right: clamp(12px, 1.8vw, 28px);
+  bottom: clamp(12px, 2.2vh, 24px);
+  width: min(330px, calc(100% - 24px));
+  gap: 10px;
+  padding: 14px 16px;
+}
+
+.rounds {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  color: var(--os-ink-2);
+  font: 600 11px/1.2 var(--font-geist-mono), monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.ready {
+  color: var(--os-accent);
+}
+
+.spent {
+  color: var(--os-line-strong);
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font: 500 13.5px/1.3 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.chip[data-urgent="true"] {
+  color: var(--os-over);
+  font-weight: 650;
+}
+
+.enemy {
+  display: grid;
+  gap: 8px;
+}
+
+.enemy button {
+  justify-content: flex-start;
+  min-height: 40px;
+  font-size: 13.5px;
+}
+
+/* Where the target lies when it is past the right edge of the view. */
+.beyond {
+  position: absolute;
+  right: 0;
+  top: 64%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 14px 8px 16px;
+  border-radius: 999px 0 0 999px;
+  background: var(--os-glass);
+  color: var(--os-ink);
+  font: 600 12px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: var(--os-shadow);
+}
+
+.beyond span {
+  color: var(--os-accent-ink);
+  font-size: 15px;
+}

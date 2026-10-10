@@ -1,0 +1,185 @@
+.screen {
+  position: absolute;
+  inset: 0;
+}
+
+/* The panels float over the battlefield; only they take the pointer. */
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+/* While a round is in the air the panels step back; while the glasses are up they make way entirely. */
+.hud > section,
+.hud .drawer,
+.aim {
+  transition: opacity 300ms ease;
+}
+
+.hud[data-busy="true"] > section,
+.hud[data-busy="true"] .drawer {
+  opacity: 0.35;
+}
+
+.screen:has([data-full="true"]) .hud > section,
+.screen:has([data-full="true"]) .hud > p,
+.screen:has([data-full="true"]) .hud .drawer,
+.screen:has([data-full="true"]) .aim {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.aim {
+  position: absolute;
+  left: clamp(12px, 1.8vw, 28px);
+  bottom: clamp(12px, 2.2vh, 24px);
+  gap: 8px;
+  padding: 16px 18px;
+}
+
+.skipHint {
+  margin: 0;
+  color: var(--os-ink-2);
+  font: 500 12.5px/1.2 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* The observer's map and the firing table, under the glasses on the right. */
+.drawer {
+  position: absolute;
+  top: calc(clamp(16px, 2.4vh, 28px) + 22vw * 0.5625 + 14px);
+  right: clamp(16px, 2vw, 32px);
+  width: min(400px, 22vw + 40px);
+  display: grid;
+  gap: 8px;
+  justify-items: end;
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--os-line-strong);
+  background: var(--os-glass);
+  color: var(--os-ink);
+  font: 600 13px/1 var(--font-geist-sans), system-ui, sans-serif;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+}
+
+.tab[aria-selected="true"] {
+  border-color: var(--os-accent);
+  background: var(--os-accent);
+  color: var(--os-on-accent);
+}
+
+.tab:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.sheet {
+  width: 100%;
+  max-height: 46vh;
+  overflow: auto;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--os-line);
+  background: var(--os-glass);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--os-shadow);
+}
+
+/* The observer's report, front and centre at the bottom. */
+.slip {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(16px, 3vh, 36px);
+  width: min(420px, 36vw);
+  transform: translateX(-50%) rotate(-1deg);
+  animation: slipIn 260ms cubic-bezier(0.3, 0.7, 0.2, 1);
+  z-index: 4;
+}
+
+@keyframes slipIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 18px) rotate(-3deg);
+  }
+}
+
+.message {
+  margin: 2px 0 0;
+  font: 500 19px/1.35 var(--font-geist-mono), monospace;
+  letter-spacing: -0.01em;
+}
+
+.note {
+  margin: 0;
+  color: #5a4b35;
+  font: 450 13px/1.4 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.tally {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 500 14px/1.3 var(--font-geist-mono), monospace;
+}
+
+.tally li {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--os-line);
+}
+
+.verdict {
+  margin: 10px 0 0;
+  font: 450 15px/1.5 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+@media (max-width: 1100px) {
+  .slip {
+    width: min(380px, calc(100% - 24px));
+    bottom: auto;
+    top: 46%;
+  }
+}
+
+@media (max-width: 720px) {
+  .drawer {
+    top: auto;
+    bottom: 230px;
+    width: calc(100% - 24px);
+  }
+
+  .aim {
+    right: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) .slip {
+    animation: none;
+  }
+}
+
+:root[data-motion="reduce"] .slip {
+  animation: none;
+}

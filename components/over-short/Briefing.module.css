@@ -1,0 +1,67 @@
+.brief {
+  width: min(520px, 100%);
+  margin-top: clamp(0px, 3vh, 36px);
+}
+
+.orders,
+.facts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--os-ink-2);
+  font: 450 15px/1.5 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.orders li,
+.facts li {
+  position: relative;
+  padding-left: 22px;
+}
+
+.orders li::before,
+.facts li::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0.6em;
+  width: 8px;
+  height: 2px;
+  background: var(--os-accent);
+}
+
+.facts {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px dashed var(--os-line-strong);
+  background: color-mix(in srgb, var(--os-paper-2) 70%, transparent);
+  font-size: 14px;
+}
+
+.medals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  color: var(--os-ink-2);
+  font: 500 13.5px/1.3 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.medals span,
+.best {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.best {
+  margin: 0;
+  color: var(--os-ink);
+  font: 600 14px/1.3 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.note {
+  margin: 0;
+  color: var(--os-ink-3);
+  font: 450 13px/1.4 var(--font-geist-sans), system-ui, sans-serif;
+}

@@ -11,6 +11,7 @@ This file is excluded from formatters (`.prettierignore`) so parallel sessions d
 | Don't Crater | `lander` | Playable | 6 of 6 | 15 (7 common, 5 rare, 3 legendary) | Daily Drop, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
 | Two Humps | `two-humps` | Playable | 6 of 6 | 15 (5 common, 7 rare, 3 legendary) | Daily Crossing, numbered from 2026-10-09 | 03 two-humps (2026-10-09) |
 | Same Trick Twice | `long-memory` | Playable | 6 of 6 | 11 (5 common, 4 rare, 2 legendary) | Daily Endgame, numbered from 2026-10-09 | 09 long-memory (2026-10-09) |
+| Over / Short | `over-short` | Playable | 6 of 6 | 12 (3 common, 7 rare, 2 legendary) | None yet (Daily Barrage in 07b) | 07a over-short (2026-10-10) |
 
 ## Polish candidates
 
@@ -115,3 +116,13 @@ prompts. Items it did fix are not listed.
 - Without WebGL2 only the 1970s terminal can be played; a flat Canvas 2D board would keep the rest playable.
 - Without a graphics card the light board shows faceted pit rims and a toothed front edge; a mesh that is dense
   only around the pits would smooth them at little cost.
+
+### Over / Short
+
+- The production build could not be made on 2026-10-10: Node could not reach Google Fonts, so every `next/font` in
+  the tree failed. The e2e suite (`playwright.over-short.config.ts`, port 3217) passed against the dev server instead.
+- The observer looks along the line of fire: a round far over is a small burst near the horizon, one far short can
+  land right under the glasses. A post off to the side would show over and short as left and right.
+- Hills and valleys are stated on the target card; the side view does not raise or sink the target.
+- Without a graphics card the night battlefield runs at 21–30 frames a second (painted at 0.6 of the pixel ratio).
+- Field Artillery, the duel, the Daily Barrage and the 1970s terminals are prompt 07b; three more eras are 07c.
