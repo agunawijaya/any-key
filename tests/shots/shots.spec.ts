@@ -6,6 +6,7 @@ import { LESSON, playToTheEnd as playSameTrickTwice, returningSave, withSave } f
 import { fireAt, formulaElevation, playClassicByFormula, waitForGun } from "../e2e/over-short-helpers";
 import { playToTheEnd, settled, takeTheTutorial, tutorialToTheReins } from "../e2e/two-humps-helpers";
 import { dropByClick, stepPads } from "../e2e/ten-turns-helpers";
+import { downCards, finishCards, passCards, playAfternoon, SEEDS } from "../e2e/sol-y-sombra-helpers";
 
 /*
  * Every route and key screen, light and dark, at a laptop and a desktop size,
@@ -295,7 +296,88 @@ const SCREENS: Screen[] = [
     },
   },
   { name: "ten-turns-settings", path: "/ten-turns", go: (page) => page.getByRole("button", { name: /^Game settings$/ }).click() },
+  { name: "sol-y-sombra-menu", path: "/sol-y-sombra", go: (page) => page.waitForTimeout(3000) },
+  {
+    name: "sol-y-sombra-paseo",
+    path: `/sol-y-sombra?seed=${SEEDS.shoulders}`,
+    go: async (page) => {
+      await page.getByRole("button", { name: /^Enter the ring/ }).click();
+      await page.waitForTimeout(5000);
+    },
+  },
+  { name: "sol-y-sombra-cards", path: `/sol-y-sombra?seed=${SEEDS.shoulders}`, go: toTheCards },
+  {
+    name: "sol-y-sombra-pass",
+    path: `/sol-y-sombra?seed=${SEEDS.shoulders}`,
+    go: async (page) => {
+      await toTheCards(page);
+      await page.keyboard.press("1");
+      // Skip the walk out to the bull; the pass itself starts with the bull pawing the sand.
+      await page.waitForTimeout(400);
+      await page.keyboard.press("Space");
+      await page.waitForTimeout(3000);
+    },
+  },
+  {
+    name: "sol-y-sombra-down",
+    path: `/sol-y-sombra?seed=${SEEDS.gored}`,
+    go: async (page) => {
+      // This afternoon's first veronica gores.
+      await toTheCards(page);
+      await page.keyboard.press("1");
+      await page.waitForTimeout(300);
+      await page.keyboard.press("Space");
+      await downCards(page).waitFor({ timeout: 90_000 });
+      await page.waitForTimeout(2500);
+    },
+  },
+  {
+    name: "sol-y-sombra-truth",
+    path: `/sol-y-sombra?seed=${SEEDS.shoulders}`,
+    go: async (page) => {
+      await toTheCards(page);
+      for (const key of ["1", "1", "2"]) {
+        await passCards(page).waitFor({ timeout: 90_000 });
+        await page.keyboard.press(key);
+        await page.waitForTimeout(300);
+        await page.keyboard.press("Space");
+      }
+      await passCards(page).waitFor({ timeout: 90_000 });
+      await page.keyboard.press("k");
+      await finishCards(page).waitFor();
+    },
+  },
+  {
+    name: "sol-y-sombra-results",
+    path: `/sol-y-sombra?seed=${SEEDS.shoulders}`,
+    go: async (page) => {
+      await page.getByRole("button", { name: /^Enter the ring/ }).click();
+      await playAfternoon(page, { by: "keys" }, 170_000);
+    },
+  },
+  {
+    name: "sol-y-sombra-1970s",
+    path: "/sol-y-sombra",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^1970s mode/ }).click();
+      for (const line of ["NO", "NO", "0", "NO", "2", "NO", "1"]) {
+        await page.keyboard.type(line);
+        await page.keyboard.press("Enter");
+      }
+    },
+  },
+  { name: "sol-y-sombra-settings", path: "/sol-y-sombra", go: (page) => page.getByRole("button", { name: /^Game settings$/ }).click() },
 ];
+
+/** Sol y Sombra: into the ring, past the paseo, the bull's entrance and the crews' work, to the first cards. */
+async function toTheCards(page: Page) {
+  await page.getByRole("button", { name: /^Enter the ring/ }).click();
+  while (!(await passCards(page).isVisible())) {
+    await page.keyboard.press("Space");
+    await page.waitForTimeout(600);
+  }
+  await page.waitForTimeout(800);
+}
 
 /** Ten Turns: choose Tactics on the game menu and open the chapter map. */
 async function openChapters(page: Page) {

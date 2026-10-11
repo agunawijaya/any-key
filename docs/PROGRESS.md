@@ -13,6 +13,7 @@ This file is excluded from formatters (`.prettierignore`) so parallel sessions d
 | Same Trick Twice | `long-memory` | Playable | 6 of 6 | 11 (5 common, 4 rare, 2 legendary) | Daily Endgame, numbered from 2026-10-09 | 09 long-memory (2026-10-09) |
 | Over / Short | `over-short` | Playable | 6 of 6 | 12 (3 common, 7 rare, 2 legendary) | None yet (Daily Barrage in 07b) | 07a over-short (2026-10-10) |
 | Ten Turns in the Pit | `ten-turns` | Playable | 6 of 6 | 13 (4 common, 7 rare, 2 legendary) | Daily Pit, numbered from 2026-10-10 | 10a ten-turns (2026-10-10) |
+| Sol y Sombra | `sol-y-sombra` | Playable | 6 of 6 | 8 (3 common, 4 rare, 1 legendary; 1 secret) | None yet (the Daily in 11c) | 11a sol-y-sombra (2026-10-10) |
 
 ## Polish candidates
 
@@ -142,3 +143,15 @@ prompts. Items it did fix are not listed.
 - The Arena play style (real time) is prompt 10b; three more looks are prompt 10c.
 - Owner question: the Hall card and the inspired-by line credit Philip Stanway from the book's notes as reproduced on
   the Internet Archive; the printed page has not been read yet.
+
+### Sol y Sombra
+
+- Owner question: the program's author. Accounts of _BASIC Computer Games_ credit David Sweet of Dartmouth, with
+  changes at Lexington High School and by Steve North of Creative Computing; the printed page has not been read, so
+  the Hall names Creative Computing only.
+- A resting bull folds its legs but doesn't roll onto a hip; the crew never fold their capes; the hurt matador walks
+  between his helpers rather than being carried.
+- The bull deep in the pens' doorway is drawn over the wall (figures are drawn over the cached stands); it is hidden
+  once through.
+- Arena (real time) and the Stylized 3D style are prompt 11b; Career, the Course Camarguaise, the Recortes and the
+  Daily are 11c.

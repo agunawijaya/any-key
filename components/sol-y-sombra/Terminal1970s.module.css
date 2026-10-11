@@ -1,0 +1,173 @@
+/* ---------- 1970s mode: a teleprinter's paper by day, a phosphor screen by night (after Same Trick Twice's terminal) ---------- */
+
+.room {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  gap: clamp(16px, 2.4vw, 32px);
+  padding: clamp(16px, 3vh, 36px) clamp(16px, 2.6vw, 40px);
+  background: radial-gradient(120% 90% at 30% 20%, color-mix(in srgb, var(--bg) 70%, white 30%), var(--bg) 70%), var(--bg);
+}
+
+:root[data-theme="dark"] .room {
+  background: radial-gradient(120% 90% at 30% 20%, #1a1520, #08070b 70%);
+}
+
+.terminal {
+  --t-ink: #1d1a17;
+  --t-dim: rgb(29 26 23 / 0.55);
+  --t-you: #7a2f0a;
+  position: relative;
+  min-height: 0;
+  border-radius: 10px;
+  padding: 26px 34px 26px 54px;
+  /* Fan-fold paper: faint green bars, tractor holes down the left. */
+  background:
+    radial-gradient(circle at 18px 50%, var(--bg-2) 0 5px, transparent 5.5px) 0 0 / 36px 26px repeat-y,
+    repeating-linear-gradient(to bottom, rgb(150 190 150 / 0.22) 0 52px, transparent 52px 104px),
+    #f8f4e8;
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.6) inset,
+    0 30px 60px -36px rgb(40 25 10 / 0.6);
+  overflow: hidden;
+}
+
+:root[data-theme="dark"] .terminal {
+  --t-ink: #8ef7a8;
+  --t-dim: rgb(142 247 168 / 0.55);
+  --t-you: #d6ffe1;
+  padding: 30px 38px;
+  border-radius: 28px;
+  background: radial-gradient(130% 120% at 50% 45%, #0e2318, #050b08 72%);
+  box-shadow:
+    0 0 0 12px #1c1a17,
+    0 0 0 13px #2c2924,
+    0 40px 80px -40px rgb(0 0 0 / 0.9),
+    inset 0 0 80px rgb(0 0 0 / 0.7);
+}
+
+:root[data-theme="dark"] .terminal::after {
+  /* Scan lines and the glass's own sheen. */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.18) 0 1px, transparent 1px 3px),
+    radial-gradient(80% 60% at 30% 20%, rgb(255 255 255 / 0.05), transparent 60%);
+}
+
+.screen {
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.line {
+  margin: 0;
+  color: var(--t-ink);
+  font:
+    500 clamp(14px, 1.05vw, 17px) / 1.42 var(--font-geist-mono),
+    monospace;
+  white-space: pre;
+}
+
+:root[data-theme="dark"] .line {
+  text-shadow: 0 0 6px rgb(120 255 160 / 0.45);
+}
+
+.line[data-kind="title"] {
+  letter-spacing: 0.08em;
+}
+
+.line[data-kind="you"] {
+  color: var(--t-you);
+}
+
+.line[data-kind="result"] {
+  font-weight: 700;
+}
+
+.prompt {
+  display: flex;
+  gap: 1ch;
+  align-items: baseline;
+  color: var(--t-ink);
+  font:
+    500 clamp(14px, 1.05vw, 17px) / 1.42 var(--font-geist-mono),
+    monospace;
+}
+
+.prompt input {
+  width: 8ch;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid var(--t-dim);
+  background: transparent;
+  color: var(--t-you);
+  font: inherit;
+  caret-color: var(--t-ink);
+}
+
+.prompt input:focus {
+  outline: none;
+  border-bottom-color: var(--t-ink);
+}
+
+/* Two classes deep: the shared panel's own position must not win, whichever stylesheet loads last. */
+.room > .side {
+  position: static;
+  align-self: start;
+  gap: 14px;
+}
+
+.note {
+  margin: 0;
+  color: var(--sy-ink-2);
+  font:
+    450 14.5px/1.55 var(--font-geist-sans),
+    system-ui,
+    sans-serif;
+}
+
+.count {
+  margin: 0;
+  color: var(--sy-ink-2);
+  font:
+    500 14px/1.4 var(--font-geist-sans),
+    system-ui,
+    sans-serif;
+}
+
+.count strong {
+  color: var(--sy-ink);
+  font:
+    400 26px/1 var(--sys-banner),
+    Georgia,
+    serif;
+}
+
+.quirks {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--sy-ink-2);
+  font:
+    italic 450 13.5px/1.45 var(--sys-print),
+    Georgia,
+    serif;
+}
+
+@media (max-width: 860px) {
+  .room {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+
+  .terminal {
+    padding-left: 44px;
+  }
+}

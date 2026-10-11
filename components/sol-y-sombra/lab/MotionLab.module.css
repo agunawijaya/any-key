@@ -1,0 +1,122 @@
+/* The lab: a warm, plain frame around the canvas; the controls sit in a strip below it. */
+.app {
+  --bg: #efe4cf;
+  --bg-2: #e6d7bb;
+  --surface: #f8f1e3;
+  --surface-2: #efe4cf;
+  --ink: #2a1c14;
+  --ink-2: #57412f;
+  --ink-3: #7a6250;
+  --line: rgb(70 40 20 / 0.14);
+  --line-strong: rgb(70 40 20 / 0.28);
+  --accent: #b51f2c;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .app {
+  --bg: #11131d;
+  --bg-2: #181b28;
+  --surface: #1b1f2e;
+  --surface-2: #232838;
+  --ink: #efe6d6;
+  --ink-2: #c9bda8;
+  --ink-3: #9d927f;
+  --line: rgb(240 225 200 / 0.12);
+  --line-strong: rgb(240 225 200 / 0.26);
+  --accent: #ef5a5f;
+}
+
+.lab {
+  display: flex;
+  flex-direction: column;
+  height: calc(100dvh - var(--shell-bar-h, 72px));
+  min-height: 560px;
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+
+.beat {
+  position: absolute;
+  left: 16px;
+  top: 12px;
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  color: var(--ink-2);
+  font: 600 13px/1.2 var(--font-sans);
+  text-transform: capitalize;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  align-items: center;
+  padding: 10px clamp(14px, 2.4vw, 32px);
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-2);
+  color: var(--ink);
+  font: 600 13px/1 var(--font-sans);
+  cursor: pointer;
+}
+
+.button[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.button kbd,
+.hint kbd {
+  font: 600 11px/1 var(--font-mono, monospace);
+  padding: 3px 5px;
+  border-radius: 5px;
+  border: 1px solid currentColor;
+  opacity: 0.75;
+}
+
+.hint {
+  color: var(--ink-3);
+  font: 500 12px/1.2 var(--font-sans);
+}

@@ -5,6 +5,7 @@ import { LongMemoryPreview } from "./LongMemoryPreview";
 import { MusicPreview } from "./MusicPreview";
 import { OuttaPreview } from "./OuttaPreview";
 import { OverShortPreview } from "./OverShortPreview";
+import { SolYSombraPreview } from "./SolYSombraPreview";
 import { SticklerPreview } from "./SticklerPreview";
 import { TenTurnsPreview } from "./TenTurnsPreview";
 import { TwoHumpsPreview } from "./TwoHumpsPreview";
@@ -28,6 +29,8 @@ export function ProgramPreview({ id }: { id: string }) {
       return <OverShortPreview />;
     case "ten-turns":
       return <TenTurnsPreview />;
+    case "sol-y-sombra":
+      return <SolYSombraPreview />;
     default: {
       const game = gameById(id);
       return game ? <ComingSoonPreview game={game} /> : null;

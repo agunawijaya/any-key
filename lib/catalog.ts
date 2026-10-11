@@ -4,12 +4,13 @@ import { longMemoryManifest } from "./long-memory/manifest";
 import { musicManifest } from "./music/manifest";
 import { outtaManifest } from "./outta/manifest";
 import { overShortManifest } from "./over-short/manifest";
+import { solYSombraManifest } from "./sol-y-sombra/manifest";
 import { sticklerManifest } from "./stickler/manifest";
 import { tenTurnsManifest } from "./ten-turns/manifest";
 import { twoHumpsManifest } from "./two-humps/manifest";
 
 /** Every game in the Hall, in the order the Hall shows them. */
-export const games: GameManifest[] = [musicManifest, sticklerManifest, landerManifest, outtaManifest, twoHumpsManifest, longMemoryManifest, overShortManifest, tenTurnsManifest];
+export const games: GameManifest[] = [musicManifest, sticklerManifest, landerManifest, outtaManifest, twoHumpsManifest, longMemoryManifest, overShortManifest, tenTurnsManifest, solYSombraManifest];
 
 export const playableGames = games.filter((game) => game.status === "playable");
 

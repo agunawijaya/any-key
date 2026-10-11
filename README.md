@@ -59,6 +59,7 @@ Every game works the same way (`docs/NAVIGATION.md`):
 | **Same Trick Twice** (`/long-memory`) | `AWARI.BAS`, Geoff Wyvill / Creative Computing, 1978 | Playable |
 | **Over / Short** (`/over-short`) | `GUNNER.BAS`, Tom Kloos / Creative Computing, 1973, and its IBM PC remake `CANNON.BAS` | Playable |
 | **Ten Turns in the Pit** (`/ten-turns`) | `RABBIT.BAS` (Man-Eating Rabbit), Philip Stanway / Creative Computing, 1979 | Playable |
+| **Sol y Sombra** (`/sol-y-sombra`) | `BULLFGHT.BAS` (Bull), Creative Computing, 1978 | Playable |
 
 ### Bop Box
 
@@ -152,6 +153,17 @@ turn on a green terminal, the bug that drags you to the middle row included. It 
 Canvas 2D: a sunny meadow in the light theme, a moonlit pit with fireflies in the dark. The docs are in
 `docs/ten-turns/`.
 
+### Sol y Sombra
+
+A red cape, half a tonne of bull, and a crowd to win over. Each pass you choose a veronica, an outside pass or a
+swirl from cards that show their real odds; the bull paws, charges and goes by, and at the closest moment the picture
+slows and the stands breathe out an olé. Gored, you get up or retire; when you're ready, the moment of truth, over the
+horns or waiting for the charge; then the crowd rolls once, from a meter you watched fill, for applause, a lap of
+honour or the shoulders through the great gate. No blood, no death: the bull rests on the sand and walks home. The
+matador, his crew, the bull and the cloth cape are a rig moving in 3D, drawn as a 1900s poster come alive: an
+afternoon in the light theme, an evening festival under lamps in the dark. The 1970s mode plays the 1978 program
+question for question, its inverted assistants and ignored kill choice included. The docs are in `docs/sol-y-sombra/`.
+
 ## Project layout
 
 ```
@@ -179,6 +191,9 @@ lib/over-short/      Over / Short: ballistic models, engagements, Classic, Campa
 components/over-short/ Over / Short menus, firing screen, Canvas 2D battlefield and observer's view, eras, sound
 lib/ten-turns/       Ten Turns in the Pit: the 1970s program, Classic, the Tactics engine, 20 pits, solvers, Daily Pit, progress
 components/ten-turns/ Ten Turns in the Pit menu, pit screen, choreography, the style layer and the Storybook, 1970s terminal
+lib/sol-y-sombra/    Sol y Sombra: the 1978 program, the Classic corrida, the crowd's verdict, bots, the plaza, the crowd, progress
+lib/sol-y-sombra/rig/ Sol y Sombra's rig: IK skeletons, booked footsteps, the bull, the cloth cape, passes and beats
+components/sol-y-sombra/ Sol y Sombra menu, the afternoon and its HUD, the stage and director, the Vintage Poster style, sound, 1970s terminal
 docs/ARCHITECTURE.md How the app is built, and the folder map of every game
 docs/NAVIGATION.md   The navigation standard
 docs/adr/            Architecture decisions
@@ -219,6 +234,7 @@ npm run check:two-humps  # Two Humps' balance against its targets, every Expedit
 npm run check:long-memory # Same Trick Twice's rule sets, the 1978 program against PC-BASIC recordings, the Learner, the Scholar, every Daily Endgame
 npm run check:over-short # Over / Short's models against the 1973 formula, the drill under five kinds of player, every Campaign mission winnable
 npm run check:ten-turns  # Ten Turns' 1970s module against the program, the survival tables, every pit and Daily Pit survivable
+npm run check:sol-y-sombra # Sol y Sombra's 1970s formulas and quirks, the cards' odds against the engine, every bull and crew winnable
 npm run build:soundfont -- path/to/MuseScore_General.sf3   # rebuild public/soundfont/bopbox.sf3
 ```
 

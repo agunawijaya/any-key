@@ -1,0 +1,70 @@
+.menu {
+  /* Inside the poster's window, on its left: the ring keeps the right of the picture. */
+  top: calc(150 * var(--u));
+  left: calc(52 * var(--u) + 8px);
+  width: min(420px, calc(100% - 32px));
+  max-height: calc(100% - 150 * var(--u) - 70 * var(--u) - 8px);
+  overflow: auto;
+}
+
+.wordmark {
+  margin: 0;
+  color: var(--sy-red);
+  font:
+    400 clamp(40px, 3.6vw, 56px) / 0.98 var(--sys-headline),
+    Georgia,
+    serif;
+  letter-spacing: 0.02em;
+  text-shadow: 3px 3px 0 var(--sy-ink);
+}
+
+:root[data-theme="dark"] .wordmark {
+  color: var(--sy-gold);
+}
+
+.wordmark span {
+  font-family: var(--sys-print), Georgia, serif;
+  font-style: italic;
+  font-size: 0.62em;
+  text-shadow: none;
+  color: var(--sy-ink);
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+.soon {
+  margin: 0;
+  color: var(--sy-ink-3);
+  font:
+    italic 450 13.5px/1.45 var(--sys-print),
+    Georgia,
+    serif;
+}
+
+.footer {
+  display: grid;
+  gap: 4px;
+}
+
+.tally {
+  margin: 0;
+  min-height: 1.3em;
+  color: var(--sy-ink-2);
+  font:
+    500 12.5px/1.3 var(--font-geist-mono),
+    monospace;
+}
+
+@media (max-width: 720px) {
+  .menu {
+    top: auto;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 72%;
+  }
+}

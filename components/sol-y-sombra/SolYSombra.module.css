@@ -1,0 +1,99 @@
+/* ---------- Sol y Sombra: a printed poster by day, a lamplit festival bill by night ---------- */
+
+.app {
+  --sy-paper: #f4e8cb;
+  --sy-paper-2: #ead9b2;
+  --sy-card: #fbf3df;
+  --sy-ink: #21160f;
+  --sy-ink-2: #4e3a28;
+  --sy-ink-3: #6f5a45;
+  --sy-red: #b3241f;
+  --sy-red-ink: #fff4e4;
+  --sy-gold: #b07a1c;
+  --sy-gold-soft: #e2a93a;
+  --sy-blue: #2e4a7d;
+  --sy-good: #2f6f3e;
+  --sy-line: rgb(33 22 15 / 0.22);
+  --sy-line-strong: rgb(33 22 15 / 0.55);
+  --sy-glass: rgb(251 243 223 / 0.94);
+  --sy-shadow: 0 16px 34px -22px rgb(40 18 4 / 0.6);
+  /* The kit's own tokens, so the top bar and sheets wear the same paper. */
+  --bg: #efe0bd;
+  --bg-2: #e2cc9c;
+  --surface: #fbf3df;
+  --surface-2: #f4e8cb;
+  --ink: #21160f;
+  --ink-2: #4e3a28;
+  --ink-3: #6f5a45;
+  --line: rgb(33 22 15 / 0.16);
+  --line-strong: rgb(33 22 15 / 0.32);
+  --accent: #b3241f;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--sy-ink);
+}
+
+:root[data-theme="dark"] .app {
+  --sy-paper: #1f1e30;
+  --sy-paper-2: #16152a;
+  --sy-card: #232238;
+  --sy-ink: #f3e6c8;
+  --sy-ink-2: #d9c69c;
+  --sy-ink-3: #b3a283;
+  --sy-red: #e0483c;
+  --sy-red-ink: #1a0c0a;
+  --sy-gold: #f0c25a;
+  --sy-gold-soft: #d9a646;
+  --sy-blue: #8fb1ff;
+  --sy-good: #8fd6a0;
+  --sy-line: rgb(243 230 200 / 0.18);
+  --sy-line-strong: rgb(243 230 200 / 0.5);
+  --sy-glass: rgb(31 30 48 / 0.94);
+  --sy-shadow: 0 20px 44px -24px rgb(0 0 0 / 0.85);
+  --bg: #1b1a2a;
+  --bg-2: #12111d;
+  --surface: #232238;
+  --surface-2: #1f1e30;
+  --ink: #f3e6c8;
+  --ink-2: #d9c69c;
+  --ink-3: #b3a283;
+  --line: rgb(243 230 200 / 0.14);
+  --line-strong: rgb(243 230 200 / 0.3);
+  --accent: #f0c25a;
+}
+
+.stage {
+  position: relative;
+  height: calc(100dvh - var(--shell-bar-h, 72px));
+  min-height: 540px;
+  overflow: hidden;
+  /* One unit of the poster's layout (its 1920×1080 design grid), for placing the HUD inside its window; the stage sets it as it is sized. */
+  --u: 0.6px;
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: opacity 0.4s ease;
+}
+
+.canvas:not([data-ready]) {
+  opacity: 0;
+}
+
+/* Over the ring while the terminal, the records or the settings are open. */
+.veil {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas {
+    transition: none;
+  }
+}
