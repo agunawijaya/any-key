@@ -3,6 +3,7 @@ import { blast, burning, dumpGoesUp, earthFountain, explosion, masonryBurst, muz
 import type { Era } from "../types";
 import { drawFlare, drawShell, drawTrail } from "./flight";
 import { frontGround, frontProps, frontSky } from "./front";
+import { drawBridge, drawLorrySide, drawRiver, drawTeam } from "./fieldPieces";
 import { drawFieldGun, fieldGunMuzzle } from "./gun";
 import { greatWarLayers } from "./land";
 import { fieldGlasses } from "./optics";
@@ -61,4 +62,5 @@ export const greatWar: Era = {
       burning(fx, at, 18, kind === "railyard" ? 0.7 : 0.4);
     },
   },
+  field: { drawRiver, drawBridge, drawLorry: drawLorrySide, drawTeam },
 };

@@ -58,12 +58,50 @@ function insideGround(tile: TileRequest, paint: () => void) {
 /** The land's body: a gradient from its lit top to its darker foot. */
 function fillGround(tile: TileRequest, top: Rgb, bottom: Rgb, depth = 0.12) {
   const { ctx } = tile;
+  if (groundSpan(tile) > H(tile, 0.03)) {
+    fillHillside(tile, top, bottom, depth);
+    return;
+  }
   const minY = groundAt(tile, tile.width / 2) - H(tile, 0.02);
   const g = ctx.createLinearGradient(0, minY, 0, minY + H(tile, depth));
   g.addColorStop(0, css(top));
   g.addColorStop(1, css(bottom));
   ctx.fillStyle = g;
   ctx.fill(groundPath(tile));
+}
+
+/** How far the ground line climbs or falls across the tile, in pixels. */
+function groundSpan(tile: TileRequest) {
+  let low = Infinity;
+  let high = -Infinity;
+  for (let x = 0; x <= tile.width; x += 16) {
+    const y = groundAt(tile, x);
+    low = Math.min(low, y);
+    high = Math.max(high, y);
+  }
+  return high - low;
+}
+
+/**
+ * On a hillside one gradient for the whole tile would leave the crest dark
+ * and the foot pale, and break at the tile's edges: lay it in narrow strips
+ * instead, each starting at its own skyline.
+ */
+function fillHillside(tile: TileRequest, top: Rgb, bottom: Rgb, depth: number) {
+  const { ctx } = tile;
+  const strip = 6;
+  ctx.save();
+  ctx.clip(groundPath(tile));
+  for (let x = -6; x < tile.width + 6; x += strip) {
+    const skyline = Math.min(groundAt(tile, x), groundAt(tile, x + strip));
+    const minY = groundAt(tile, x + strip / 2) - H(tile, 0.02);
+    const g = ctx.createLinearGradient(0, minY, 0, minY + H(tile, depth));
+    g.addColorStop(0, css(top));
+    g.addColorStop(1, css(bottom));
+    ctx.fillStyle = g;
+    ctx.fillRect(x, skyline - 2, strip + 0.5, tile.height - skyline + 6);
+  }
+  ctx.restore();
 }
 
 /**

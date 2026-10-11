@@ -267,6 +267,151 @@ export function explosion(fx: Particles, at: At, power = 1) {
   }
 }
 
+/**
+ * Earth from a burst close by coming down on a spot: clods pattering out of
+ * the sky over `spread` metres either side, and a fine curtain of dirt
+ * sifting down through them. The crew of a gun under fire, covered.
+ */
+export function earthRain(fx: Particles, at: At, spread: number, power = 1) {
+  fx.anchorAt(at.x);
+  const r = fx.random;
+  for (let i = 0; i < 46 * power; i++) {
+    const fall = between(r, 0, 1.6);
+    fx.after(fall, () => {
+      fx.anchorAt(at.x);
+      fx.add({
+        kind: "clod",
+        x: at.x + between(r, -spread, spread),
+        y: between(r, 6, 14),
+        z: at.z + between(r, -1, 1),
+        vx: between(r, -3, 1),
+        vy: between(r, -8, -2),
+        life: between(r, 1.8, 3),
+        size: between(r, 0.14, 0.42),
+        spin: between(r, -8, 8),
+        color: pick(r, EARTH),
+      });
+    });
+  }
+  for (let i = 0; i < 10 * power; i++) {
+    fx.after(between(r, 0, 0.8), () => {
+      fx.anchorAt(at.x);
+      fx.add({
+        kind: "dust",
+        x: at.x + between(r, -spread, spread),
+        y: between(r, 4, 9),
+        z: at.z + between(r, -1, 1),
+        vx: between(r, -1.5, 0.5),
+        vy: between(r, -2.5, -1),
+        life: between(r, 2.2, 3.4),
+        size: between(r, 0.8, 1.6),
+        grow: between(r, 0.4, 0.9),
+        angle: r() * Math.PI * 2,
+        spin: between(r, -0.3, 0.3),
+        color: pick(r, MUD_SPRAY),
+        alpha: 0.55,
+      });
+    });
+  }
+}
+
+/**
+ * The smoke a burst leaves standing over its crater, thinning and leaning
+ * with the wind for `seconds`: a row of them shows where the rounds have
+ * been falling, and which way they are walking.
+ */
+export function smokePall(fx: Particles, at: At, seconds: number, power = 1) {
+  fx.anchorAt(at.x);
+  const r = fx.random;
+  const feed = (left: number) => {
+    if (left <= 0) return;
+    fx.anchorAt(at.x);
+    const strength = Math.min(1, left / seconds + 0.25);
+    fx.add({
+      kind: "smoke",
+      x: at.x + between(r, -3, 3),
+      y: between(r, 2, 6),
+      z: at.z + between(r, -2, 2),
+      vx: between(r, -0.5, 1),
+      vy: between(r, 4, 7),
+      life: between(r, 7, 10),
+      size: between(r, 1.2, 2.2) * power,
+      grow: between(r, 0.5, 0.9) * power,
+      angle: r() * Math.PI * 2,
+      spin: between(r, -0.12, 0.12),
+      color: mix([70, 64, 58], [118, 110, 100], r()),
+      alpha: 0.7 * strength,
+      billow: "above",
+    });
+    fx.after(0.35, () => feed(left - 0.35));
+  };
+  feed(seconds);
+}
+
+/** A round into water: a tall white column thrown straight up, drops raining off it, mist rolling out at its foot. */
+export function waterSpout(fx: Particles, at: At, power = 1) {
+  fx.anchorAt(at.x);
+  const r = fx.random;
+  fx.add({ kind: "flash", x: at.x, y: 2, z: at.z, life: 0.2, size: 10 * power, color: [255, 244, 220], alpha: 0.8 });
+  // The column itself: soft white masses climbing one above another.
+  for (let i = 0; i < 30 * power; i++) {
+    fx.add({
+      kind: "dust",
+      x: at.x + between(r, -1.2, 1.2),
+      y: between(r, 0.5, 3),
+      z: at.z + between(r, -1, 1),
+      vx: between(r, -1.2, 1.2),
+      vy: between(r, 8, 34) * Math.sqrt(power),
+      life: between(r, 2.4, 3.8),
+      size: between(r, 1.4, 2.6) * power,
+      grow: between(r, 0.6, 1.4),
+      angle: r() * Math.PI * 2,
+      spin: between(r, -0.3, 0.3),
+      color: mix([206, 214, 224], [244, 246, 250], r()),
+      alpha: 0.8,
+      pale: true,
+    });
+  }
+  // Drops flung off it, falling back.
+  for (let i = 0; i < 70 * power; i++) {
+    const a = between(r, -0.28, 0.28) + Math.PI / 2;
+    const speed = between(r, 14, 40) * Math.sqrt(power);
+    fx.add({
+      kind: "spray",
+      x: at.x + between(r, -1.5, 1.5),
+      y: 0.5,
+      z: at.z + between(r, -1, 1),
+      vx: Math.cos(a) * speed,
+      vy: Math.sin(a) * speed,
+      vz: between(r, -2, 2),
+      life: between(r, 2.5, 4.5),
+      size: between(r, 0.12, 0.32),
+      color: mix([214, 222, 228], [250, 252, 255], r()),
+      alpha: 0.85,
+    });
+  }
+  // Mist rolling out over the water at its foot.
+  for (let i = 0; i < 12 * power; i++) {
+    const side = r() < 0.5 ? -1 : 1;
+    fx.add({
+      kind: "dust",
+      x: at.x + side * between(r, 0.5, 3),
+      y: between(r, 0.5, 2),
+      z: at.z + between(r, -1, 1),
+      vx: side * between(r, 4, 12),
+      vy: between(r, 0.5, 2),
+      life: between(r, 2.5, 4.5),
+      size: between(r, 1.5, 3) * power,
+      grow: between(r, 1, 2),
+      angle: r() * Math.PI * 2,
+      spin: between(r, -0.3, 0.3),
+      color: mix([200, 208, 218], [232, 236, 242], r()),
+      alpha: 0.55,
+      pale: true,
+    });
+  }
+}
+
 /** The gun's own smoke: a grey-white cloud punched out of the muzzle, then drifting off. */
 export function muzzleSmoke(fx: Particles, at: At & { y?: number }, direction: number, power = 1) {
   fx.anchorAt(at.x);

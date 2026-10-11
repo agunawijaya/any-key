@@ -46,15 +46,16 @@ export function GameSettings({ progress, onBack }: { progress: Progress; onBack:
       </div>
       <div className={styles.columns}>
         <Segmented
-          name="style"
-          legend="Play style"
-          hint="Which the menu offers first. Each keeps its own records."
-          value={s.style}
+          name="difficulty"
+          legend="Difficulty (Field Artillery and the duel)"
+          hint="The wind and its gusts, how sharp the observer's eye is, how far out the map is, how fast the enemy finds you. The Daily Barrage is always Normal."
+          value={s.difficulty}
           choices={[
-            { value: "classic", label: "Classic" },
-            { value: "campaign", label: "Campaign" },
+            { value: "easy", label: "Easy" },
+            { value: "normal", label: "Normal" },
+            { value: "hard", label: "Hard" },
           ]}
-          onChange={(style) => set({ style })}
+          onChange={(difficulty) => set({ difficulty })}
         />
         <Segmented
           name="era"

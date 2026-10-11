@@ -6,8 +6,11 @@ import { effectsBus, isSoundOn } from "@/lib/kit/sound";
  * it in (Cannoneer's PC speaker swept from 3,000 to 4,000 Hz for the same
  * moment); the distant crump of a round landing, a bigger one for a hit and
  * a rolling chain for a dump going up; the telephone line crackling before
- * the observer speaks; the enemy's incoming whistle; a crew call before
- * each round and a cheer for a target destroyed; birds between barrages.
+ * the observer speaks, and the field telephone's ring; the enemy's incoming
+ * shell, falling in pitch as it comes (where our own climbs as it goes); a
+ * crew call before each round and a cheer for a target destroyed; the team
+ * of horses and the limber's wheels when the gun moves; the pop and hiss of
+ * a star shell; birds between barrages.
  * Everything runs through the collection's effects bus, so the top bar's
  * mute and the volume apply, and nothing starts before the player presses
  * something.
@@ -23,8 +26,14 @@ export type BattleSound = {
   incoming(): void;
   cheer(): void;
   limber(): void;
+  /** The field telephone's ring before the observer speaks. */
+  telephone(): void;
+  /** A star shell: the pop of it bursting and the hiss of it burning. */
+  starShell(): void;
   /** Called now and then while all is quiet: sometimes a bird. */
   quiet(day: boolean): void;
+  /** Opens the audio ahead of the first sound: opening it takes a moment the first round should not wait for. */
+  wake(): void;
   stop(): void;
 };
 
@@ -187,7 +196,9 @@ export function battleSound(): BattleSound {
       noiseHit(0.5, 0.03, "highpass", 3000, 0.15);
     },
     incoming() {
-      glide(0, 0.65, 2300, 700, 0.06, 30);
+      // Theirs falls in pitch and swells as it comes down on you; ours climbs as it goes away.
+      glide(0, 0.8, 2900, 620, 0.07, 40, "triangle");
+      noiseHit(0, 0.85, "bandpass", 1600, 0.05, 2);
     },
     cheer() {
       call(0, 210, 0.45, 0.07);
@@ -195,12 +206,32 @@ export function battleSound(): BattleSound {
       call(0.15, 240, 0.4, 0.06);
     },
     limber() {
-      for (let k = 0; k < 8; k++) noiseHit(k * 0.2, 0.18, "lowpass", 260, 0.25);
+      call(0, 140, 0.4, 0.1);
+      // Hooves at the walk, four beats a stride; the limber's iron tyres rumbling; the harness chinking.
+      for (let k = 0; k < 18; k++) {
+        const at = 0.5 + k * 0.24 + (k % 2) * 0.03;
+        noiseHit(at, 0.06, "bandpass", 900 + (k % 4) * 140, 0.22, 4);
+        thump(at, 120, 70, 0.08, 0.12);
+      }
+      noiseHit(1.4, 3.2, "lowpass", 180, 0.18, 0.8);
+      for (let k = 0; k < 6; k++) glide(1.5 + k * 0.5 + Math.random() * 0.2, 0.05, 5200, 4800, 0.02);
+    },
+    telephone() {
+      // A magneto ring: a buzz chopped twice.
+      for (const at of [0, 0.32]) glide(at, 0.22, 920, 900, 0.035, 25, "square");
+    },
+    starShell() {
+      noiseHit(0, 0.12, "highpass", 1800, 0.35);
+      thump(0, 220, 90, 0.15, 0.25);
+      noiseHit(0.15, 2.6, "highpass", 3200, 0.04, 0.5);
     },
     quiet(day) {
       if (!day || Math.random() > 0.35) return;
       const at = Math.random() * 0.5;
       for (let k = 0; k < 3; k++) glide(at + k * 0.13, 0.09, 3800 + Math.random() * 1200, 5200 + Math.random() * 900, 0.018);
+    },
+    wake() {
+      ready();
     },
     stop() {
       for (const node of live) {

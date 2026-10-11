@@ -249,6 +249,67 @@ const SCREENS: Screen[] = [
       await playClassicByFormula(page, "keys");
     },
   },
+  { name: "over-short-field", path: "/over-short", go: (page) => page.getByRole("button", { name: /^Field Artillery/ }).click() },
+  {
+    // Counter-Battery at the gun: charge, line and elevation, and the battery already ranging on it.
+    name: "over-short-field-firing",
+    path: "/over-short",
+    go: (page) => openShoot(page, /^F6 Counter-Battery/),
+  },
+  {
+    // A night shoot at the gun: the dark (the moon up in the light theme), three star shells to call for.
+    name: "over-short-field-night",
+    path: "/over-short",
+    go: (page) => openShoot(page, /^F8 Night Shoot/),
+  },
+  {
+    // The observer's map after one round: left and right as well as over and short.
+    name: "over-short-field-map",
+    path: "/over-short",
+    go: async (page) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await openShoot(page, /^F1 Registration/);
+      await fireAt(page, "25", "keys");
+      await waitForGun(page);
+      await page.getByRole("tab", { name: /^Map/ }).click();
+    },
+  },
+  { name: "over-short-duel", path: "/over-short", go: (page) => page.getByRole("button", { name: /^Counter-Battery Duel/ }).click() },
+  {
+    name: "over-short-duel-ridge",
+    path: "/over-short",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^Counter-Battery Duel/ }).click();
+      await page.getByRole("button", { name: /To the guns/ }).click();
+      await page.waitForTimeout(2500);
+    },
+  },
+  { name: "over-short-daily", path: "/over-short", go: (page) => page.getByRole("button", { name: /^Daily Barrage/ }).click() },
+  {
+    name: "over-short-gunner",
+    path: "/over-short",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^The 1970s/ }).click();
+      await page.getByRole("button", { name: /^Gunner, 1973/ }).click();
+      await page.waitForTimeout(500);
+      await page.keyboard.press("Space");
+      await page.keyboard.type("30");
+      await page.keyboard.press("Enter");
+      await page.keyboard.press("Space");
+    },
+  },
+  {
+    name: "over-short-cannoneer",
+    path: "/over-short",
+    go: async (page) => {
+      await page.getByRole("button", { name: /^The 1970s/ }).click();
+      await page.getByRole("button", { name: /Cannoneer, IBM PC/ }).click();
+      await page.waitForTimeout(1500);
+      await page.keyboard.type("25");
+      await page.keyboard.press("Enter");
+      await page.waitForTimeout(3500);
+    },
+  },
   { name: "ten-turns-menu", path: "/ten-turns", go: (page) => page.waitForTimeout(2500) },
   { name: "ten-turns-chapters", path: "/ten-turns", go: openChapters },
   {
@@ -377,6 +438,14 @@ async function toTheCards(page: Page) {
     await page.waitForTimeout(600);
   }
   await page.waitForTimeout(800);
+}
+
+/** Over / Short: a Field Artillery shoot's briefing, then at the gun. */
+async function openShoot(page: Page, title: RegExp) {
+  await page.getByRole("button", { name: /^Field Artillery/ }).click();
+  await page.getByRole("button", { name: title }).click();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(2500);
 }
 
 /** Ten Turns: choose Tactics on the game menu and open the chapter map. */

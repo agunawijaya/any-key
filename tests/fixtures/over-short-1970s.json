@@ -1,0 +1,913 @@
+{
+ "about": "Gunner (GUNNER.BAS) and Cannoneer (CANNON.BAS) run unmodified in PC-BASIC, a GW-BASIC interpreter, on 2026-10-10, with these lines typed at their prompts. Only what happened is kept, as kinds and numbers: none of the programs' words.",
+ "runs": [
+  {
+   "name": "gunner-calculator",
+   "program": "gunner",
+   "typed": [
+    "19.2132",
+    "26.3335",
+    "21.5720",
+    "23.8281",
+    "4.5727",
+    "N"
+   ],
+   "events": [
+    {
+     "kind": "gun",
+     "range": 24854
+    },
+    {
+     "kind": "target",
+     "distance": 15446
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 19761
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 16995
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 18369
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 3950
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "total",
+     "rounds": 5
+    },
+    {
+     "kind": "again",
+     "yes": false
+    }
+   ]
+  },
+  {
+   "name": "gunner-quirks",
+   "program": "gunner",
+   "typed": [
+    "abc",
+    "",
+    "0",
+    "90",
+    "-5",
+    "89",
+    "1",
+    "12.5",
+    "19.0650",
+    "19.2132",
+    "60",
+    "60",
+    "60",
+    "60",
+    "60",
+    "60",
+    "y"
+   ],
+   "events": [
+    {
+     "kind": "gun",
+     "range": 24854
+    },
+    {
+     "kind": "target",
+     "distance": 15446
+    },
+    {
+     "kind": "not-a-number"
+    },
+    {
+     "kind": "refused",
+     "too": "low"
+    },
+    {
+     "kind": "refused",
+     "too": "low"
+    },
+    {
+     "kind": "refused",
+     "too": "high"
+    },
+    {
+     "kind": "refused",
+     "too": "low"
+    },
+    {
+     "kind": "short",
+     "distance": 14572
+    },
+    {
+     "kind": "short",
+     "distance": 14578
+    },
+    {
+     "kind": "short",
+     "distance": 4942
+    },
+    {
+     "kind": "over",
+     "distance": 100
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 5
+    },
+    {
+     "kind": "target",
+     "distance": 19761
+    },
+    {
+     "kind": "over",
+     "distance": 1766
+    },
+    {
+     "kind": "over",
+     "distance": 1766
+    },
+    {
+     "kind": "over",
+     "distance": 1766
+    },
+    {
+     "kind": "over",
+     "distance": 1766
+    },
+    {
+     "kind": "over",
+     "distance": 1766
+    },
+    {
+     "kind": "found"
+    },
+    {
+     "kind": "again",
+     "yes": false
+    }
+   ]
+  },
+  {
+   "name": "gunner-slow",
+   "program": "gunner",
+   "typed": [
+    "60",
+    "60",
+    "60",
+    "19.2132",
+    "60",
+    "60",
+    "60",
+    "26.3335",
+    "60",
+    "60",
+    "60",
+    "21.5720",
+    "60",
+    "60",
+    "60",
+    "23.8281",
+    "60",
+    "60",
+    "60",
+    "4.5727",
+    "Y",
+    "13.8107",
+    "60",
+    "60",
+    "60",
+    "60",
+    "60",
+    "60",
+    "N"
+   ],
+   "events": [
+    {
+     "kind": "gun",
+     "range": 24854
+    },
+    {
+     "kind": "target",
+     "distance": 15446
+    },
+    {
+     "kind": "over",
+     "distance": 6081
+    },
+    {
+     "kind": "over",
+     "distance": 6081
+    },
+    {
+     "kind": "over",
+     "distance": 6081
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 19761
+    },
+    {
+     "kind": "over",
+     "distance": 1766
+    },
+    {
+     "kind": "over",
+     "distance": 1766
+    },
+    {
+     "kind": "over",
+     "distance": 1766
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 16995
+    },
+    {
+     "kind": "over",
+     "distance": 4532
+    },
+    {
+     "kind": "over",
+     "distance": 4532
+    },
+    {
+     "kind": "over",
+     "distance": 4532
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 18369
+    },
+    {
+     "kind": "over",
+     "distance": 3158
+    },
+    {
+     "kind": "over",
+     "distance": 3158
+    },
+    {
+     "kind": "over",
+     "distance": 3158
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 3950
+    },
+    {
+     "kind": "over",
+     "distance": 17577
+    },
+    {
+     "kind": "over",
+     "distance": 17577
+    },
+    {
+     "kind": "over",
+     "distance": 17577
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "total",
+     "rounds": 20
+    },
+    {
+     "kind": "again",
+     "yes": true
+    },
+    {
+     "kind": "gun",
+     "range": 39612
+    },
+    {
+     "kind": "target",
+     "distance": 18364
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 7359
+    },
+    {
+     "kind": "over",
+     "distance": 26950
+    },
+    {
+     "kind": "over",
+     "distance": 26950
+    },
+    {
+     "kind": "over",
+     "distance": 26950
+    },
+    {
+     "kind": "over",
+     "distance": 26950
+    },
+    {
+     "kind": "over",
+     "distance": 26950
+    },
+    {
+     "kind": "found"
+    },
+    {
+     "kind": "again",
+     "yes": false
+    }
+   ]
+  },
+  {
+   "name": "cannoneer-calculator",
+   "program": "cannoneer",
+   "typed": [
+    "19.2128",
+    "26.3315",
+    "21.5698",
+    "23.8273",
+    "4.5717",
+    "N"
+   ],
+   "events": [
+    {
+     "kind": "gun",
+     "range": 10485
+    },
+    {
+     "kind": "target",
+     "distance": 6516
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 8336
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 7169
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 7749
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 1666
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "total",
+     "rounds": 5
+    },
+    {
+     "kind": "again",
+     "yes": false
+    }
+   ]
+  },
+  {
+   "name": "cannoneer-quirks",
+   "program": "cannoneer",
+   "typed": [
+    "abc",
+    "",
+    "0",
+    "90",
+    "-5",
+    "89",
+    "1",
+    "12.5",
+    "18.8624",
+    "19.2128",
+    "60",
+    "60",
+    "60",
+    "60",
+    "60",
+    "60",
+    "y",
+    "60",
+    "60",
+    "60",
+    "23.8277",
+    "60",
+    "60",
+    "60",
+    "4.5722",
+    "60",
+    "60",
+    "60",
+    "14.7444",
+    "60",
+    "60",
+    "60",
+    "13.8102",
+    "60",
+    "60",
+    "5.3535",
+    "Y",
+    "20.7696",
+    "15.8498",
+    "30.6377",
+    "10.4492",
+    "29.9364",
+    "N"
+   ],
+   "events": [
+    {
+     "kind": "gun",
+     "range": 10485
+    },
+    {
+     "kind": "target",
+     "distance": 6516
+    },
+    {
+     "kind": "not-a-number"
+    },
+    {
+     "kind": "refused",
+     "too": "low"
+    },
+    {
+     "kind": "refused",
+     "too": "low"
+    },
+    {
+     "kind": "refused",
+     "too": "high"
+    },
+    {
+     "kind": "refused",
+     "too": "low"
+    },
+    {
+     "kind": "short",
+     "distance": 6147
+    },
+    {
+     "kind": "short",
+     "distance": 6150
+    },
+    {
+     "kind": "short",
+     "distance": 2085
+    },
+    {
+     "kind": "over",
+     "distance": 100
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 5
+    },
+    {
+     "kind": "target",
+     "distance": 8336
+    },
+    {
+     "kind": "over",
+     "distance": 746
+    },
+    {
+     "kind": "over",
+     "distance": 746
+    },
+    {
+     "kind": "over",
+     "distance": 746
+    },
+    {
+     "kind": "over",
+     "distance": 746
+    },
+    {
+     "kind": "over",
+     "distance": 746
+    },
+    {
+     "kind": "found"
+    },
+    {
+     "kind": "again",
+     "yes": true
+    },
+    {
+     "kind": "gun",
+     "range": 12919
+    },
+    {
+     "kind": "target",
+     "distance": 9548
+    },
+    {
+     "kind": "over",
+     "distance": 1642
+    },
+    {
+     "kind": "over",
+     "distance": 1642
+    },
+    {
+     "kind": "over",
+     "distance": 1642
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 2053
+    },
+    {
+     "kind": "over",
+     "distance": 9137
+    },
+    {
+     "kind": "over",
+     "distance": 9137
+    },
+    {
+     "kind": "over",
+     "distance": 9137
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 6359
+    },
+    {
+     "kind": "over",
+     "distance": 4831
+    },
+    {
+     "kind": "over",
+     "distance": 4831
+    },
+    {
+     "kind": "over",
+     "distance": 4831
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 5989
+    },
+    {
+     "kind": "over",
+     "distance": 5201
+    },
+    {
+     "kind": "over",
+     "distance": 5201
+    },
+    {
+     "kind": "over",
+     "distance": 5201
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 2400
+    },
+    {
+     "kind": "over",
+     "distance": 8790
+    },
+    {
+     "kind": "over",
+     "distance": 8790
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 3
+    },
+    {
+     "kind": "total",
+     "rounds": 19
+    },
+    {
+     "kind": "again",
+     "yes": true
+    },
+    {
+     "kind": "gun",
+     "range": 13802
+    },
+    {
+     "kind": "target",
+     "distance": 9152
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 7252
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 12103
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 4923
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 11937
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "total",
+     "rounds": 5
+    },
+    {
+     "kind": "again",
+     "yes": false
+    }
+   ]
+  },
+  {
+   "name": "cannoneer-slow",
+   "program": "cannoneer",
+   "typed": [
+    "60",
+    "60",
+    "60",
+    "19.2128",
+    "60",
+    "60",
+    "60",
+    "26.3315",
+    "60",
+    "60",
+    "60",
+    "21.5698",
+    "60",
+    "60",
+    "60",
+    "23.8273",
+    "60",
+    "60",
+    "60",
+    "4.5717",
+    "Y",
+    "13.8105",
+    "60",
+    "60",
+    "60",
+    "60",
+    "60",
+    "60",
+    "N"
+   ],
+   "events": [
+    {
+     "kind": "gun",
+     "range": 10485
+    },
+    {
+     "kind": "target",
+     "distance": 6516
+    },
+    {
+     "kind": "over",
+     "distance": 2566
+    },
+    {
+     "kind": "over",
+     "distance": 2566
+    },
+    {
+     "kind": "over",
+     "distance": 2566
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 8336
+    },
+    {
+     "kind": "over",
+     "distance": 746
+    },
+    {
+     "kind": "over",
+     "distance": 746
+    },
+    {
+     "kind": "over",
+     "distance": 746
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 7169
+    },
+    {
+     "kind": "over",
+     "distance": 1913
+    },
+    {
+     "kind": "over",
+     "distance": 1913
+    },
+    {
+     "kind": "over",
+     "distance": 1913
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 7749
+    },
+    {
+     "kind": "over",
+     "distance": 1333
+    },
+    {
+     "kind": "over",
+     "distance": 1333
+    },
+    {
+     "kind": "over",
+     "distance": 1333
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "target",
+     "distance": 1666
+    },
+    {
+     "kind": "over",
+     "distance": 7416
+    },
+    {
+     "kind": "over",
+     "distance": 7416
+    },
+    {
+     "kind": "over",
+     "distance": 7416
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 4
+    },
+    {
+     "kind": "total",
+     "rounds": 20
+    },
+    {
+     "kind": "again",
+     "yes": true
+    },
+    {
+     "kind": "gun",
+     "range": 11961
+    },
+    {
+     "kind": "target",
+     "distance": 5545
+    },
+    {
+     "kind": "destroyed",
+     "rounds": 1
+    },
+    {
+     "kind": "target",
+     "distance": 2222
+    },
+    {
+     "kind": "over",
+     "distance": 8138
+    },
+    {
+     "kind": "over",
+     "distance": 8138
+    },
+    {
+     "kind": "over",
+     "distance": 8138
+    },
+    {
+     "kind": "over",
+     "distance": 8138
+    },
+    {
+     "kind": "over",
+     "distance": 8138
+    },
+    {
+     "kind": "found"
+    },
+    {
+     "kind": "again",
+     "yes": false
+    }
+   ]
+  }
+ ]
+}

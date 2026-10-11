@@ -4,11 +4,16 @@ import { useSyncExternalStore } from "react";
 import { forgetGame } from "@/lib/kit/forget";
 import { createProgress, withoutAchievements } from "@/lib/kit/progress";
 import { createStore } from "@/lib/kit/save";
+import type { DuelEngagement, DuelSide, Commander } from "./duel";
 import type { Engagement, Shot, TableRow } from "./engagement";
+import type { Difficulty, FieldEngagement } from "./field";
+import { fieldMedalFor, fieldMissionById, type FieldMedal } from "./fieldMissions";
 import { overShortManifest } from "./manifest";
 import { missionById, MISSIONS, type Medal } from "./missions";
 import { verdictOf, type PlayStyleId, type Session } from "./playstyles";
+import type { Program } from "./terminal";
 import type { Units } from "./words";
+import { heightAt as terrainHeight } from "./terrain";
 
 /** Everything Over / Short remembers lives in this browser only, in the kit store `anykey.over-short.save`. */
 
@@ -23,9 +28,17 @@ export type Settings = {
   camera: "follow" | "fixed";
   /** The Campaign assist: where the textbook formula says a round will land. */
   hint: boolean;
+  /** Field Artillery and the duel: the wind, the observer's eye, the enemy's speed. */
+  difficulty: Difficulty;
 };
 
 export type MissionRecord = { tries: number; wins: number; best: number | null; medal: Medal | null };
+
+export type FieldRecord = { tries: number; wins: number; best: { rounds: number; seconds: number } | null; medal: FieldMedal | null };
+
+export type DailyRecord = { number: number; won: boolean; rounds: number; marks: string };
+
+export type TerminalRecord = { wars: number; finished: number; best: number | null };
 
 export type Progress = {
   classic: { games: number; complete: number; standard: number; best: number | null; targets: number; firstRoundHits: number };
@@ -34,6 +47,12 @@ export type Progress = {
     /** The battery gun's range table, from every round it has fired with a distance reported (Chapters 4 and 5). */
     table: TableRow[];
   };
+  /** Field Artillery's missions, kept per difficulty: "F3/normal". */
+  field: { missions: Record<string, FieldRecord> };
+  duel: { played: number; won: number; drawn: number; hotSeat: number; beat: Record<Commander, number> };
+  /** Daily Barrages played to an end, by local date. */
+  daily: Record<string, DailyRecord>;
+  terminals: Record<Program, TerminalRecord>;
   achievements: string[];
   settings: Settings;
 };
@@ -41,8 +60,12 @@ export type Progress = {
 const EMPTY: Progress = {
   classic: { games: 0, complete: 0, standard: 0, best: null, targets: 0, firstRoundHits: 0 },
   campaign: { missions: {}, table: [] },
+  field: { missions: {} },
+  duel: { played: 0, won: 0, drawn: 0, hotSeat: 0, beat: { cautious: 0, aggressive: 0, methodical: 0 } },
+  daily: {},
+  terminals: { gunner: { wars: 0, finished: 0, best: null }, cannoneer: { wars: 0, finished: 0, best: null } },
   achievements: [],
-  settings: { style: "classic", era: "great-war", units: "m", precision: 0.1, camera: "follow", hint: false },
+  settings: { style: "classic", era: "great-war", units: "m", precision: 0.1, camera: "follow", hint: false, difficulty: "normal" },
 };
 
 type Saved = Omit<Progress, "achievements">;
@@ -55,16 +78,25 @@ export const overShortStore = createStore<Saved>(overShortManifest.id, {
     ...saved,
     classic: { ...EMPTY.classic, ...saved.classic },
     campaign: { ...EMPTY.campaign, ...saved.campaign },
+    field: { ...EMPTY.field, ...saved.field },
+    duel: { ...EMPTY.duel, ...saved.duel, beat: { ...EMPTY.duel.beat, ...saved.duel?.beat } },
+    daily: saved.daily ?? {},
+    terminals: { gunner: { ...EMPTY.terminals.gunner, ...saved.terminals?.gunner }, cannoneer: { ...EMPTY.terminals.cannoneer, ...saved.terminals?.cannoneer } },
     settings: { ...EMPTY.settings, ...saved.settings },
   }),
 });
 
+const sum = <T>(records: Record<string, T>, count: (r: T) => number) => Object.values(records).reduce((n, r) => n + count(r), 0);
+
 const progress = createProgress<Progress>(overShortManifest.id, overShortStore, {
   play: (before, after) => {
-    const played = (p: Progress) => p.classic.games + Object.values(p.campaign.missions).reduce((n, m) => n + m.tries, 0);
-    const won = (p: Progress) => p.classic.complete + Object.values(p.campaign.missions).reduce((n, m) => n + m.wins, 0);
+    const played = (p: Progress) =>
+      p.classic.games + sum(p.campaign.missions, (m) => m.tries) + sum(p.field.missions, (m) => m.tries) + p.duel.played + Object.keys(p.daily).length + p.terminals.gunner.wars + p.terminals.cannoneer.wars;
+    const won = (p: Progress) =>
+      p.classic.complete + sum(p.campaign.missions, (m) => m.wins) + sum(p.field.missions, (m) => m.wins) + p.duel.won + sum(p.daily, (d) => (d.won ? 1 : 0)) + p.terminals.gunner.finished + p.terminals.cannoneer.finished;
     return played(after) > played(before) ? { won: won(after) > won(before) } : null;
   },
+  dailies: (p) => p.daily,
 });
 
 export const getProgress = progress.get;
@@ -174,4 +206,95 @@ function campaignKeycaps(missionId: string, e: Engagement, won: boolean): string
   if (e.targets.some((t, i) => t.speed !== 0 && e.shots.filter((s) => s.target === i).slice(0, 2).some((s) => s.hit))) ids.push("moving-target");
   if (won && e.rules.counterfire) ids.push("counter-battery");
   return ids;
+}
+
+/* ---------- Field Artillery, the duel, the Daily and the terminals ---------- */
+
+const FIELD_MEDAL_RANK: Record<FieldMedal, number> = { bronze: 1, silver: 2, gold: 3 };
+const betterField = (a: FieldMedal | null, b: FieldMedal | null) => (!a ? b : !b ? a : FIELD_MEDAL_RANK[a] >= FIELD_MEDAL_RANK[b] ? a : b);
+
+/** The keycaps any finished Field Artillery engagement can earn, mission or Daily. */
+function fieldKeycaps(next: Progress, e: FieldEngagement): Progress {
+  const won = e.outcome === "won";
+  const target = e.targets[0];
+  let p = next;
+  // A crest between gun and target, and a hit on it with one of the two smallest charges.
+  if (won && e.shots.some((s) => s.hit && s.aim.charge <= 2) && hasCrest(e)) p = withAchievement(p, "charge-two");
+  // A hit on the round after the observer called the line off by fifty or more.
+  if (e.shots.some((s, i) => s.hit && i > 0 && e.shots[i - 1].report.kind === "correction" && (() => { const r = e.shots[i - 1].report; return r.kind === "correction" && (r.line?.metres ?? 0) >= 50; })())) p = withAchievement(p, "left-fifty");
+  if (won && target.kind === "bridge" && e.rules.deadline !== null) p = withAchievement(p, "bridge-down");
+  if (won && e.rules.smoke.length > 0 && e.shots.some((s) => s.report.kind === "lost")) p = withAchievement(p, "smoke-and-mirrors");
+  if (won && e.enemyRounds.some((r) => r.emptyPit)) p = withAchievement(p, "moving-day");
+  return p;
+}
+
+/** Whether the ground rises above the line from the gun to the target anywhere between. */
+function hasCrest(e: FieldEngagement) {
+  const t = e.targets[0];
+  const ground = (x: number) => heightAtTerrain(e, x);
+  const from = ground(0);
+  const to = ground(t.x);
+  for (let x = 200; x < t.x - 60; x += 25) if (ground(x) - (from + ((to - from) * x) / t.x) > 30) return true;
+  return false;
+}
+
+const heightAtTerrain = (e: FieldEngagement, x: number) => terrainHeight(e.rules.terrain, x);
+
+/** What a finished Field Artillery mission records. */
+export function afterField(p: Progress, mission: string, difficulty: Difficulty, e: FieldEngagement): Progress {
+  const spec = fieldMissionById(mission);
+  if (!spec) return p;
+  const key = `${mission}/${difficulty}`;
+  const old = p.field.missions[key] ?? { tries: 0, wins: 0, best: null, medal: null };
+  const won = e.outcome === "won";
+  const medal = won ? fieldMedalFor(spec, e.shots.length, e.time) : null;
+  const faster = won && (!old.best || e.shots.length < old.best.rounds || (e.shots.length === old.best.rounds && e.time < old.best.seconds));
+  const record: FieldRecord = {
+    tries: old.tries + 1,
+    wins: old.wins + (won ? 1 : 0),
+    best: faster ? { rounds: e.shots.length, seconds: Math.round(e.time) } : old.best,
+    medal: betterField(old.medal, medal),
+  };
+  return fieldKeycaps({ ...p, field: { missions: { ...p.field.missions, [key]: record } } }, e);
+}
+
+/** What a finished Daily Barrage records: its first finish on the day stands. */
+export function afterDaily(p: Progress, key: string, number: number, e: FieldEngagement, marks: string): Progress {
+  if (p.daily[key]) return fieldKeycaps(p, e);
+  const daily = { ...p.daily, [key]: { number, won: e.outcome === "won", rounds: e.shots.length, marks } };
+  let next = fieldKeycaps({ ...p, daily }, e);
+  if (Object.values(daily).filter((d) => d.won).length >= 7) next = withAchievement(next, "daily-gunner");
+  return next;
+}
+
+/** What a finished duel records, for the human side or sides. */
+export function afterDuel(p: Progress, e: DuelEngagement): Progress {
+  const humans = (["west", "east"] as const).filter((side) => e[side].player === "player");
+  const hotSeat = humans.length === 2;
+  const human: DuelSide | undefined = humans[0];
+  const computer = !hotSeat && human ? e[human === "west" ? "east" : "west"].player : null;
+  const won = !hotSeat && human !== undefined && e.winner === human;
+  const beat = { ...p.duel.beat };
+  if (won && computer && computer !== "player") beat[computer] += 1;
+  let next: Progress = {
+    ...p,
+    duel: {
+      played: p.duel.played + 1,
+      won: p.duel.won + (won ? 1 : 0),
+      drawn: p.duel.drawn + (e.winner === "draw" ? 1 : 0),
+      hotSeat: p.duel.hotSeat + (hotSeat ? 1 : 0),
+      beat,
+    },
+  };
+  if (won) next = withAchievement(next, "duelist");
+  return next;
+}
+
+/** What a war on a 1970s terminal records: begun, and finished (all five targets down) with its total. */
+export function afterTerminal(p: Progress, program: Program, finished: boolean, total: number): Progress {
+  const old = p.terminals[program];
+  const record: TerminalRecord = { wars: old.wars + 1, finished: old.finished + (finished ? 1 : 0), best: finished ? Math.min(old.best ?? Infinity, total) : old.best };
+  let next: Progress = { ...p, terminals: { ...p.terminals, [program]: record } };
+  if (next.terminals.gunner.finished > 0 && next.terminals.cannoneer.finished > 0) next = withAchievement(next, "old-terminals");
+  return next;
 }

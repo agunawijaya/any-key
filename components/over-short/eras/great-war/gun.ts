@@ -7,9 +7,10 @@ import type { GunPose } from "../types";
  * A Great War field gun side-on, facing right: big spoked wooden wheels, a
  * steel shield, the barrel with its recoil cylinder above it, and the box
  * trail running back to a spade in the mud. Its crew stand round it: one at
- * the sight, one with a round ready, one holding the lanyard. Drawn at any
- * size from the wheel's diameter; elevation turns the barrel, recoil throws
- * it back along its own line.
+ * the sight, one with a round ready, one holding the lanyard. When rounds
+ * come down close they get down behind the shield, arms over their helmets.
+ * Drawn at any size from the wheel's diameter; elevation turns the barrel,
+ * recoil throws it back along its own line.
  */
 
 
@@ -43,13 +44,21 @@ export function drawFieldGun(ctx: Ctx, x: number, y: number, wheel: number, pose
   const c = COLORS[appearance];
   const r = wheel / 2;
   const axle = { x, y: y - r };
-  crewMember(ctx, x - wheel * 2.1, y, wheel, c, "kneel");
+  const ducking = pose.crew === "ducking";
+  if (ducking) prone(ctx, x - wheel * 2.2, y, wheel, c);
+  else crewMember(ctx, x - wheel * 2.1, y, wheel, c, "kneel");
   trail(ctx, axle, x - wheel * 2.3, y, wheel, c);
   barrel(ctx, axle, wheel, pose, c);
   shield(ctx, axle, wheel, c);
   wheelOf(ctx, axle, r, c);
-  crewMember(ctx, x - wheel * 0.95, y, wheel, c, "sight");
-  crewMember(ctx, x + wheel * 0.95, y, wheel, c, "stand");
+  if (ducking) {
+    // Down behind the shield and the wheel, the only cover the gun has.
+    cowering(ctx, x - wheel * 0.62, y, wheel, c);
+    cowering(ctx, x - wheel * 1.3, y, wheel, c);
+  } else {
+    crewMember(ctx, x - wheel * 0.95, y, wheel, c, "sight");
+    crewMember(ctx, x + wheel * 0.95, y, wheel, c, "stand");
+  }
 }
 
 /** The muzzle at rest, from the point the gun is drawn at: the barrel pivots above the axle and reaches 1.85 wheels out. */
@@ -222,6 +231,113 @@ function crewMember(ctx: Ctx, x: number, groundY: number, wheel: number, c: GunC
   ctx.moveTo(-h * 0.12 + bend * h * 0.5, -h * 0.84);
   ctx.lineTo(-h * 0.14, hip);
   ctx.stroke();
+  ctx.restore();
+}
+
+/** Draws a pose as thick round strokes, in units of a standing man's height `h`, so it reads at a few dozen pixels. */
+function strokes(ctx: Ctx, h: number) {
+  return (width: number, color: Rgb, points: [number, number][]) => {
+    ctx.strokeStyle = css(color);
+    ctx.lineWidth = Math.max(1, h * width);
+    ctx.beginPath();
+    points.forEach(([px, py], i) => (i ? ctx.lineTo(px * h, py * h) : ctx.moveTo(px * h, py * h)));
+    ctx.stroke();
+  };
+}
+
+/** A steel helmet over a head at (x, y), tipped forward by `tilt` radians: a shallow dome on a broad flat brim. */
+function helmet(ctx: Ctx, x: number, y: number, h: number, tilt: number, c: GunColors) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tilt);
+  ctx.fillStyle = css(mix(c.steelDark, c.iron, 0.4));
+  ctx.beginPath();
+  ctx.ellipse(0, -h * 0.035, h * 0.085, h * 0.065, 0, Math.PI, 0);
+  ctx.fill();
+  ctx.fillRect(-h * 0.155, -h * 0.045, h * 0.31, h * 0.03);
+  ctx.strokeStyle = css(c.rim, 0.6);
+  ctx.lineWidth = Math.max(0.8, h * 0.022);
+  ctx.beginPath();
+  ctx.ellipse(0, -h * 0.035, h * 0.085, h * 0.065, 0, Math.PI * 1.1, Math.PI * 1.9);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/** Down on one knee facing the gun, hunched right over, an arm thrown across the helmet. */
+function cowering(ctx: Ctx, x: number, groundY: number, wheel: number, c: GunColors) {
+  const h = wheel * 1.45;
+  const limb = strokes(ctx, h);
+  ctx.save();
+  ctx.translate(x, groundY);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  // The knee down and the shin lying back along the ground; the other foot planted, its knee up.
+  limb(0.08, c.crewDark, [
+    [-0.22, -0.03],
+    [0.04, -0.04],
+  ]);
+  limb(0.09, c.crewDark, [
+    [0.16, -0.03],
+    [0.16, -0.19],
+    [-0.06, -0.2],
+  ]);
+  // The greatcoat's skirt, then the back bent forward over the knees.
+  ctx.fillStyle = css(c.crew);
+  ctx.beginPath();
+  ctx.moveTo(-0.07 * h, -0.24 * h);
+  ctx.lineTo(-0.17 * h, -0.07 * h);
+  ctx.lineTo(0.02 * h, -0.13 * h);
+  ctx.closePath();
+  ctx.fill();
+  limb(0.19, c.crew, [
+    [-0.06, -0.21],
+    [0.13, -0.36],
+  ]);
+  // Head down in front of the shoulders, an arm across it, the helmet over both.
+  ctx.fillStyle = css(c.crew);
+  ctx.beginPath();
+  ctx.arc(0.23 * h, -0.31 * h, h * 0.052, 0, Math.PI * 2);
+  ctx.fill();
+  limb(0.07, shade(c.crew, 1.06), [
+    [0.1, -0.37],
+    [0.18, -0.43],
+    [0.29, -0.4],
+  ]);
+  helmet(ctx, 0.24 * h, -0.34 * h, h, 0.62, c);
+  ctx.restore();
+}
+
+/** Flat on the ground behind the gun, face down, hands over the helmet. */
+function prone(ctx: Ctx, x: number, groundY: number, wheel: number, c: GunColors) {
+  const h = wheel * 1.45;
+  const limb = strokes(ctx, h);
+  ctx.save();
+  ctx.translate(x, groundY);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  limb(0.075, c.crewDark, [
+    [-0.66, -0.035],
+    [-0.28, -0.05],
+  ]);
+  limb(0.075, c.crewDark, [
+    [-0.62, -0.08],
+    [-0.42, -0.06],
+    [-0.28, -0.06],
+  ]);
+  limb(0.16, c.crew, [
+    [-0.3, -0.07],
+    [0.06, -0.09],
+  ]);
+  ctx.fillStyle = css(c.crew);
+  ctx.beginPath();
+  ctx.arc(0.16 * h, -0.07 * h, h * 0.05, 0, Math.PI * 2);
+  ctx.fill();
+  limb(0.065, shade(c.crew, 1.06), [
+    [0.04, -0.12],
+    [0.15, -0.2],
+    [0.24, -0.14],
+  ]);
+  helmet(ctx, 0.18 * h, -0.1 * h, h, 1.1, c);
   ctx.restore();
 }
 

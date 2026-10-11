@@ -40,6 +40,8 @@ export type Particle = {
   billow?: "above" | "below";
   /** Smoke only: the colour it fades to as it ages, like smoke cooling as it leaves the fire. */
   cools?: Rgb;
+  /** Smoke and dust only: pale spray that the star shells light up, so the night does not darken it. */
+  pale?: boolean;
   /** Where along x the effect it belongs to started: the point it is drawn larger around (see `magnify`). */
   ax: number;
 };
@@ -247,7 +249,7 @@ function drawParticle(ctx: Ctx, p: Particle, at: Projected, night: number) {
       const fireLit = p.billow === "below" && night > 0.5;
       const born = fireLit && p.cools ? mix(p.color, p.cools, smoothstep(0, 0.28, t)) : (p.cools ?? p.color);
       // Unlit smoke at night is a dark shape against the sky; smoke lit by a fire below keeps its glow.
-      const darken = fireLit ? night * smoothstep(0.08, 0.35, t) : night;
+      const darken = p.pale ? night * 0.35 : fireLit ? night * smoothstep(0.08, 0.35, t) : night;
       const color = darken > 0 ? mix(born, [born[0] * 0.28, born[1] * 0.3, born[2] * 0.36], darken) : born;
       const sprite = puff(Math.floor(p.seed * PUFF_VARIANTS), color, p.billow ? (fireLit ? "below" : "above") : undefined);
       ctx.save();

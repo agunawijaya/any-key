@@ -1,0 +1,245 @@
+/* Field Artillery's own panels: the charge and line controls, the observer's map from above, the firing table. */
+
+.aimPanel {
+  display: grid;
+  gap: 12px;
+}
+
+.charges,
+.line {
+  display: grid;
+  gap: 6px;
+}
+
+.segments {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  padding: 3px;
+  border-radius: 12px;
+  border: 1px solid var(--os-line);
+  background: var(--os-paper-2);
+}
+
+.segment {
+  display: grid;
+  gap: 1px;
+  justify-items: center;
+  padding: 5px 0 6px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--os-ink-2);
+  cursor: pointer;
+  font: 600 15px/1.1 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.segment small {
+  font: 500 10.5px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.02em;
+  opacity: 0.8;
+}
+
+.segment[aria-checked="true"] {
+  background: var(--os-accent);
+  color: var(--os-on-accent);
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--os-accent) 55%, black 45%);
+}
+
+.segment:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.segment:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.lineRow {
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  gap: 6px;
+}
+
+.lineRow button {
+  justify-content: center;
+  min-height: 38px;
+  padding: 0;
+}
+
+.lineValue {
+  text-align: center;
+  font: 400 26px/1 var(--font-instrument), Georgia, serif;
+  color: var(--os-ink);
+}
+
+.lineValue small {
+  font: 500 12px/1 var(--font-geist-mono), monospace;
+  color: var(--os-ink-2);
+}
+
+.lineNote {
+  margin: 0;
+  color: var(--os-ink-2);
+  font: 450 12.5px/1.3 var(--font-geist-sans), system-ui, sans-serif;
+  text-align: center;
+}
+
+.smokeNote {
+  margin: 0;
+  color: var(--os-ink-2);
+  font: 450 12.5px/1.35 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* ---------- The observer's map from above ---------- */
+
+.map {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.map svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.paper {
+  fill: var(--os-paper);
+  stroke: var(--os-line);
+}
+
+.grid {
+  stroke: var(--os-line);
+  stroke-width: 1;
+}
+
+.gridMain {
+  stroke: var(--os-line-strong);
+  stroke-width: 1.2;
+}
+
+.edge {
+  fill: var(--os-ink-2);
+  font: 600 10px/1 var(--font-geist-mono), monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.scale {
+  fill: var(--os-ink-3);
+  font: 500 9.5px/1 var(--font-geist-mono), monospace;
+}
+
+.radius {
+  fill: color-mix(in srgb, var(--os-hit) 18%, transparent);
+  stroke: var(--os-hit);
+  stroke-dasharray: 3 3;
+}
+
+.targetMark {
+  fill: var(--os-stamp);
+}
+
+.fall circle,
+.flash circle {
+  fill: var(--os-paper);
+  stroke: var(--os-ink);
+  stroke-width: 1.6;
+}
+
+.fall[data-hit="true"] circle {
+  fill: var(--os-hit);
+  stroke: var(--os-hit);
+}
+
+.flash circle {
+  stroke-dasharray: 3 2;
+}
+
+.fall text,
+.flash text {
+  fill: var(--os-ink);
+  font: 700 10.5px/1 var(--font-geist-mono), monospace;
+}
+
+.fall[data-hit="true"] text {
+  fill: var(--os-paper);
+}
+
+.calls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  color: var(--os-ink-2);
+  font: 500 12px/1.3 var(--font-geist-mono), monospace;
+}
+
+/* ---------- The firing table ---------- */
+
+.table {
+  display: grid;
+  gap: 8px;
+}
+
+.tableTitle {
+  margin: 0;
+  color: var(--os-accent-ink);
+  font: 600 11.5px/1.3 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.table table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 500 12.5px/1.2 var(--font-geist-mono), monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--os-line-strong);
+  color: var(--os-ink-2);
+  font-weight: 600;
+  text-align: right;
+}
+
+.table td {
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--os-line);
+  text-align: right;
+}
+
+.table th:first-child,
+.table td:first-child {
+  text-align: left;
+}
+
+.table tr[data-near="true"] td {
+  background: color-mix(in srgb, var(--os-accent) 16%, transparent);
+  color: var(--os-ink);
+  font-weight: 700;
+}
+
+.tableNote {
+  margin: 0;
+  color: var(--os-ink-2);
+  font: 450 12px/1.4 var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* ---------- The Daily's result ---------- */
+
+.share {
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--os-line);
+  background: var(--os-paper-2);
+  color: var(--os-ink);
+  font: 500 14px/1.5 var(--font-geist-mono), monospace;
+  white-space: pre-wrap;
+}

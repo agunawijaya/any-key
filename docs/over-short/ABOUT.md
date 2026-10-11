@@ -3,8 +3,9 @@
 You command a field gun on the Western Front. You can't see the target: you call an elevation, the gun fires, and
 a minute later a voice on the field telephone tells you where the round came down. Over. Short. Over, by less.
 Then: direct hit. Over / Short is one of the very first artillery games, written in 1973, rebuilt as a painted
-battlefield with a shell you can ride along its arc, an observer's field glasses, and a campaign that keeps taking
-away the thing you just learned to rely on.
+battlefield with a shell you can ride along its arc, an observer's field glasses, a campaign that keeps taking
+away the thing you just learned to rely on, and a full-physics battery with charges, wind and an enemy gun hunting
+yours.
 
 ## The game
 
@@ -17,6 +18,11 @@ bracket, and the next round goes in between.
 The moment people talk about afterwards is the dump going up: the round lands square on the stacked shells, the
 first blast throws timber into the air, and then the secondaries go off one after another while a column of black
 smoke climbs out of the glasses.
+
+In Field Artillery the other side shoots back. Their rounds walk in on your gun, each closer than the last; the
+view comes in close as one lands beside the pit, the crew get down and earth comes down on them. Then the team of
+horses comes up, the gun is hooked to its limber and hauled down the road, and their next round falls on the empty
+pit.
 
 ## What's new
 
@@ -31,7 +37,15 @@ smoke climbs out of the glasses.
 - **The observer's map**: every fall of shot plotted with its round number, so the bracket shows.
 - **A painted Great War**: the gun and its crew, shell-scarred fields, a ruined farm, a church spire, an observation
   balloon and a spotter biplane; a grey overcast by day, star shells and gun flashes at night.
-- Twelve keycaps for the Keyring, from First Bracket to Fort Sill Graduate.
+- **Field Artillery**: four charges, an elevation and a line; real air, wind across the line of fire and real
+  hills; an observer who says "Add 200. Left 50."; ten shoots, from a target behind a crest to a bridge dropped by
+  night before a column crosses, with an enemy battery firing back on its own clock. Easy, Normal and Hard.
+- **Counter-Battery Duel**: two guns either side of a ridge, both firing at once, against a friend on the same screen
+  or a cautious, aggressive or methodical computer commander.
+- **Daily Barrage**: one shoot a day, the same for everyone, with a share line of over, short and hit marks.
+- **The 1970s**: Gunner and Cannoneer themselves, on a teletype and a green screen with its PC speaker, quirks and
+  all.
+- Twenty keycaps for the Keyring, from First Bracket to 1973 Gunner and Cannoneer.
 
 Everything that differs from 1973 is in [CHANGES-FROM-ORIGINAL.md](CHANGES-FROM-ORIGINAL.md).
 

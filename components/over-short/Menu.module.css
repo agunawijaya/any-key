@@ -1,11 +1,14 @@
 .menu {
-  width: min(470px, 100%);
-  margin-top: clamp(0px, 4vh, 48px);
+  width: min(640px, 100%);
+  margin-top: clamp(0px, 2vh, 32px);
+  gap: 14px;
+  padding-top: 22px;
+  padding-bottom: 20px;
 }
 
 .wordmark {
   margin: -4px 0 0;
-  font: 400 clamp(52px, 6.4vw, 76px) / 0.95 var(--font-instrument), Georgia, serif;
+  font: 400 clamp(48px, 5.6vw, 68px) / 0.95 var(--font-instrument), Georgia, serif;
   letter-spacing: -0.015em;
 }
 
@@ -14,11 +17,19 @@
   font-style: italic;
 }
 
+/* Six ways to play, two to a row. */
 .actions {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
 .actions button {
-  min-height: 64px;
+  min-height: 62px;
+}
+
+@media (max-width: 620px) {
+  .actions {
+    grid-template-columns: 1fr;
+  }
 }

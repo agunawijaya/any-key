@@ -13,7 +13,8 @@ import { buildMission, medalFor, missionById, type Medal, type MissionSpec } fro
 export type ClassicSession = { style: "classic"; seed: string };
 export type CampaignSession = { style: "campaign"; mission: string; seed: string };
 export type Session = ClassicSession | CampaignSession;
-export type PlayStyleId = Session["style"];
+/** Every way to play, as the menu remembers the last one chosen: the two above, and Field Artillery's family (see `field.ts`, `duel.ts`, `terminal.ts`). */
+export type PlayStyleId = Session["style"] | "field" | "duel" | "daily" | "terminals";
 
 export type Verdict = {
   won: boolean;

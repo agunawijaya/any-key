@@ -1,0 +1,191 @@
+/*
+ * The two terminals, each designed for both themes. Gunner's teletype: a
+ * roll of pale paper over a black platen, capitals in worn ink; by day a
+ * desk by a window, by night the same desk under a lamp. Cannoneer's IBM
+ * PC: a green-phosphor screen with its faint scanlines and glow, in a
+ * beige case by day and a charcoal one at night.
+ */
+
+.choose {
+  width: min(560px, 100%);
+}
+
+.options {
+  display: grid;
+  gap: 10px;
+}
+
+.options button {
+  min-height: 64px;
+}
+
+.room {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  padding: clamp(12px, 2vh, 24px) clamp(12px, 3vw, 48px) clamp(16px, 3vh, 32px);
+  --paper: #f1ead3;
+  --paper-edge: #ddd2b4;
+  --ink: #2c2a26;
+  --room: radial-gradient(120% 90% at 50% 20%, #e7e0cf 0%, #cfc6b1 70%, #bdb39c 100%);
+  --platen: #1d1c1b;
+  --case: #d6ccb6;
+  --case-edge: #b8ad94;
+  --phosphor: #7dff95;
+  --phosphor-dim: rgb(125 255 149 / 0.55);
+  --glass: #07120a;
+  background: var(--room);
+}
+
+:root[data-theme="dark"] .room {
+  --paper: #e6d9b8;
+  --paper-edge: #b6a47a;
+  --ink: #1d1a14;
+  --room: radial-gradient(70% 70% at 50% 35%, #3b3121 0%, #1a1611 55%, #0b0a08 100%);
+  --platen: #0c0b0a;
+  --case: #2a2b2c;
+  --case-edge: #18191a;
+  --phosphor: #8bff9f;
+  --phosphor-dim: rgb(139 255 159 / 0.5);
+  --glass: #030805;
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bar button {
+  color: var(--os-ink);
+}
+
+:root[data-theme="dark"] .bar button,
+:root[data-theme="dark"] .caption {
+  color: #e9dfc8;
+}
+
+.caption {
+  margin: 0;
+  color: var(--os-ink-2);
+  font: 600 12px/1.2 var(--font-geist-mono), monospace;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.machine {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  justify-items: center;
+}
+
+.paper {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  width: min(820px, 100%);
+  height: 100%;
+  padding: 28px 44px 48px;
+  font: 500 clamp(14px, 1.15vw, 17px) / 1.5 var(--font-geist-mono), monospace;
+  cursor: text;
+}
+
+.lineText {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-height: 1.5em;
+}
+
+/* The teletype: paper rolling up over the platen, a lamp's warmth at night. */
+.room[data-program="gunner"] .paper {
+  background:
+    linear-gradient(to right, var(--paper-edge), transparent 3%, transparent 97%, var(--paper-edge)),
+    var(--paper);
+  color: var(--ink);
+  border-bottom: 18px solid var(--platen);
+  border-radius: 4px 4px 14px 14px;
+  box-shadow:
+    0 30px 60px -30px rgb(0 0 0 / 0.55),
+    inset 0 -30px 40px -30px rgb(0 0 0 / 0.25);
+  letter-spacing: 0.04em;
+  text-shadow: 0 0 0.6px rgb(0 0 0 / 0.5);
+}
+
+:root[data-theme="dark"] .room[data-program="gunner"] .paper {
+  box-shadow:
+    0 0 120px 10px rgb(255 190 110 / 0.18),
+    0 30px 60px -30px rgb(0 0 0 / 0.8),
+    inset 0 -30px 40px -30px rgb(0 0 0 / 0.35);
+}
+
+/* The green screen in its case. */
+.room[data-program="cannoneer"] .paper {
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.22) 2px 3px),
+    radial-gradient(120% 120% at 50% 45%, #0b1d10 0%, var(--glass) 70%);
+  color: var(--phosphor);
+  text-shadow:
+    0 0 4px var(--phosphor-dim),
+    0 0 12px rgb(125 255 149 / 0.2);
+  border: 22px solid var(--case);
+  border-bottom-width: 34px;
+  border-radius: 28px;
+  outline: 1px solid var(--case-edge);
+  box-shadow:
+    inset 0 0 60px rgb(0 0 0 / 0.85),
+    0 30px 70px -30px rgb(0 0 0 / 0.65);
+}
+
+.cursor {
+  display: inline-block;
+  width: 0.6em;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: currentColor;
+  animation: blink 1.06s steps(2, start) infinite;
+}
+
+@keyframes blink {
+  to {
+    visibility: hidden;
+  }
+}
+
+.room[data-program="gunner"] .cursor {
+  height: 0.18em;
+  vertical-align: -0.1em;
+}
+
+/* The real input sits behind the paper: it takes the keys, the paper shows them. */
+.input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
+
+.after {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(16px, 4vh, 48px);
+  transform: translateX(-50%);
+  width: min(460px, calc(100% - 32px));
+  gap: 12px;
+  padding: 18px 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) .cursor {
+    animation: none;
+  }
+}
+
+:root[data-motion="reduce"] .cursor {
+  animation: none;
+}

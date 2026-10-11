@@ -1,7 +1,7 @@
 # Over / Short: notes
 
 The lab book: what we verified about the two programs behind Over / Short, how, and the simulations behind the
-Classic drill and the Campaign. Line numbers are the BASIC listings'. The listings stay outside the repository;
+Classic drill, the Campaign, Field Artillery, the duel and the Daily Barrage. Line numbers are the BASIC listings'. The listings stay outside the repository;
 everything here is in our own words.
 
 ## Verified facts about the originals
@@ -55,6 +55,12 @@ From reading `GUNNER.BAS` (52 lines) and `CANNON.BAS` (69 lines), unless a fact 
     number: any positive argument does that in IBM PC BASIC.)
 16. **Message slips.** Cannoneer's messages carry two spelling mistakes. Nothing of either program's text is in
     our game.
+17. **The war a fresh load fights.** Run unmodified in PC-BASIC 2.0.8 (a GW-BASIC interpreter), a freshly loaded
+    Gunner rolls a gun of 24,854 yards and a first target 15,446 yards away; a freshly loaded Cannoneer, a gun of
+    10,485 metres and a first target 6,516 metres away. Playing again rolls the next gun in the same sequence
+    (Cannoneer's second war: 12,919 metres).
+18. **Typing that is not a number.** At the elevation prompt, letters get the interpreter's own request to type
+    the line again, not the program's; an empty line counts as 0 and is refused as too low.
 
 ### How these were checked
 
@@ -63,16 +69,20 @@ judge with 57.3, INT and the > 100 test, the sixth-round ending), and `scripts/c
 4–5 (100,000 rolls each), 6, 8–11 against it. Fact 2 comes from the two web sources named in it. Fact 14's
 timings are worked out from the code and IBM PC BASIC's tick rate, not heard.
 
+Facts 9–13, 15, 17 and 18 were also seen to happen: both listings were run unmodified in PC-BASIC 2.0.8 for six
+scripted sessions ([the 1970s terminals](#the-1970s-terminals)), and the terminals replay the same sessions step
+for step.
+
 ## Quirks and bugs, and what Over / Short does with them
 
 | Quirk | In 1973 | In Over / Short |
 |---|---|---|
-| A round 100 short is called over (9) | Yes | Fixed in every play style: the observer calls the direction the round fell. The 1970s mode (prompt 07b) keeps it |
-| Lopsided hit window from INT (8) | Yes | A hit is any round within 100 m either way, measured exactly |
-| 57.3 for 180/π (6) | Yes | Exact radians; Classic and the 1973 judge disagree on 2 calls in 20,000, all within 4 m of the 100 m edge |
-| The sixth elevation is never fired (11) | Yes | The fifth miss at one target ends the game at once: the enemy has found the gun |
-| The formula gives a first-round hit every time (7) | Yes | Kept in Classic, where it belongs. The Campaign exists to break it, one twist per chapter |
-| Same gun and targets every load (15) | Under Microsoft BASIC | Every game has its own seed |
+| A round 100 short is called over (9) | Yes | Fixed in every play style: the observer calls the direction the round fell. The 1970s terminals keep it |
+| Lopsided hit window from INT (8) | Yes | A hit is any round within 100 m either way, measured exactly. The terminals keep the lopsided window |
+| 57.3 for 180/π (6) | Yes | Exact radians; Classic and the 1973 judge disagree on 2 calls in 20,000, all within 4 m of the 100 m edge. The terminals divide by 57.3 |
+| The sixth elevation is never fired (11) | Yes | The fifth miss at one target ends the game at once: the enemy has found the gun. The terminals ask for the sixth elevation, as the programs did |
+| The formula gives a first-round hit every time (7) | Yes | Kept in Classic and on the terminals, where it belongs. The Campaign exists to break it, one twist per chapter; Field Artillery has no formula at all |
+| Same gun and targets every load (15) | Under Microsoft BASIC | Every game has its own seed. The terminals run Microsoft BASIC's own generator from its state at load, so they fight the same war every time, as the programs did |
 | Yards from 20,000 to 59,999 (4) | Gunner | Classic uses Cannoneer's metric scale (see the simulations for why); yards are a display setting |
 
 ## Simulations
@@ -191,6 +201,186 @@ The convoy drives at 8–11 m/s: at 5 m/s, the first design, a low round's 15–
 hit radius and leading did not matter (the blind gunner still won 99.7%). The first enemy battery took five
 rounds to find the gun, so a gunner who never moved still won every time; now its third round is lethal.
 
+## Field Artillery
+
+### The model
+
+Field Artillery flies every round in three dimensions (`lib/over-short/fieldModel.ts`): the same fourth-order
+Runge–Kutta step of 0.1 s and the same drag as the Campaign's air (k = 4 × 10⁻⁵ per metre, against the velocity
+through the air), with wind along and across the line of fire, over real ground (`terrain.ts`: a smooth survey
+line with a little unevenness). The ground crossing is found by bisection inside the last step; a round that meets
+the ground while still climbing is marked as having struck a crest.
+
+The gun has four charges, muzzle speeds of 190, 245, 300 and 370 m/s, which throw at most about 3.3, 5.2, 7.2 and
+9.9 km in still air. The line is in NATO mils, 6,400 to the circle; the muzzle stands 1.2 m above the ground.
+
+| Check | Result |
+|---|---|
+| No air, no wind, level ground, at 10°, 30°, 45° and 60° | lands where R · sin 2θ says, within 5 cm |
+| Air, against the Campaign's model at the same four elevations | the same landing, within 5 cm |
+| Crosswind drift against Didion's lag rule (drift = wind × the shell's lag behind a vacuum flight over the same distance), 4 charges × 4 elevations, 6 m/s across | worst difference 0.0% |
+| Charge 3 at 30° | 6,539 m in still air; 6,576 m with a 5 m/s tailwind, 6,501 m into a 5 m/s headwind; 19.1 m of drift either way in 5 m/s across |
+| The firing table's wind columns against a flight, charge 2 at 30° in 4 m/s behind and across | table 4,650 m and 9.2 m right; flight 4,644 m and 9.0 m |
+| Charge 4 at 6° at a ridge 150 m high | struck the rising ground 578 m out, still climbing |
+
+### Why the first round rarely hits
+
+The first version of the skilled-gunner bot hit with its first round almost every time: with the table, the
+forecast and the map all exact, the physics can be solved. Real batteries missed with the first round because none
+of those is exact, so each attempt now draws these errors, and the target card and the forecast show what the
+battery believes, not the truth:
+
+| Source | Easy | Normal | Hard |
+|---|---|---|---|
+| The map's error in the target's position (along, across) | up to 70 m, 20 m | up to 160 m, 45 m | up to 260 m, 80 m |
+| The forecast's error in each wind component | up to 0.5 m/s | up to 1.5 m/s | up to 2.5 m/s |
+| This barrel against its table (wear), share of muzzle speed | up to 1.2% either way | the same | the same |
+| One round's powder against the next (dispersion) | 0.15% | 0.25% | 0.35% |
+| Gusts: each round's wind against the mean | 6% | 15% | 28% |
+| The observer's misjudgement, and the rounding | none, 10 m | about 8%, 25 m | about 15%, 50 m |
+
+The first round's report measures the map, forecast and wear errors together, and they carry over to every round on
+that target: that is why registering a charge pays, and why switching charge costs a little accuracy as well as 15
+seconds.
+
+### The players
+
+The checks play every shoot with three simulated players. Two see only what the screen shows (`fieldSeen`: the
+map's distance, the height, the forecast, the firing tables and the observer's words):
+
+- **the skilled gunner** (`fieldGunnerBot`) keeps a registration: how much further than the table its rounds have
+  been throwing, shared across charges, and how far right they have been drifting. It picks the charge and
+  elevation whose path clears any crest with room to spare, prefers the middle of the table and a charge already
+  registered, leads a convoy by the flight time, calls star shells, and moves the gun when the enemy's next round
+  would land close;
+- **a player at the screen** (`fieldHumanBot`) lays the first round straight from the table at the map's distance,
+  then takes each correction at its word but only partly trusts it, and brackets the flashes at night in steps
+  that halve when the call flips;
+- **the oracle** (`fieldOracle`) knows the target's true position, the true mean wind and this barrel's wear, but
+  not the gusts. If the oracle ever loses an attempt, the attempt was dealt unwinnable.
+
+### The shoots
+
+60 attempts per shoot and difficulty for the gunner and the player, 30 for the oracle, each with its own seed:
+
+| Shoot | Gunner: Easy, Normal, Hard | Player at the screen, Normal | Player's median rounds and game time | Gold, silver |
+|---|---|---|---|---|
+| F1 Registration | 100%, 100%, 100% | 100% | 2, 72 s | 2 in 1:20, 3 in 2:20 |
+| F2 Behind the Crest | 100%, 98.3%, 98.3% | 98.3% | 2, 93 s | 2 in 1:50, 4 in 3:10 |
+| F3 Crosswind | 100%, 100%, 100% | 100% | 3, 114 s | 2 in 1:30, 3 in 2:20 |
+| F4 The Supply Road | 100%, 100%, 100% | 96.7% | 3, 87 s | 2 in 1:05, 3 in 1:50 |
+| F5 Smoke | 100%, 100%, 100% | 100% | 2, 79 s | 2 in 1:40, 4 in 3:30 |
+| F6 Counter-Battery | 100%, 100%, 100% | 100% | 3, 262 s | 2 in 2:00, 4 in 5:40 |
+| F7 Drop the Bridge | 100%, 100%, 96.7% | 98.3% | 5, 209 s | 4 in 3:00, 5 in 4:20 |
+| F8 Night Shoot | 100%, 100%, 100% | 100% | 3, 138 s | 2 in 1:50, 3 in 3:20 |
+| F9 Bridge by Night | 100%, 100%, 96.7% | 93.3% | 4, 207 s | 4 in 3:35, 6 in 5:00 |
+| F10 Under Fire | 100%, 100%, 100% | 100% | 3, 116 s | 3 in 2:00, 4 in 3:20 |
+
+The oracle won every attempt at every shoot on every difficulty. Medals are set from the player at the screen: the
+median player earns silver or bronze, and gold asks for a first round laid from a good registration.
+
+**Each twist matters**, played on Normal by the player at the screen, blind to one thing:
+
+| Shoot | Blind to | Result |
+|---|---|---|
+| F2 Behind the Crest | the crest (lays the flattest path) | won 80.0%, against 98.3% seeing it |
+| F4 The Supply Road | the convoy's movement | won 0% |
+| F3 Crosswind | the crosswind (lays on the bearing) | 2.53 rounds a win against 2.45; still wins every time |
+| F9 Bridge by Night | star shells (never calls one) | won 81.7% against 93.3%, 5.49 rounds a win against 4.59 |
+
+The crosswind costs little once the first round has fallen, because the observer's left and right correct it at
+once; what it costs is the first round, which is what the medals reward.
+
+Tuning on the way: F2 first set its target further out behind a higher crest, which left a player at the screen
+too few charges that clear it; the target is now 2.2–2.7 km out behind a crest 130–160 m high. F4's convoy first
+drove faster and closer to the crossing; it now drives at 4–6 m/s across the line and starts a minute short of the
+crossing, with a 30 m hit radius.
+
+### The duel
+
+120 duels for each commander and player, each side played from both ends of the ridge, on Normal:
+
+| Player | Beats cautious | Beats aggressive | Beats methodical |
+|---|---|---|---|
+| a player at the screen (`fieldHumanBot`) | 53.3% | 56.7% | 38.3% |
+| the skilled gunner | 74.2% | 82.5% | 69.2% |
+
+Every duel ended. The commanders are the player-at-the-screen bot with their own settings: cautious takes 60% of
+each correction and moves when a round lands within 230 m; aggressive takes 115%, never moves and loads the charge
+with the shortest flight; methodical takes 85% and moves within 120 m. On the way, the aggressive commander first
+won most duels and was retuned; each shot now keeps where its own side's map put the enemy when it was fired, so a
+battery that moves does not confuse the other side's earlier corrections; and duels that ran out of rounds without
+a winner are settled by 20 rounds a side and the fewer-hits rule.
+
+### The Daily Barrage
+
+The first 120 days: the oracle won every one, the skilled gunner 100%. Each run of ten days counted from the first
+Daily plays all ten shoots in an order of its own, and on about a third of the days whose shoot has no enemy, a
+battery 3–4 km beyond the target joins in.
+
+## The 1970s terminals
+
+`lib/over-short/terminal.ts` plays each program as a state machine in Microsoft BASIC's arithmetic: single
+precision (`Math.fround` on every value) and its random generator, a 24-bit linear congruential sequence (each
+state is 214,013 × the last + 2,531,011, modulo 2²⁴) starting from the state it has when a program is freshly
+loaded. Everything they print is written fresh.
+
+The golden sessions in `tests/fixtures/over-short-1970s.json` were made by running both listings unmodified in
+PC-BASIC 2.0.8 with lines typed at their prompts, keeping only what happened, as kinds and numbers (a gun, a target,
+a refusal, over or short by so much, a target destroyed in so many rounds, the gun found, the total, play again):
+none of the programs' words.
+
+| Sessions | Typed | What they show |
+|---|---|---|
+| gunner-calculator, cannoneer-calculator | the formula's elevation, to four places, for each target | five targets in five rounds |
+| gunner-quirks, cannoneer-quirks | letters, an empty line, 0, 90, −5, 89, 1, fractions, an elevation that falls 100 short, six rounds at one target, a lower-case y | not-a-number, four refusals with nothing counted, the round 100 short called over, the sixth round never fired, Gunner refusing y and Cannoneer accepting it; Cannoneer then plays a second war to a total of 19 (the artillery school) and a third of 5 |
+| gunner-slow, cannoneer-slow | three misses and then the formula at each target, a capital Y, then six misses at one target | a total of 20 (the artillery school), playing again, and the gun lost |
+
+The check replays each session on the terminal and compares every event: all six match, 184 events in all.
+
+## Drawing performance
+
+Measured with Playwright's Chromium at 1920 × 1080, on a real graphics card and on the software renderer, in the
+first round of F6 in the dark theme (the night barrage, the heaviest scene), F7 by day and the duel:
+
+| Scene | Graphics card | Software renderer |
+|---|---|---|
+| Aiming | 60 fps | 35 fps |
+| A round in flight and its burst | 60 fps, worst frame 17 ms | 32 fps |
+| The glasses and the enemy's rounds | 60 fps, worst frame 17 ms | 26 fps |
+| The duel, both guns firing | 60 fps, worst frame 17 ms | 38 fps |
+
+Three things got it there:
+
+- **Tiles kept per scale.** The close view under fire first zoomed in smoothly, so every frame was a new scale and
+  every tile was repainted: 5 fps. The close view is now a cut, and the side view keeps its tiles per scale.
+- **Painting ahead.** While the player aims, the side view paints one tile a frame of the close view and of the
+  land out past the target (`SideView.prepare`, `warmOne`). Before, a profile showed the camera riding the shell
+  into unpainted land, and the cut to the close view painting 36 tiles in one frame (183 ms).
+- **A resize that changes nothing repaints nothing.** Layout reported the same size twice after the screen opened,
+  which threw away every tile and the queue of tiles to paint ahead. The side view now ignores a resize to its own
+  size, and counts the times it has dropped its tiles (`generation`), so the director knows to prepare them again.
+
+The audio is opened when the Field Artillery or duel screen opens, not on the first shot: creating the audio
+context took 80 ms in the profile, and the first round's frame paid for it. One frame of about 120 ms remains at a
+session's first shot, outside JavaScript (in the graphics process); it does not repeat.
+
+## Hero frames
+
+`docs/over-short/media/hero/`, each in light and dark, 1920 × 1080:
+
+| File | What it shows | Made in |
+|---|---|---|
+| `arc-*.jpg` | the camera riding a shell along its arc over the fields | 07a |
+| `dump-*.jpg` | a supply dump going up on the main screen | 07a |
+| `observer-*.jpg` | the fall of shot in the observer's glasses | 07a |
+| `walking-*.jpg` | enemy rounds walking in on the gun, one bursting beside the pit | 07b |
+| `duel-*.jpg` | the duel's ridge with both guns firing at once | 07b |
+| `night-*.jpg` | a night shoot under star shells (the moon up in the light theme) | 07b |
+
+They are the game's own drawing code, staged for the camera at each prompt's first stage and saved as JPEG for
+the docs; 07b's staging page was removed once the frames were approved.
+
 ## Regression checks
 
 `npm run check:over-short` (`scripts/check-over-short.ts`) fails if:
@@ -203,7 +393,19 @@ rounds to find the gun, so a gunner who never moved still won every time; now it
 - drag fails to bring the best angle below 44°, or 30° and 60° land within 300 m of each other in air;
 - Classic's observer and the 1973 judge disagree more than 4 m from the 100 m edge;
 - the sensible gunner loses any of 300 attempts at any mission, or the bracketer any Chapter 1 attempt;
-- a gunner blind to a Chapter 5 twist wins more than 85% (convoy), 20% (clock) or 90% (counter-battery).
+- a gunner blind to a Chapter 5 twist wins more than 85% (convoy), 20% (clock) or 90% (counter-battery);
+- Field Artillery's model leaves the 1973 formula or the Campaign's model by 5 cm, crosswind drift leaves the lag
+  rule by 3%, a tailwind fails to lengthen or a headwind to shorten, crosswinds from either side differ, the firing
+  table's wind columns miss a flight in that wind by 25 m in range or 2 m in drift, or a flat round fails to strike
+  a ridge;
+- the oracle loses any attempt at any shoot on any difficulty, or any of the first 120 Daily Barrages;
+- on Normal the skilled gunner wins less than 90% of a shoot, or the player at the screen less than 70%;
+- a player blind to the crest wins more than 90% of F2, or one who does not lead the convoy more than 30% of F4;
+  ignoring the crosswind on F3 or never lighting F9 costs nothing;
+- a duel never ends, or the player at the screen beats a commander less than 30% or more than 75% of the time, or
+  the skilled gunner less than 55% or more than 95%;
+- the skilled gunner wins less than 90% of the Daily Barrages;
+- a 1970s terminal departs from a golden session in any event.
 
 ## Open questions
 
@@ -212,4 +414,7 @@ rounds to find the gun, so a gunner who never moved still won every time; now it
   confirm Gunner (or a six-letter GUNER) was in it.
 - **Cannoneer.** We found nothing about it beyond the listing: not its author, date or where it was published.
 - **The 1973 machines.** Whether Gunner's targets repeated on the minicomputers it was first written for depends
-  on their BASIC's RND; we only know that Microsoft BASIC repeats without `RANDOMIZE`.
+  on their BASIC's RND; we only know that Microsoft BASIC repeats without `RANDOMIZE`. The Gunner terminal uses
+  Microsoft BASIC's sequence, the one we could run.
+- **Real charges.** The four charges are our own, chosen so each covers a band of distances with some overlap
+  (3.3, 5.2, 7.2 and 9.9 km); they are not taken from a particular Great War gun's tables.

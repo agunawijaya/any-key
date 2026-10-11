@@ -117,7 +117,9 @@ sweeps; your own destruction, a low drone.
   than 99 over is not.
 - 57.3 for 180/π shifts every round by up to 13.7 yards on Gunner's longest gun.
 - Neither program seeds its random numbers, so under Microsoft BASIC every run rolls the same gun and the same
-  targets.
+  targets: in PC-BASIC, a 24,854-yard gun for Gunner and a 10,485-metre gun for Cannoneer, every time.
+- Letters typed for an elevation never reach the program: the interpreter itself asks for the line again. An empty
+  line is a 0, and refused as too low.
 - Gunner only plays again on a capital Y.
 
 Details and evidence are in [NOTES.md](NOTES.md).
@@ -131,8 +133,13 @@ distance, then ask for an elevation; the player types a number, reads "over" or 
 again. Five targets later, or five misses at one of them, the program gives its verdict and asks whether to play
 again.
 
+Both run unmodified in PC-BASIC, a free GW-BASIC interpreter: that is how the 1970s terminals in Over / Short were
+checked, by typing the same lines into both and comparing what happened (NOTES.md). Inside Over / Short, **The
+1970s** plays both programs turn for turn, in our own words.
+
 ## Sources
 
 - The listings themselves, read line by line.
 - The IBM PC BASIC reference for `SOUND` (durations in clock ticks, 18.2 a second) and `RND` (any positive argument
   gives the next number).
+- PC-BASIC 2.0.8, a GW-BASIC interpreter, running both listings unmodified.

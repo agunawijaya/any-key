@@ -1,6 +1,7 @@
 "use client";
 
 import { useHydrated } from "@/components/kit/hooks";
+import { FIELD_MISSIONS } from "@/lib/over-short/fieldMissions";
 import { CHAPTERS, missionsIn, MISSIONS } from "@/lib/over-short/missions";
 import { bandFilled, TABLE_BANDS, type Progress } from "@/lib/over-short/progress";
 import { MedalIcon } from "./icons";
@@ -19,6 +20,10 @@ export function Records({ progress, onBack }: { progress: Progress; onBack: () =
   }
   const bands = TABLE_BANDS.filter((b) => bandFilled(progress.campaign.table, b)).length;
   const won = MISSIONS.filter((m) => (missions[m.id]?.wins ?? 0) > 0).length;
+  const field = progress.field.missions;
+  const days = Object.values(progress.daily);
+  const duel = progress.duel;
+  const terminals = progress.terminals;
 
   return (
     <section className={`${ui.panel} ${styles.records}`} aria-labelledby="os-records-title">
@@ -99,6 +104,58 @@ export function Records({ progress, onBack }: { progress: Progress; onBack: () =
                 ))}
               </tbody>
             </table>
+          </div>
+          <div>
+            <h3 className={styles.title}>Field Artillery</h3>
+            <table className={styles.table}>
+              <caption className={ui.srOnly}>Medals per shoot and difficulty</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Shoot</th>
+                  <th scope="col">Easy</th>
+                  <th scope="col">Normal</th>
+                  <th scope="col">Hard</th>
+                </tr>
+              </thead>
+              <tbody>
+                {FIELD_MISSIONS.map((m) => (
+                  <tr key={m.id}>
+                    <th scope="row" title={m.title}>
+                      {m.id}
+                    </th>
+                    {(["easy", "normal", "hard"] as const).map((d) => {
+                      const r = field[`${m.id}/${d}`];
+                      return <td key={d}>{r?.medal ? <MedalIcon medal={r.medal} size={14} /> : <span>{r?.tries ? "·" : ""}</span>}</td>;
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <h3 className={styles.title}>Duel, Daily and the 1970s</h3>
+            <dl className={styles.figures}>
+              <div>
+                <dt>Duels</dt>
+                <dd>{duel.played ? `${duel.won} won of ${duel.played}${duel.hotSeat ? ` · ${duel.hotSeat} with a friend` : ""}` : "–"}</dd>
+              </div>
+              <div>
+                <dt>Commanders beaten</dt>
+                <dd>{`cautious ${duel.beat.cautious} · aggressive ${duel.beat.aggressive} · methodical ${duel.beat.methodical}`}</dd>
+              </div>
+              <div>
+                <dt>Daily Barrages</dt>
+                <dd>{days.length ? `${days.filter((d) => d.won).length} won of ${days.length}` : "–"}</dd>
+              </div>
+              <div>
+                <dt>Gunner, 1973</dt>
+                <dd>{terminals.gunner.finished ? `${terminals.gunner.finished} finished · best ${terminals.gunner.best}` : terminals.gunner.wars ? `${terminals.gunner.wars} begun` : "–"}</dd>
+              </div>
+              <div>
+                <dt>Cannoneer, IBM PC</dt>
+                <dd>{terminals.cannoneer.finished ? `${terminals.cannoneer.finished} finished · best ${terminals.cannoneer.best}` : terminals.cannoneer.wars ? `${terminals.cannoneer.wars} begun` : "–"}</dd>
+              </div>
+            </dl>
           </div>
         </div>
       )}

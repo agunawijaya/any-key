@@ -11,7 +11,7 @@ This file is excluded from formatters (`.prettierignore`) so parallel sessions d
 | Don't Crater | `lander` | Playable | 6 of 6 | 15 (7 common, 5 rare, 3 legendary) | Daily Drop, numbered from 2026-01-01 | 00 retrofit (2026-10-07) |
 | Two Humps | `two-humps` | Playable | 6 of 6 | 15 (5 common, 7 rare, 3 legendary) | Daily Crossing, numbered from 2026-10-09 | 03 two-humps (2026-10-09) |
 | Same Trick Twice | `long-memory` | Playable | 6 of 6 | 11 (5 common, 4 rare, 2 legendary) | Daily Endgame, numbered from 2026-10-09 | 09 long-memory (2026-10-09) |
-| Over / Short | `over-short` | Playable | 6 of 6 | 12 (3 common, 7 rare, 2 legendary) | None yet (Daily Barrage in 07b) | 07a over-short (2026-10-10) |
+| Over / Short | `over-short` | Playable | 6 of 6 | 20 (5 common, 12 rare, 3 legendary) | Daily Barrage, numbered from 2026-10-10 | 07b over-short (2026-10-11) |
 | Ten Turns in the Pit | `ten-turns` | Playable | 6 of 6 | 13 (4 common, 7 rare, 2 legendary) | Daily Pit, numbered from 2026-10-10 | 10a ten-turns (2026-10-10) |
 | Sol y Sombra | `sol-y-sombra` | Playable | 6 of 6 | 8 (3 common, 4 rare, 1 legendary; 1 secret) | None yet (the Daily in 11c) | 11a sol-y-sombra (2026-10-10) |
 
@@ -123,13 +123,20 @@ prompts. Items it did fix are not listed.
 
 ### Over / Short
 
-- The production build could not be made on 2026-10-10: Node could not reach Google Fonts, so every `next/font` in
-  the tree failed. The e2e suite (`playwright.over-short.config.ts`, port 3217) passed against the dev server instead.
 - The observer looks along the line of fire: a round far over is a small burst near the horizon, one far short can
   land right under the glasses. A post off to the side would show over and short as left and right.
-- Hills and valleys are stated on the target card; the side view does not raise or sink the target.
-- Without a graphics card the night battlefield runs at 21–30 frames a second (painted at 0.6 of the pixel ratio).
-- Field Artillery, the duel, the Daily Barrage and the 1970s terminals are prompt 07b; three more eras are 07c.
+- In Classic and the Campaign, hills and valleys are stated on the target card; the side view does not raise or
+  sink the target. Field Artillery draws its real ground, with heights squeezed.
+- Without a graphics card the night battlefield runs at 21–30 frames a second in the Campaign and 26–35 in Field
+  Artillery (painted at 0.6 of the pixel ratio); the duel at 38.
+- One frame of about 120 ms at a session's first shot in Field Artillery, in the graphics process; it does not
+  repeat.
+- F3 Crosswind's twist is mild: a player who ignores the forecast's crosswind needs only a tenth of a round more on
+  average, since the observer's left and right correct it at once. It can cost a medal, never the shoot.
+- The duel shows no observer's glasses; both observers' reports are on slips over the ridge.
+- Owner question: the methodical commander is the hardest for a player at the screen in simulation (38% against
+  53–57% for the other two). Is that the right order, or should the cautious one be the hardest?
+- Three more eras are prompt 07c.
 
 ### Ten Turns in the Pit
 

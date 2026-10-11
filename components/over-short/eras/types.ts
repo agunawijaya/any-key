@@ -16,14 +16,48 @@ export type TargetState = "intact" | "damaged" | "destroyed";
 /** How a target looks at a moment; `since` is seconds since its state last changed. */
 export type TargetLook = { kind: TargetKind; state: TargetState; since: number };
 
+/** What the crew are doing: serving the gun, or down behind its shield with rounds landing close. */
+export type CrewAction = "serving" | "ducking";
+
 export type GunPose = {
   elevation: number;
   /** 0 at rest, 1 at the instant of firing, easing back. */
   recoil: number;
+  /** Serving when left out. */
+  crew?: CrewAction;
 };
 
 /** Metres in an effect's scene: x along the view, z into it. */
 export type At = { x: number; z: number };
+
+/** A river in its valley, in screen pixels: the water between the banks, and the lights shining on it. */
+export type RiverGeometry = {
+  left: number;
+  right: number;
+  /** The water's surface, the bottom of the band drawn for it, and the bank's line at any x. */
+  surface: number;
+  bed: number;
+  bankY: (x: number) => number;
+  lights: { x: number; intensity: number }[];
+  time: number;
+  moonlit: boolean;
+};
+
+/** A bridge across the river valley, in screen pixels, with how lit it is (0–1) and what state it is in. */
+export type BridgeGeometry = {
+  x0: number;
+  x1: number;
+  deckY: number;
+  /** Where a pier at screen x stands: on the slope, or on the river bed. */
+  footY: (x: number) => number;
+  /** The view's height, for sizes that follow the screen. */
+  scale: number;
+  light: number;
+  state: TargetState;
+};
+
+/** The team moving the gun: where the horses are in their stride (0–1) and how far the limber's wheels have turned (radians). */
+export type TeamPose = { step: number; wheelTurn: number };
 
 export type Era = {
   id: string;
@@ -72,5 +106,15 @@ export type Era = {
     hit: (fx: Particles, kind: TargetKind, at: At, destroyed: boolean, power: number) => void;
     /** Smoke and flash at the muzzle; `direction` is the barrel's angle in radians from the ground. */
     muzzle: (fx: Particles, at: At & { y?: number }, direction: number, power: number) => void;
+  };
+
+  /** What Field Artillery adds to the side view: rivers and their bridges, lorries side-on, the team that moves the gun. */
+  field: {
+    drawRiver: (ctx: Ctx, river: RiverGeometry, appearance: Appearance) => void;
+    drawBridge: (ctx: Ctx, bridge: BridgeGeometry, appearance: Appearance) => void;
+    /** A lorry at (x, road), facing left (−1) or right, `scale` pixels a metre, lit 0–1 at night. */
+    drawLorry: (ctx: Ctx, x: number, roadY: number, scale: number, facing: 1 | -1, appearance: Appearance, light: number, wrecked: boolean) => void;
+    /** The horses and limber, the limber's hook at (x, y), at the scale of a gun whose wheel is `wheel` pixels. */
+    drawTeam: (ctx: Ctx, x: number, y: number, wheel: number, pose: TeamPose, appearance: Appearance) => void;
   };
 };

@@ -73,3 +73,24 @@ export const MoveIcon = ({ size = 18, className }: IconProps) =>
 /** A burst: the enemy's rounds. */
 export const BurstIcon = ({ size = 18, className }: IconProps) =>
   svg(size, className, <path d="m12 2 1.8 5.3L19 5l-2.3 5.1L22 12l-5.3 1.8L19 19l-5.2-2.3L12 22l-1.8-5.3L5 19l2.3-5.2L2 12l5.3-1.9L5 5l5.2 2.3z" fill="currentColor" />);
+
+/** A star shell under its parachute, its light radiating. */
+export const FlareIcon = ({ size = 18, className }: IconProps) =>
+  svg(
+    size,
+    className,
+    <>
+      <path d="M6 7a6 4 0 0 1 12 0z" fill="currentColor" />
+      <path d="M6.3 7.2 12 15l5.7-7.8" fill="none" stroke="currentColor" strokeWidth="1.2" />
+      <circle cx="12" cy="16.5" r="2.4" fill="currentColor" />
+      <path d="M12 20.5V23M7.6 18.8l-1.8 1.8M16.4 18.8l1.8 1.8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </>,
+  );
+
+/** Two crossed barrels: a duel. */
+export const DuelIcon = ({ size = 18, className }: IconProps) =>
+  svg(
+    size,
+    className,
+    <path d="m3 19 9.6-9.6 1.8 1.8L4.8 20.8zM21 19l-9.6-9.6-1.8 1.8 9.6 9.6zM2.5 15.5l3 3M21.5 15.5l-3 3M11 4h2v4h-2z" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />,
+  );

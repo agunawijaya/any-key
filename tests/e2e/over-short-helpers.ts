@@ -65,3 +65,32 @@ export async function playClassicByFormula(page: Page, by: "keys" | "mouse") {
   }
   await expect(results(page)).toBeVisible();
 }
+
+/* ---------- Field Artillery ---------- */
+
+/** A save with the difficulty set, for Field Artillery and the duel. */
+export const difficultySave = (difficulty: "easy" | "normal" | "hard") => ({ version: 1, data: { settings: { difficulty } } });
+
+export const fieldSlip = (page: Page) => page.getByRole("status").filter({ hasText: /observer/i });
+
+/** The elevation the printed table gives for `range` with a charge, read between its rows on the low road. */
+export function tableElevation(rows: { elevation: number; range: number }[], range: number) {
+  const low = rows.filter((r) => r.elevation <= 45);
+  for (let i = 0; i + 1 < low.length; i++) {
+    const a = low[i];
+    const b = low[i + 1];
+    if ((a.range - range) * (b.range - range) <= 0) return a.elevation + ((range - a.range) / (b.range - a.range)) * (b.elevation - a.elevation);
+  }
+  return range > low[low.length - 1].range ? 45 : 5;
+}
+
+/** A correction as the slip gives it: metres to add (positive) or drop, and mils to move right (positive) or left. */
+export function readCorrection(text: string) {
+  const range = /(Add|Drop) (\d+)/.exec(text);
+  const line = /(Left|Right) \d+ \((\d+) mils\)/.exec(text);
+  return {
+    hit: /Target!/.test(text),
+    metres: range ? (range[1] === "Add" ? 1 : -1) * Number(range[2]) : 0,
+    mils: line ? (line[1] === "Right" ? 1 : -1) * Number(line[2]) : 0,
+  };
+}

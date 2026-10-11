@@ -15,6 +15,11 @@ import type { Particles, Projector, SceneLight } from "./particles";
  *
  * At night every layer is painted twice, dark and as lit white by a flare;
  * the flares' light is a mask that lets the lit painting show through.
+ *
+ * A battlefield with real hills (Field Artillery) gives the view a relief:
+ * the shells' ground then rises and falls with the true heights, squeezed
+ * the same way as the sky, so a shell that clears a crest in the physics
+ * clears it on screen too.
  */
 
 export type Appearance = "day" | "night";
@@ -65,6 +70,15 @@ export type SideSky = {
 
 export type SideScenery = { sky: SideSky; layers: SideLayer[]; nightAmbient: Rgb };
 
+/** The true lie of the land under the shells: metres above the lowest ground, at world metre x. */
+export type Relief = {
+  height: (x: number) => number;
+  /** The highest the ground gets anywhere, so the land's tiles leave room above it. */
+  highest: number;
+  /** The altitude in metres that takes up about two-thirds of the sky (see `heightY`). */
+  squeeze: number;
+};
+
 export type SideFrameInfo = { width: number; height: number; time: number; appearance: Appearance; cameraX: number; scale: number };
 
 export type SideFrame = {
@@ -80,6 +94,8 @@ export type SideFrame = {
   lights?: SceneLight[];
   /** Drawn after the land behind the shells and before the land in front: the shell, its trail, the gun. */
   actors?: (ctx: Ctx, view: SideView) => void;
+  /** Drawn over the bursts and smoke: whatever stands nearer than they do, such as the gun when rounds land beyond it. */
+  foreground?: (ctx: Ctx, view: SideView) => void;
   /** Drawn last, over everything: the heat of a burst washing over the view. */
   overlay?: (ctx: Ctx, view: SideView) => void;
 };
@@ -96,12 +112,15 @@ export class SideView {
   appearance: Appearance = "day";
   private sky: HTMLCanvasElement | null = null;
   private tiles = new Map<string, Tile>();
+  private warming: { layer: SideLayer; lighting: Lighting; index: number; scale: number }[] = [];
+  private forgotten = 0;
   private scratch: HTMLCanvasElement | null = null;
   private frameNo = 0;
   /** The camera of the frame being drawn. */
   cameraX = 0;
   scale = 1;
   apex = 1500;
+  relief: Relief | null = null;
 
   constructor(
     private canvas: HTMLCanvasElement,
@@ -111,6 +130,8 @@ export class SideView {
   }
 
   resize(width: number, height: number, dpr: number) {
+    // Layout often reports the same size twice; repainting every tile for it would cost a frame.
+    if (width === this.width && height === this.height && dpr === this.dpr) return;
     this.width = width;
     this.height = height;
     this.dpr = dpr;
@@ -125,10 +146,23 @@ export class SideView {
     this.forget();
   }
 
-  /** Drops every painted buffer (size, zoom or appearance changed). */
+  /** Gives the shells' ground real hills, or takes them away again (`null`). */
+  setRelief(relief: Relief | null) {
+    this.relief = relief;
+    this.forget();
+  }
+
+  /** How many times every painted buffer was dropped: tiles prepared ahead before then need preparing again. */
+  get generation() {
+    return this.forgotten;
+  }
+
+  /** Drops every painted buffer (size or appearance changed). */
   forget() {
+    this.forgotten++;
     this.sky = null;
     this.tiles.clear();
+    this.warming = [];
     this.scratch = null;
   }
 
@@ -146,8 +180,20 @@ export class SideView {
 
   /** Screen y of the shells' ground under world metre x. */
   groundY(x: number) {
+    if (this.relief) return this.heightY(this.relief.height(x));
     const g = this.ground;
     return (g.baseline + g.contour(x)) * this.height;
+  }
+
+  /**
+   * With a relief, the screen y of `metres` above the lowest ground: the
+   * ground and the shells over it share one squeezed scale, true to the
+   * metre near the ground and ever more compressed higher up.
+   */
+  heightY(metres: number) {
+    const base = this.ground.baseline * this.height;
+    const sky = base - this.height * 0.1;
+    return base - sky * (1 - Math.exp(-metres / (this.relief?.squeeze ?? 1000)));
   }
 
   /**
@@ -162,6 +208,7 @@ export class SideView {
 
   /** Screen y of something flying `altitude` metres above the shells' ground at x: shells, flares, planes. */
   skyY(x: number, altitude: number) {
+    if (this.relief) return this.heightY(this.relief.height(x) + altitude);
     return this.altitudeY(this.groundY(x), altitude, this.apex);
   }
 
@@ -177,10 +224,8 @@ export class SideView {
   draw(frame: SideFrame) {
     this.cameraX = frame.cameraX;
     this.apex = frame.apex ?? this.apex;
-    if (frame.scale !== this.scale) {
-      this.scale = frame.scale;
-      this.tiles.clear();
-    }
+    // Tiles are kept per scale, so a cut to a closer view and back again repaints nothing it has painted before.
+    this.scale = frame.scale;
     this.frameNo++;
     const ctx = this.ctx;
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
@@ -200,6 +245,7 @@ export class SideView {
     if (night && lights.length) this.drawLit(behind, lights);
     frame.actors?.(ctx, this);
     frame.fx?.draw(ctx, this.project, { night: night ? 1 : 0 });
+    frame.foreground?.(ctx, this);
     this.drawLayers(ctx, front, "ambient");
     if (night && lights.length) this.drawLit(front, lights);
     if (night) this.drawGlows(ctx, lights);
@@ -221,22 +267,68 @@ export class SideView {
     for (const layer of layers) this.drawLayer(ctx, layer, lighting);
   }
 
+  /** The tiles of a layer in view with the camera at `cameraX` and this scale. */
+  private tilesInView(layer: SideLayer, cameraX: number, scale: number) {
+    const tileMetres = TILE / scale;
+    const u = cameraX * layer.parallax;
+    const halfMetres = this.width / 2 / scale;
+    return { first: Math.floor((u - halfMetres) / tileMetres), last: Math.floor((u + halfMetres) / tileMetres), u, tileMetres };
+  }
+
   private drawLayer(ctx: Ctx, layer: SideLayer, lighting: Lighting) {
-    const tileMetres = TILE / this.scale;
-    const u = this.cameraX * layer.parallax;
-    const halfMetres = this.width / 2 / this.scale;
-    const first = Math.floor((u - halfMetres) / tileMetres);
-    const last = Math.floor((u + halfMetres) / tileMetres);
-    const top = (layer.baseline - layer.headroom) * this.height;
+    const { first, last, u, tileMetres } = this.tilesInView(layer, this.cameraX, this.scale);
+    const top = this.layerTop(layer);
     for (let i = first; i <= last; i++) {
       const tile = this.tile(layer, lighting, i, top);
-      const x = this.width / 2 + (i * tileMetres - u) * this.scale;
+      // On whole device pixels: two tiles meeting mid-pixel would each half cover it, and the land behind would show through as a seam.
+      const x = Math.round((this.width / 2 + (i * tileMetres - u) * this.scale) * this.dpr) / this.dpr;
       ctx.drawImage(tile, x, top, TILE, this.height - top);
     }
   }
 
-  private tile(layer: SideLayer, lighting: Lighting, index: number, top: number) {
-    const key = `${layer.id}/${lighting}/${index}`;
+  /** Screen y of the top of a layer's tiles: its headroom above its ground, or above the highest hill. */
+  private layerTop(layer: SideLayer) {
+    const top = (layer.baseline - layer.headroom) * this.height;
+    if (!this.relief || layer.parallax !== 1) return top;
+    return Math.min(top, this.heightY(this.relief.highest) - layer.headroom * this.height);
+  }
+
+  /** Screen y of a layer's ground line at layer metre u: the relief's true heights for the shells' ground. */
+  private contourY(layer: SideLayer, u: number) {
+    if (this.relief && layer.parallax === 1) return this.heightY(this.relief.height(u));
+    return (layer.baseline + layer.contour(u)) * this.height;
+  }
+
+  /**
+   * Paints ahead the tiles of a view the camera is about to cut to (closer in
+   * on the gun, say) or travel through (out to the target with a round), one a
+   * frame through `warmOne`, so the camera never waits for land to be painted.
+   */
+  prepare(cameraX: number, scale: number, toCameraX = cameraX) {
+    const lightings: Lighting[] = this.appearance === "night" ? ["ambient", "flare"] : ["ambient"];
+    for (const layer of this.scenery.layers) {
+      const { first } = this.tilesInView(layer, cameraX, scale);
+      const { last } = this.tilesInView(layer, toCameraX, scale);
+      for (let i = first; i <= last; i++) for (const lighting of lightings) this.warming.push({ layer, lighting, index: i, scale });
+    }
+  }
+
+  /** Paints one tile prepared ahead, if one still needs it; true while more are waiting. */
+  warmOne() {
+    for (let next = this.warming.shift(); next; next = this.warming.shift()) {
+      if (this.tiles.has(this.tileKey(next.layer, next.lighting, next.index, next.scale))) continue;
+      this.tile(next.layer, next.lighting, next.index, this.layerTop(next.layer), next.scale);
+      break;
+    }
+    return this.warming.length > 0;
+  }
+
+  private tileKey(layer: SideLayer, lighting: Lighting, index: number, scale: number) {
+    return `${scale.toFixed(5)}/${layer.id}/${lighting}/${index}`;
+  }
+
+  private tile(layer: SideLayer, lighting: Lighting, index: number, top: number, scale = this.scale) {
+    const key = this.tileKey(layer, lighting, index, scale);
     const known = this.tiles.get(key);
     if (known) {
       known.used = this.frameNo;
@@ -246,21 +338,21 @@ export class SideView {
     const canvas = makeCanvas(TILE * this.dpr, height * this.dpr);
     const ctx = context(canvas);
     ctx.scale(this.dpr, this.dpr);
-    const tileMetres = TILE / this.scale;
+    const tileMetres = TILE / scale;
     const u0 = index * tileMetres;
     layer.paint({
       ctx,
       u0,
       u1: u0 + tileMetres,
-      scale: this.scale,
+      scale,
       width: TILE,
       height,
       top,
       viewHeight: this.height,
       appearance: this.appearance,
       lighting,
-      contourY: (u) => (layer.baseline + layer.contour(u)) * this.height,
-      tileX: (u) => (u - u0) * this.scale,
+      contourY: (u) => this.contourY(layer, u),
+      tileX: (u) => (u - u0) * scale,
     });
     this.tiles.set(key, { canvas, used: this.frameNo });
     return canvas;

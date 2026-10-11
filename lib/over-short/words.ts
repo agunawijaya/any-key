@@ -1,4 +1,6 @@
 import type { Report } from "./engagement";
+import type { FieldReport } from "./field";
+import type { Wind } from "./fieldModel";
 
 /*
  * Numbers as the game shows and says them. The engine thinks in metres;
@@ -54,4 +56,40 @@ export function spokenReport(report: Report, units: Units, destroyed: boolean): 
   if (report.distance === null) return call;
   const amount = inUnits(report.distance, units);
   return `${call} ${capital(inWords(amount))} ${unitWord(units, amount !== 1)}.`;
+}
+
+/* ---------- Field Artillery ---------- */
+
+const COMPASS = ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"];
+
+/**
+ * The wind as a forecast gives it: "12 km/h from the west". The line of
+ * fire runs east, so a wind behind the gun comes from the west and one
+ * blowing to the gunners' right (south) comes from the north.
+ */
+export function windWords(wind: Wind): string {
+  const speed = Math.hypot(wind.along, wind.across);
+  const kmh = Math.round(speed * 3.6);
+  if (kmh < 2) return "calm";
+  const towards = (Math.atan2(wind.along, -wind.across) * 180) / Math.PI;
+  const from = (towards + 180 + 360) % 360;
+  return `${kmh} km/h from the ${COMPASS[Math.round(from / 45) % 8]}`;
+}
+
+/** A correction's distance in the player's units, to the nearest 5. */
+const shortDistance = (metres: number, units: Units) => Math.max(5, Math.round(inUnits(metres, units) / 5) * 5);
+
+/** What the observer says down the line about one round: "Add 150. Right 40." */
+export function correctionWords(report: FieldReport, units: Units, milsHint = false): string {
+  if (report.kind === "target") return report.destroyed ? "Target! It's gone up." : "Target! Hit, but still standing.";
+  if (report.kind === "lost") return report.destroyed ? "Lost it in the smoke, but we heard it go up." : "Lost in the smoke. Nothing seen.";
+  if (report.kind === "flash") {
+    if (!report.range && !report.line) return "Flash right on it, but too dark to tell.";
+    const where = [report.range === "over" ? "beyond the target" : report.range === "short" ? "short of the target" : null, report.line ? `to the ${report.line}` : null].filter(Boolean).join(", ");
+    return `Only the flash: ${where}.`;
+  }
+  const parts: string[] = [];
+  if (report.range) parts.push(`${capital(report.range.word)} ${shortDistance(report.range.metres, units)}.`);
+  if (report.line) parts.push(`${capital(report.line.word)} ${shortDistance(report.line.metres, units)}${milsHint ? ` (${report.line.mils} mils)` : ""}.`);
+  return parts.length ? parts.join(" ") : "On for line and range, just missed.";
 }

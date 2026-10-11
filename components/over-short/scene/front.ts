@@ -110,6 +110,11 @@ export class FrontView {
     this.propsSet = false;
   }
 
+  /** Paints ahead the ground as a flare lights it, which night needs at the first burst and is slow to paint. */
+  prepare() {
+    if (this.appearance === "night") this.buffer("ground/flare");
+  }
+
   get focal() {
     return this.camera.focal * this.height;
   }

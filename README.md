@@ -140,7 +140,11 @@ arc over the fields, the view cuts to the observer's field glasses for the fall 
 a message slip. Play Classic, the 1973 drill of five targets in 18 rounds, or a twenty-mission Campaign that breaks
 the textbook formula one chapter at a time: an observer who gives only over or short, an unknown gun, hills and
 gales, real air, a moving convoy, a clock, and an enemy battery walking its rounds onto your gun until you move it.
-The docs are in `docs/over-short/`.
+Field Artillery is the full-physics battery: four charges, a line in mils, wind across the line of fire, real
+crests, an observer who says "Add 200. Left 50.", ten shoots from a convoy to a bridge by night, and an enemy gun
+firing back on its own clock. Two guns face each other across a ridge in the Counter-Battery Duel, against a friend
+on the same screen or one of three computer commanders; the Daily Barrage is one shoot a day for everyone; and the
+1970s terminals play Gunner and Cannoneer themselves, quirks and all. The docs are in `docs/over-short/`.
 
 ### Ten Turns in the Pit
 
@@ -187,8 +191,8 @@ lib/two-humps/       Two Humps: trek engine, pursuers, 1982 program, bots, Exped
 components/two-humps/ Two Humps menu, pursuer pick, trek screen, Canvas 2D diorama, map, 1982 terminal
 lib/long-memory/     Same Trick Twice: three rule sets, the 1978 program, the Learner, the Scholar, solver, Daily Endgame
 components/long-memory/ Same Trick Twice menu, WebGL2 board and seed physics, Memory Book, match screen, 1970s terminal
-lib/over-short/      Over / Short: ballistic models, engagements, Classic, Campaign missions, bots, the 1973 rules, progress
-components/over-short/ Over / Short menus, firing screen, Canvas 2D battlefield and observer's view, eras, sound
+lib/over-short/      Over / Short: ballistic models, engagements, Classic, Campaign missions, Field Artillery, duel, Daily Barrage, the 1970s terminals, bots, progress
+components/over-short/ Over / Short menus, firing screens, Canvas 2D battlefield and observer's view, duel, terminals, eras, sound
 lib/ten-turns/       Ten Turns in the Pit: the 1970s program, Classic, the Tactics engine, 20 pits, solvers, Daily Pit, progress
 components/ten-turns/ Ten Turns in the Pit menu, pit screen, choreography, the style layer and the Storybook, 1970s terminal
 lib/sol-y-sombra/    Sol y Sombra: the 1978 program, the Classic corrida, the crowd's verdict, bots, the plaza, the crowd, progress
@@ -232,7 +236,7 @@ npm run check:outta      # Outta Here's rules, the 1980 simulation, and human-li
 npm run check:lander     # 1979 maths; every world, mission, Daily Drop and Free Flight site can be landed by human-like pilots
 npm run check:two-humps  # Two Humps' balance against its targets, every Expedition leg, the Daily, and the 1982 program's numbers
 npm run check:long-memory # Same Trick Twice's rule sets, the 1978 program against PC-BASIC recordings, the Learner, the Scholar, every Daily Endgame
-npm run check:over-short # Over / Short's models against the 1973 formula, the drill under five kinds of player, every Campaign mission winnable
+npm run check:over-short # Over / Short's models against the 1973 formula and the lag rule, every Campaign mission and Field Artillery shoot winnable, the duel's balance, every Daily Barrage, the 1970s terminals against PC-BASIC runs
 npm run check:ten-turns  # Ten Turns' 1970s module against the program, the survival tables, every pit and Daily Pit survivable
 npm run check:sol-y-sombra # Sol y Sombra's 1970s formulas and quirks, the cards' odds against the engine, every bull and crew winnable
 npm run build:soundfont -- path/to/MuseScore_General.sf3   # rebuild public/soundfont/bopbox.sf3
